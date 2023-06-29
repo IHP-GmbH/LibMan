@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['saveprojectfile',['saveProjectFile',['../classMainWindow.html#a8513c227af4759727cdaff0528760411',1,'MainWindow']]],
+  ['set',['set',['../classProperties.html#add6b87d7b0d66ef5dd0a9b2d419cae7f',1,'Properties']]],
+  ['setcurrentviewtype',['setCurrentViewType',['../classNewView.html#aa364531816409ad712b7ea54eba38ee4',1,'NewView']]],
+  ['setdefault',['setDefault',['../classProperties.html#a59c39bab253ac2c960a63b811736bad2',1,'Properties']]],
+  ['setrecentproject',['setRecentProject',['../classMainWindow.html#aafa974e05a80e493c719909da5e5b76d',1,'MainWindow']]],
+  ['setstatechanged',['setStateChanged',['../classMainWindow.html#a281bfe571e3ce2af52bf79bb4fa44fde',1,'MainWindow::setStateChanged()'],['../classProjectManager.html#ac178fe4a0ff88ce4b860fa92373f6e23',1,'ProjectManager::setStateChanged()']]],
+  ['setstatesaved',['setStateSaved',['../classMainWindow.html#a5fb61a8cf4108faeb224c8f2d99b6ee3',1,'MainWindow::setStateSaved()'],['../classProjectManager.html#a89c55c9616362e13ef4fd81de2a2389b',1,'ProjectManager::setStateSaved()']]],
+  ['settingschanged',['settingsChanged',['../classProjectManager.html#ad8697c2b5edaa3aeda168de093139254',1,'ProjectManager::settingsChanged()'],['../classToolManager.html#ad46d597d99731298489b34f4c25a6f00',1,'ToolManager::settingsChanged()']]],
+  ['showcategoryinfo',['showCategoryInfo',['../classMainWindow.html#ad63d5f418c4d55c90d63269162782ac4',1,'MainWindow']]],
+  ['showcategorymenu',['showCategoryMenu',['../classMainWindow.html#acd00c7003f796ac714582e3238788872',1,'MainWindow']]],
+  ['showfolderinfo',['showFolderInfo',['../classMainWindow.html#a38f2a589547d744fe8effcd86d56522f',1,'MainWindow']]],
+  ['showgroupinfo',['showGroupInfo',['../classMainWindow.html#a7792544db8869842840c6e4716f8cbec',1,'MainWindow']]],
+  ['showgroupmenu',['showGroupMenu',['../classMainWindow.html#a19879440aaeb18585b7fac488e540c49',1,'MainWindow']]],
+  ['showlibrarymenu',['showLibraryMenu',['../classMainWindow.html#aefeae0de6c70fcace6f9f4b3836d8a84',1,'MainWindow']]],
+  ['showprojectinfo',['showProjectInfo',['../classMainWindow.html#a2fbeb11fb0bbe28be62403ef732931a7',1,'MainWindow']]],
+  ['showviewinfo',['showViewInfo',['../classMainWindow.html#a6e334fe603796652be44d5df952e0f4a',1,'MainWindow']]],
+  ['showviewmenu',['showViewMenu',['../classMainWindow.html#a9a11decabf7bc3f32641bc59431bee3c',1,'MainWindow']]]
+];

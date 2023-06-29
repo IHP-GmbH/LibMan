@@ -1,0 +1,273 @@
+#ifndef MAINWINDOW_H
+#define MAINWINDOW_H
+
+#include <QMainWindow>
+
+class Properties;
+class QTreeWidget;
+class QListWidget;
+class QListWidgetItem;
+class QTreeWidgetItem;
+
+namespace Ui {
+    class MainWindow;
+}
+
+/*!*********************************************************************************************************************
+ * \brief The MainWindow class is responsible for creating main framework of LibMan and controlls all slots and signals.
+ **********************************************************************************************************************/
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
+
+    friend class NewView;
+    friend class ProjectManager;
+
+    /*!
+     * \brief The RECENT_FILES enum specifies maximum number of recent project files.
+     */
+    enum RECENT_FILES {
+        PROJ_MAX_COUNT          = 5
+    };
+
+    /*!
+     * \brief The COPY_STATE enum specifies different states used for coping project/group/view (library/cell/view).
+     */
+    enum COPY_STATE {
+        NONE                    = 1000,
+        PROJECT,
+        GROUP,
+        VIEW
+    };
+    
+public:
+    explicit MainWindow(const QString &projFile, const QString &runDir, QWidget *parent = 0);
+    ~MainWindow();
+    
+private slots:
+    void                                closeEvent(QCloseEvent *event);
+    void                                showViewMenu(const QPoint &pos);
+    void                                showGroupMenu(const QPoint &pos);
+    void                                showLibraryMenu(const QPoint &pos);
+    void                                showCategoryMenu(const QPoint &pos);
+
+    void                                addNewGroup();
+    void                                addNewProject();
+    void                                addNewCategory();
+    void                                addNewSpiceView();
+    void                                addNewLayoutView();
+    void                                addNewSchematicView();    
+    void                                removeSelectedView();
+    void                                removeSelectedGroup();
+    void                                removeSelectedProject();
+    void                                removeSelectedCategory();
+    void                                showViewInfo();
+    void                                showGroupInfo();
+    void                                showProjectInfo();
+    void                                showCategoryInfo();
+    void                                removeFromGroup();
+    void                                removeGroupUnion();
+    void                                showFolderInfo(const QString &, const QString &, const QString &, bool clear = true);
+    void                                mergeProjectIntoGroup();
+
+    void                                pasteSelectedData();
+    void                                copySelectedView();
+    void                                copySelectedGroup();
+    void                                copySelectedProject();
+    void                                clearCurrentCopyState();
+    void                                addViewToBeCopied(const QString &);    
+    void                                addProjectToBeCopied(const QString &);
+    void                                addGroupToBeCopied(const QString &, const QString &);
+
+    void                                loadRecentProject();
+    void                                updateRecentProjectActions();
+    void                                loadProjectFile(const QString &);
+    void                                saveProjectFile(const QString &);
+    void                                setRecentProject(const QString &);
+
+    void                                on_actionSave_triggered();
+    void                                on_actionSave_As_triggered();
+    void                                on_actionExit_triggered();
+    void                                on_actionShow_Categories_toggled(bool);
+    void                                on_actionShow_Documents_toggled(bool);
+
+    void                                on_actionTools_triggered();
+    void                                on_actionProjects_triggered();    
+    void                                on_actionOpen_triggered();
+    void                                on_actionClear_Recent_File_Stack_triggered();
+
+    void                                on_treeLibs_itemClicked(QTreeWidgetItem *item, int column);
+    void                                on_listGroups_itemClicked(QListWidgetItem *item);
+    void                                on_listViews_itemDoubleClicked(QListWidgetItem *item);
+    void                                on_listDocumentation_itemDoubleClicked(QTreeWidgetItem *item);
+    void                                on_listViews_itemClicked(QListWidgetItem *item);
+    void                                on_listCategories_itemClicked(QTreeWidgetItem *item);    
+    void                                on_treeLibs_itemChanged(QTreeWidgetItem *item, int column);
+    void                                on_listCategories_itemDoubleClicked(QTreeWidgetItem *item, int column);    
+    void                                on_txtLibSearch_textEdited(const QString &arg1);
+    void                                on_txtCatSearch_textEdited(const QString &arg1);
+    void                                on_txtCellSearch_textEdited(const QString &arg1);
+    void                                on_txtViewSearch_textEdited(const QString &arg1);
+
+    void                                on_actionAbout_triggered();
+    void                                on_actionProject_triggered();
+    void                                on_actionGroup_triggered();
+    void                                on_actionUnion_triggered();
+    void                                on_actionCategory_triggered();
+    void                                on_actionSession_triggered();
+
+private:
+    void                                loadSettings();
+
+    void                                info(const QString &msg, bool clear = true);
+    void                                error(const QString &msg, bool clear = true);
+
+    void                                initRecentProjectMenu();
+
+    bool                                createNewFile(const QString &);
+    bool                                isStateChanged() const;
+
+    void                                setStateSaved();
+    void                                setStateChanged();
+
+    void                                checkAndSaveProjectData(QCloseEvent *);
+
+    void                                createProjectUnionMenu();
+
+    void                                loadLibraries();
+    void                                loadGroups(const QString &libPath);
+    void                                loadDocuments(const QString &libPath);
+    void                                loadCategories(const QString &libPath);
+    void                                loadCombinedLibs(const QMap<QString, QStringList> &);
+    void                                loadViews(const QString &libPath, const QString &groupName);
+
+    void                                hideTreeItem(QTreeWidget *, const QString &filter);
+    void                                hideListItem(QListWidget *, const QString &filter);
+
+    bool                                isViewCopied() const;
+    bool                                isGroupCopied() const;
+    bool                                isProjectCopied() const;    
+    bool                                askForFileReplacement() const;
+    bool                                askForPermanentDelete() const;
+    bool                                askUserForAction(const QString &title) const;
+
+    bool                                removeDir(const QString &) const;
+    void                                copyDir(const QString &, const QString &) const;
+
+    QString                             getLibraryPath(const QString &) const;
+    QString                             getLibraryKeyPrefix() const;
+
+    QString                             getProjectFileFromDir(const QString &) const;
+
+    QString                             generateCopyName(const QString &, const QString &, const QString &suffix = "") const;
+
+    QString                             getViewPath(const QString &, const QString &, const QString &) const;
+
+    QString                             getCurrentViewName() const;
+    QString                             getCurrentGroupName() const;
+    QString                             getCurrentUnionName() const;
+    QString                             getCurrentWorkingDir() const;    
+    QString                             getCurrentLibraryName() const;
+    QString                             getCurrentProjectFile() const;
+    QString                             getCurrentLibraryPath() const;
+    QString                             getCurrentCategoryName() const;
+    QString                             getCurrentViewFilePath(const QString &) const;
+    QString                             getCurrentDocumentFilePath(const QString &) const;
+    QString                             getCurrentGroupPath(const QString &viewName, bool toBeCreated = false);
+
+    QString                             getSettingsHeaderName() const;
+    QString                             getToolByView(const QString &) const;
+    QString                             getDocumentTool(const QString &) const;
+
+    QString                             getLibManTitle() const;
+
+    QStringList                         getValidViewList() const;
+    QStringList                         getCurrentGroups(const QString &) const;
+    QStringList                         getCurrentViews(const QString &, const QString &) const;
+    QStringList                         readLibraryCategories(const QString &, const QString &);    
+
+    QTreeWidgetItem*                    getTreeItemByName(const QString &name);
+
+    QMap<QString, QString>              getCurrentLibraries() const;
+
+private:
+    Ui::MainWindow                      *m_ui;                  /*!< A pointer to acess ProjectManager graphic items. */
+    Properties                          *m_properties;          /*!< A pointer to acess Properties collection with all settings. */
+
+    bool                                m_isStateChanged;       /*!< State to keep if LibMan was changed or not. */
+
+    QString                             m_itemText;             /*!< Name of the last selected item. */
+    QString                             m_runDirectory;         /*!< Directory where LibMan was executed. */
+    QString                             m_currentProjFile;      /*!< Currently loaded project files. */
+
+    QList<QAction*>                     m_recentProjects;       /*!< List of existing recent project files. */
+
+    QStringList                         m_copyData;             /*!< A list used as a buffer for coping data (library/cell/view). */
+    COPY_STATE                          m_currentCopyState;     /*!< State to specify what user would like to copy (library/cell/view). */
+};
+
+/*!*******************************************************************************************************************
+ * \brief Returns prefix for storing libraries in the LibMan settings collection.
+ ********************************************************************************************************************/
+inline QString MainWindow::getLibraryKeyPrefix() const
+{
+    return("LIBRARY_");
+}
+
+/*!*******************************************************************************************************************
+ * \brief Returns header name used for storing LibMan settings.
+ ********************************************************************************************************************/
+inline QString MainWindow::getSettingsHeaderName() const
+{
+    return("LIBAMN");
+}
+
+/*!*******************************************************************************************************************
+ * \brief Returns true the LibMan window state has been changed, otherwise false.
+ ********************************************************************************************************************/
+inline bool MainWindow::isStateChanged() const
+{
+    return m_isStateChanged;
+}
+
+/*!*******************************************************************************************************************
+ * \brief Returns path to the current project file.
+ ********************************************************************************************************************/
+inline QString MainWindow::getCurrentProjectFile() const
+{
+    return(m_currentProjFile);
+}
+
+/*!*******************************************************************************************************************
+ * \brief Returns true the LibMan project (library) state has been changed, otherwise false.
+ ********************************************************************************************************************/
+inline bool MainWindow::isProjectCopied() const
+{
+    return(m_currentCopyState == PROJECT ? true : false);
+}
+
+/*!*******************************************************************************************************************
+ * \brief Returns true the LibMan group (cell) state has been changed, otherwise false.
+ ********************************************************************************************************************/
+inline bool MainWindow::isGroupCopied() const
+{
+    return(m_currentCopyState == GROUP ? true : false);
+}
+
+/*!*******************************************************************************************************************
+ * \brief Returns true the LibMan view state has been changed, otherwise false.
+ ********************************************************************************************************************/
+inline bool MainWindow::isViewCopied() const
+{
+    return(m_currentCopyState == VIEW ? true : false);
+}
+
+/*!*******************************************************************************************************************
+ * \brief Returns titel of the LibMan.
+ ********************************************************************************************************************/
+inline QString MainWindow::getLibManTitle() const
+{
+    return QString("LibMan - Library Project Manager");
+}
+
+#endif // MAINWINDOW_H

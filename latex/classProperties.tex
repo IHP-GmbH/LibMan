@@ -1,0 +1,310 @@
+\hypertarget{classProperties}{\section{Properties Class Reference}
+\label{classProperties}\index{Properties@{Properties}}
+}
+
+
+The \hyperlink{classProperties}{Properties} class stores and manipulates all kind of data types. It is used for managing Lib\-Man settings.  
+
+
+
+
+{\ttfamily \#include $<$property.\-h$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classProperties_a7c001f15168b6ec386377dc91e288033}{Properties} ()
+\begin{DoxyCompactList}\small\item\em Constructs \hyperlink{classProperties}{Properties} object. \end{DoxyCompactList}\item 
+\hyperlink{classProperties_a9a4367c64d90a962fc260128587670dd}{$\sim$\-Properties} ()
+\begin{DoxyCompactList}\small\item\em Destructs \hyperlink{classProperties}{Properties} obejct and clears up the property items. \end{DoxyCompactList}\item 
+unsigned \hyperlink{classProperties_af65e2e755382f74208fc9d3411eb7d93}{count} () const 
+\begin{DoxyCompactList}\small\item\em Returns number of stored properties. \end{DoxyCompactList}\item 
+unsigned \hyperlink{classProperties_a02eae31d56c3ce060acf269808c1aae4}{get\-Value\-Count} (const Q\-String \&name) const 
+\begin{DoxyCompactList}\small\item\em Removes property item by name. \end{DoxyCompactList}\item 
+void \hyperlink{classProperties_a648567d171b2bac9cdfa8de6fe53a865}{remove} (const Q\-String \&name)
+\begin{DoxyCompactList}\small\item\em Removes property item by name. \end{DoxyCompactList}\item 
+bool \hyperlink{classProperties_affd1124bf0ea0712a110e99204b55ea2}{exists} (const Q\-String \&name) const 
+\begin{DoxyCompactList}\small\item\em Checks if property item is part of the collection. \end{DoxyCompactList}\item 
+bool \hyperlink{classProperties_a8dec2d75af8e2871a089eb49c24227c6}{is\-Modified} (const Q\-String \&name) const 
+\begin{DoxyCompactList}\small\item\em Cehcks if item has been modified. \end{DoxyCompactList}\item 
+Q\-Variant \hyperlink{classProperties_ac987644f72837c216e73c67dbe931e2b}{get\-Variant} (const Q\-String \&name) const 
+\begin{DoxyCompactList}\small\item\em Returns propery variant's value. \end{DoxyCompactList}\item 
+{\footnotesize template$<$class T $>$ }\\T \hyperlink{classProperties_a4821665cdb6ab25eb9ce4a4681ba0f3c}{get} (const Q\-String \&name) const 
+\begin{DoxyCompactList}\small\item\em Returns property item by name. \end{DoxyCompactList}\item 
+{\footnotesize template$<$class T $>$ }\\Q\-List$<$ T $>$ \hyperlink{classProperties_a6bc91c0049e2b7b5f87220ad34186eaa}{get\-List} (const Q\-String \&name) const 
+\begin{DoxyCompactList}\small\item\em Return list of the property items by property name. \end{DoxyCompactList}\item 
+{\footnotesize template$<$class T $>$ }\\void \hyperlink{classProperties_add6b87d7b0d66ef5dd0a9b2d419cae7f}{set} (const Q\-String \&name, const T \&value)
+\begin{DoxyCompactList}\small\item\em Assigns a new value to property item. \end{DoxyCompactList}\item 
+{\footnotesize template$<$class T $>$ }\\void \hyperlink{classProperties_a695bdfbe49a5a8301dd960076a5ab375}{add} (const Q\-String \&name, const T \&value)
+\begin{DoxyCompactList}\small\item\em Adds property value to collection. \end{DoxyCompactList}\item 
+{\footnotesize template$<$class T $>$ }\\void \hyperlink{classProperties_a59c39bab253ac2c960a63b811736bad2}{set\-Default} (const Q\-String \&name, const T \&value)
+\begin{DoxyCompactList}\small\item\em Sets the default value of property item. \end{DoxyCompactList}\item 
+const Q\-Map$<$ Q\-String, \\*
+\hyperlink{classPropertyItem}{Property\-Item} $\ast$ $>$ \hyperlink{classProperties_aca02c11425e9c2fb0b76b3f2a7b54b30}{get\-Map} () const 
+\begin{DoxyCompactList}\small\item\em Returns collection's map of property items. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classProperties_afe7bbb30e511d652af272b08c78bf8a9}{Q\-Map$<$ Q\-String, \hyperlink{classPropertyItem}{Property\-Item} $\ast$ $>$ {\bfseries m\-\_\-data}}\label{classProperties_afe7bbb30e511d652af272b08c78bf8a9}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+The \hyperlink{classProperties}{Properties} class stores and manipulates all kind of data types. It is used for managing Lib\-Man settings. 
+
+
+
+ 
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classProperties_a7c001f15168b6ec386377dc91e288033}{\index{Properties@{Properties}!Properties@{Properties}}
+\index{Properties@{Properties}!Properties@{Properties}}
+\subsubsection[{Properties}]{\setlength{\rightskip}{0pt plus 5cm}Properties\-::\-Properties (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{classProperties_a7c001f15168b6ec386377dc91e288033}
+
+
+Constructs \hyperlink{classProperties}{Properties} object. 
+
+
+
+ \hypertarget{classProperties_a9a4367c64d90a962fc260128587670dd}{\index{Properties@{Properties}!$\sim$\-Properties@{$\sim$\-Properties}}
+\index{$\sim$\-Properties@{$\sim$\-Properties}!Properties@{Properties}}
+\subsubsection[{$\sim$\-Properties}]{\setlength{\rightskip}{0pt plus 5cm}Properties\-::$\sim$\-Properties (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{classProperties_a9a4367c64d90a962fc260128587670dd}
+
+
+Destructs \hyperlink{classProperties}{Properties} obejct and clears up the property items. 
+
+
+
+ 
+
+\subsection{Member Function Documentation}
+\hypertarget{classProperties_a695bdfbe49a5a8301dd960076a5ab375}{\index{Properties@{Properties}!add@{add}}
+\index{add@{add}!Properties@{Properties}}
+\subsubsection[{add}]{\setlength{\rightskip}{0pt plus 5cm}template$<$class T $>$ void Properties\-::add (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{name, }
+\item[{const T \&}]{value}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}}\label{classProperties_a695bdfbe49a5a8301dd960076a5ab375}
+
+
+Adds property value to collection. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em name} & Name of the property item. \\
+\hline
+{\em value} & Value of the property item. Property can be any of allowed type. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classProperties_af65e2e755382f74208fc9d3411eb7d93}{\index{Properties@{Properties}!count@{count}}
+\index{count@{count}!Properties@{Properties}}
+\subsubsection[{count}]{\setlength{\rightskip}{0pt plus 5cm}unsigned Properties\-::count (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}}\label{classProperties_af65e2e755382f74208fc9d3411eb7d93}
+
+
+Returns number of stored properties. 
+
+
+
+ \hypertarget{classProperties_affd1124bf0ea0712a110e99204b55ea2}{\index{Properties@{Properties}!exists@{exists}}
+\index{exists@{exists}!Properties@{Properties}}
+\subsubsection[{exists}]{\setlength{\rightskip}{0pt plus 5cm}bool Properties\-::exists (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{name}
+\end{DoxyParamCaption}
+) const}}\label{classProperties_affd1124bf0ea0712a110e99204b55ea2}
+
+
+Checks if property item is part of the collection. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em name} & Name of the property item. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classProperties_a4821665cdb6ab25eb9ce4a4681ba0f3c}{\index{Properties@{Properties}!get@{get}}
+\index{get@{get}!Properties@{Properties}}
+\subsubsection[{get}]{\setlength{\rightskip}{0pt plus 5cm}template$<$class T $>$ T Properties\-::get (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{name}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}}\label{classProperties_a4821665cdb6ab25eb9ce4a4681ba0f3c}
+
+
+Returns property item by name. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em name} & Name of the property item. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classProperties_a6bc91c0049e2b7b5f87220ad34186eaa}{\index{Properties@{Properties}!get\-List@{get\-List}}
+\index{get\-List@{get\-List}!Properties@{Properties}}
+\subsubsection[{get\-List}]{\setlength{\rightskip}{0pt plus 5cm}template$<$class T $>$ Q\-List$<$ T $>$ Properties\-::get\-List (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{name}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}}\label{classProperties_a6bc91c0049e2b7b5f87220ad34186eaa}
+
+
+Return list of the property items by property name. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em name} & Name of the property item. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classProperties_aca02c11425e9c2fb0b76b3f2a7b54b30}{\index{Properties@{Properties}!get\-Map@{get\-Map}}
+\index{get\-Map@{get\-Map}!Properties@{Properties}}
+\subsubsection[{get\-Map}]{\setlength{\rightskip}{0pt plus 5cm}const Q\-Map$<$ Q\-String, {\bf Property\-Item} $\ast$ $>$ Properties\-::get\-Map (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}}\label{classProperties_aca02c11425e9c2fb0b76b3f2a7b54b30}
+
+
+Returns collection's map of property items. 
+
+
+
+ \hypertarget{classProperties_a02eae31d56c3ce060acf269808c1aae4}{\index{Properties@{Properties}!get\-Value\-Count@{get\-Value\-Count}}
+\index{get\-Value\-Count@{get\-Value\-Count}!Properties@{Properties}}
+\subsubsection[{get\-Value\-Count}]{\setlength{\rightskip}{0pt plus 5cm}unsigned Properties\-::get\-Value\-Count (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{name}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}}\label{classProperties_a02eae31d56c3ce060acf269808c1aae4}
+
+
+Removes property item by name. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em name} & Name of the property item to be removed. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classProperties_ac987644f72837c216e73c67dbe931e2b}{\index{Properties@{Properties}!get\-Variant@{get\-Variant}}
+\index{get\-Variant@{get\-Variant}!Properties@{Properties}}
+\subsubsection[{get\-Variant}]{\setlength{\rightskip}{0pt plus 5cm}Q\-Variant Properties\-::get\-Variant (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{name}
+\end{DoxyParamCaption}
+) const}}\label{classProperties_ac987644f72837c216e73c67dbe931e2b}
+
+
+Returns propery variant's value. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em name} & Name of the property item. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classProperties_a8dec2d75af8e2871a089eb49c24227c6}{\index{Properties@{Properties}!is\-Modified@{is\-Modified}}
+\index{is\-Modified@{is\-Modified}!Properties@{Properties}}
+\subsubsection[{is\-Modified}]{\setlength{\rightskip}{0pt plus 5cm}bool Properties\-::is\-Modified (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{name}
+\end{DoxyParamCaption}
+) const}}\label{classProperties_a8dec2d75af8e2871a089eb49c24227c6}
+
+
+Cehcks if item has been modified. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em name} & Name of the property item. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classProperties_a648567d171b2bac9cdfa8de6fe53a865}{\index{Properties@{Properties}!remove@{remove}}
+\index{remove@{remove}!Properties@{Properties}}
+\subsubsection[{remove}]{\setlength{\rightskip}{0pt plus 5cm}void Properties\-::remove (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{name}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}}\label{classProperties_a648567d171b2bac9cdfa8de6fe53a865}
+
+
+Removes property item by name. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em name} & Name of the property to be removed. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classProperties_add6b87d7b0d66ef5dd0a9b2d419cae7f}{\index{Properties@{Properties}!set@{set}}
+\index{set@{set}!Properties@{Properties}}
+\subsubsection[{set}]{\setlength{\rightskip}{0pt plus 5cm}template$<$class T $>$ void Properties\-::set (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{name, }
+\item[{const T \&}]{value}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}}\label{classProperties_add6b87d7b0d66ef5dd0a9b2d419cae7f}
+
+
+Assigns a new value to property item. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em name} & Name of the property item. \\
+\hline
+{\em name} & Value of the property item. Property can be any of allowed type. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classProperties_a59c39bab253ac2c960a63b811736bad2}{\index{Properties@{Properties}!set\-Default@{set\-Default}}
+\index{set\-Default@{set\-Default}!Properties@{Properties}}
+\subsubsection[{set\-Default}]{\setlength{\rightskip}{0pt plus 5cm}template$<$class T $>$ void Properties\-::set\-Default (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{name, }
+\item[{const T \&}]{value}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}}\label{classProperties_a59c39bab253ac2c960a63b811736bad2}
+
+
+Sets the default value of property item. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em name} & Name of the property item. \\
+\hline
+{\em value} & Value of the property item. Property can be any of allowed type. \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+\item 
+property.\-h\item 
+property.\-cpp\end{DoxyCompactItemize}

@@ -1,0 +1,176 @@
+\hypertarget{classToolManager}{\section{Tool\-Manager Class Reference}
+\label{classToolManager}\index{Tool\-Manager@{Tool\-Manager}}
+}
+
+
+The \hyperlink{classToolManager}{Tool\-Manager} class creates a dialog window to allow user controlling 3-\/d party tools executed by Lib\-Man.  
+
+
+
+
+{\ttfamily \#include $<$toolmanager.\-h$>$}
+
+Inheritance diagram for Tool\-Manager\-:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classToolManager}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classToolManager_ac69e222494ba128594c73d6545e50688}{Tool\-Manager} (Q\-Widget $\ast$parent, \hyperlink{classProperties}{Properties} $\ast$properties)
+\begin{DoxyCompactList}\small\item\em Creates \hyperlink{classToolManager}{Tool\-Manager} object to give user an opportunity to choose tools for working with different view types. \end{DoxyCompactList}\item 
+\hyperlink{classToolManager_a242d9f322f17b81946a921764ea6c5dd}{$\sim$\-Tool\-Manager} ()
+\begin{DoxyCompactList}\small\item\em Destructs \hyperlink{classToolManager}{Tool\-Manager} obejct and clears up U\-I members. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Slots}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classToolManager_ad46d597d99731298489b34f4c25a6f00}{settings\-Changed} (Qt\-Property $\ast$, Q\-Variant)
+\begin{DoxyCompactList}\small\item\em The slot is triggered once user changes tool settings. \end{DoxyCompactList}\item 
+void \hyperlink{classToolManager_a2877a5eebdbf32bd984f58ba60087dfd}{on\-\_\-btn\-Ok\-\_\-clicked} ()
+\begin{DoxyCompactList}\small\item\em Saves current tool settings into properties of \hyperlink{classMainWindow}{Main\-Window} object and closes the window. \end{DoxyCompactList}\item 
+void \hyperlink{classToolManager_a5251e65adb28c3c8355ea2c16bfb2c2d}{on\-\_\-btn\-Cancel\-\_\-clicked} ()
+\begin{DoxyCompactList}\small\item\em closes \hyperlink{classToolManager}{Tool\-Manager} window. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classToolManager_a0ebfb9302faf76d53d4eafc48aad559a}{init} ()
+\begin{DoxyCompactList}\small\item\em Initializes Qt\-Tree\-Property\-Browser and creates its properties. It's used to provide a list of tools that can be chosen by user to work with different view, documentation etc. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Ui\-::\-Tool\-Manager $\ast$ \hyperlink{classToolManager_a8cfa8377de1438e8eaa63d549cdeec44}{m\-\_\-ui}
+\item 
+\hyperlink{classMainWindow}{Main\-Window} $\ast$ \hyperlink{classToolManager_aaf5b5ff482e6fe661c5ba774c5fde50e}{m\-\_\-mw}
+\item 
+\hyperlink{classProperties}{Properties} $\ast$ \hyperlink{classToolManager_af7ce412063a8651c31441376504deda4}{m\-\_\-properties}
+\item 
+Qt\-Tree\-Property\-Browser $\ast$ \hyperlink{classToolManager_a6b9d5df12862696e13c561277f134e0d}{m\-\_\-pb\-Settings}
+\item 
+Qt\-Variant\-Property\-Manager $\ast$ \hyperlink{classToolManager_ac363f07b4d5b4d6b85f653d2590a730b}{m\-\_\-vm\-Settings}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+The \hyperlink{classToolManager}{Tool\-Manager} class creates a dialog window to allow user controlling 3-\/d party tools executed by Lib\-Man. 
+
+
+
+ 
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classToolManager_ac69e222494ba128594c73d6545e50688}{\index{Tool\-Manager@{Tool\-Manager}!Tool\-Manager@{Tool\-Manager}}
+\index{Tool\-Manager@{Tool\-Manager}!ToolManager@{Tool\-Manager}}
+\subsubsection[{Tool\-Manager}]{\setlength{\rightskip}{0pt plus 5cm}Tool\-Manager\-::\-Tool\-Manager (
+\begin{DoxyParamCaption}
+\item[{Q\-Widget $\ast$}]{parent, }
+\item[{{\bf Properties} $\ast$}]{properties}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [explicit]}}}\label{classToolManager_ac69e222494ba128594c73d6545e50688}
+
+
+Creates \hyperlink{classToolManager}{Tool\-Manager} object to give user an opportunity to choose tools for working with different view types. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em parent} & Parent widget, by default is N\-U\-L\-L. \\
+\hline
+{\em properties} & Container of Lib\-Man settings. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classToolManager_a242d9f322f17b81946a921764ea6c5dd}{\index{Tool\-Manager@{Tool\-Manager}!$\sim$\-Tool\-Manager@{$\sim$\-Tool\-Manager}}
+\index{$\sim$\-Tool\-Manager@{$\sim$\-Tool\-Manager}!ToolManager@{Tool\-Manager}}
+\subsubsection[{$\sim$\-Tool\-Manager}]{\setlength{\rightskip}{0pt plus 5cm}Tool\-Manager\-::$\sim$\-Tool\-Manager (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{classToolManager_a242d9f322f17b81946a921764ea6c5dd}
+
+
+Destructs \hyperlink{classToolManager}{Tool\-Manager} obejct and clears up U\-I members. 
+
+
+
+ 
+
+\subsection{Member Function Documentation}
+\hypertarget{classToolManager_a0ebfb9302faf76d53d4eafc48aad559a}{\index{Tool\-Manager@{Tool\-Manager}!init@{init}}
+\index{init@{init}!ToolManager@{Tool\-Manager}}
+\subsubsection[{init}]{\setlength{\rightskip}{0pt plus 5cm}void Tool\-Manager\-::init (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classToolManager_a0ebfb9302faf76d53d4eafc48aad559a}
+
+
+Initializes Qt\-Tree\-Property\-Browser and creates its properties. It's used to provide a list of tools that can be chosen by user to work with different view, documentation etc. 
+
+
+
+ \hypertarget{classToolManager_a5251e65adb28c3c8355ea2c16bfb2c2d}{\index{Tool\-Manager@{Tool\-Manager}!on\-\_\-btn\-Cancel\-\_\-clicked@{on\-\_\-btn\-Cancel\-\_\-clicked}}
+\index{on\-\_\-btn\-Cancel\-\_\-clicked@{on\-\_\-btn\-Cancel\-\_\-clicked}!ToolManager@{Tool\-Manager}}
+\subsubsection[{on\-\_\-btn\-Cancel\-\_\-clicked}]{\setlength{\rightskip}{0pt plus 5cm}void Tool\-Manager\-::on\-\_\-btn\-Cancel\-\_\-clicked (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classToolManager_a5251e65adb28c3c8355ea2c16bfb2c2d}
+
+
+closes \hyperlink{classToolManager}{Tool\-Manager} window. 
+
+
+
+ \hypertarget{classToolManager_a2877a5eebdbf32bd984f58ba60087dfd}{\index{Tool\-Manager@{Tool\-Manager}!on\-\_\-btn\-Ok\-\_\-clicked@{on\-\_\-btn\-Ok\-\_\-clicked}}
+\index{on\-\_\-btn\-Ok\-\_\-clicked@{on\-\_\-btn\-Ok\-\_\-clicked}!ToolManager@{Tool\-Manager}}
+\subsubsection[{on\-\_\-btn\-Ok\-\_\-clicked}]{\setlength{\rightskip}{0pt plus 5cm}void Tool\-Manager\-::on\-\_\-btn\-Ok\-\_\-clicked (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classToolManager_a2877a5eebdbf32bd984f58ba60087dfd}
+
+
+Saves current tool settings into properties of \hyperlink{classMainWindow}{Main\-Window} object and closes the window. 
+
+
+
+ \hypertarget{classToolManager_ad46d597d99731298489b34f4c25a6f00}{\index{Tool\-Manager@{Tool\-Manager}!settings\-Changed@{settings\-Changed}}
+\index{settings\-Changed@{settings\-Changed}!ToolManager@{Tool\-Manager}}
+\subsubsection[{settings\-Changed}]{\setlength{\rightskip}{0pt plus 5cm}void Tool\-Manager\-::settings\-Changed (
+\begin{DoxyParamCaption}
+\item[{Qt\-Property $\ast$}]{, }
+\item[{Q\-Variant}]{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classToolManager_ad46d597d99731298489b34f4c25a6f00}
+
+
+The slot is triggered once user changes tool settings. 
+
+
+
+ 
+
+\subsection{Member Data Documentation}
+\hypertarget{classToolManager_aaf5b5ff482e6fe661c5ba774c5fde50e}{\index{Tool\-Manager@{Tool\-Manager}!m\-\_\-mw@{m\-\_\-mw}}
+\index{m\-\_\-mw@{m\-\_\-mw}!ToolManager@{Tool\-Manager}}
+\subsubsection[{m\-\_\-mw}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Main\-Window}$\ast$ Tool\-Manager\-::m\-\_\-mw\hspace{0.3cm}{\ttfamily [private]}}}\label{classToolManager_aaf5b5ff482e6fe661c5ba774c5fde50e}
+A pointer to acess \hyperlink{classMainWindow}{Main\-Window} items as it's a friend class. \hypertarget{classToolManager_a6b9d5df12862696e13c561277f134e0d}{\index{Tool\-Manager@{Tool\-Manager}!m\-\_\-pb\-Settings@{m\-\_\-pb\-Settings}}
+\index{m\-\_\-pb\-Settings@{m\-\_\-pb\-Settings}!ToolManager@{Tool\-Manager}}
+\subsubsection[{m\-\_\-pb\-Settings}]{\setlength{\rightskip}{0pt plus 5cm}Qt\-Tree\-Property\-Browser$\ast$ Tool\-Manager\-::m\-\_\-pb\-Settings\hspace{0.3cm}{\ttfamily [private]}}}\label{classToolManager_a6b9d5df12862696e13c561277f134e0d}
+A property browser framework enabling the user to edit a set of properties. \hypertarget{classToolManager_af7ce412063a8651c31441376504deda4}{\index{Tool\-Manager@{Tool\-Manager}!m\-\_\-properties@{m\-\_\-properties}}
+\index{m\-\_\-properties@{m\-\_\-properties}!ToolManager@{Tool\-Manager}}
+\subsubsection[{m\-\_\-properties}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Properties}$\ast$ Tool\-Manager\-::m\-\_\-properties\hspace{0.3cm}{\ttfamily [private]}}}\label{classToolManager_af7ce412063a8651c31441376504deda4}
+Container to store Lib\-Man settings. \hypertarget{classToolManager_a8cfa8377de1438e8eaa63d549cdeec44}{\index{Tool\-Manager@{Tool\-Manager}!m\-\_\-ui@{m\-\_\-ui}}
+\index{m\-\_\-ui@{m\-\_\-ui}!ToolManager@{Tool\-Manager}}
+\subsubsection[{m\-\_\-ui}]{\setlength{\rightskip}{0pt plus 5cm}Ui\-::\-Tool\-Manager$\ast$ Tool\-Manager\-::m\-\_\-ui\hspace{0.3cm}{\ttfamily [private]}}}\label{classToolManager_a8cfa8377de1438e8eaa63d549cdeec44}
+A pointer to acess \hyperlink{classToolManager}{Tool\-Manager} graphic items. \hypertarget{classToolManager_ac363f07b4d5b4d6b85f653d2590a730b}{\index{Tool\-Manager@{Tool\-Manager}!m\-\_\-vm\-Settings@{m\-\_\-vm\-Settings}}
+\index{m\-\_\-vm\-Settings@{m\-\_\-vm\-Settings}!ToolManager@{Tool\-Manager}}
+\subsubsection[{m\-\_\-vm\-Settings}]{\setlength{\rightskip}{0pt plus 5cm}Qt\-Variant\-Property\-Manager$\ast$ Tool\-Manager\-::m\-\_\-vm\-Settings\hspace{0.3cm}{\ttfamily [private]}}}\label{classToolManager_ac363f07b4d5b4d6b85f653d2590a730b}
+Each property type, the framework provides a property manager associated with editor factory. 
+
+The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+\item 
+toolmanager.\-h\item 
+toolmanager.\-cpp\end{DoxyCompactItemize}

@@ -1,0 +1,153 @@
+\hypertarget{classNewView}{\section{New\-View Class Reference}
+\label{classNewView}\index{New\-View@{New\-View}}
+}
+
+
+The \hyperlink{classNewView}{New\-View} class creates a dialog box where user can select which view to be created.  
+
+
+
+
+{\ttfamily \#include $<$newview.\-h$>$}
+
+Inheritance diagram for New\-View\-:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classNewView}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classNewView_adf346776d2dbb084ffd8fae4239d85f3}{New\-View} (Q\-Widget $\ast$parent=0, const Q\-String \&lib\-Name=\char`\"{}\char`\"{}, const Q\-String \&cell\-Name=\char`\"{}\char`\"{})
+\begin{DoxyCompactList}\small\item\em Constracts a \hyperlink{classNewView}{New\-View} dialog window to let user select which type of views to create. \end{DoxyCompactList}\item 
+\hyperlink{classNewView_ab2bb30c39ce51c8a246dcdeb5c72ef72}{$\sim$\-New\-View} ()
+\begin{DoxyCompactList}\small\item\em Destructs \hyperlink{classNewView}{New\-View} obejct and clears up U\-I members. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Slots}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classNewView_a1420ad9f114c7a5ff01f55195d7378bd}{on\-\_\-btn\-Cancel\-\_\-clicked} ()
+\begin{DoxyCompactList}\small\item\em Closes \hyperlink{classNewView}{New\-View} window. \end{DoxyCompactList}\item 
+void \hyperlink{classNewView_a0a34135b4013988f3276bce43782c8ea}{on\-\_\-btn\-Create\-\_\-clicked} ()
+\begin{DoxyCompactList}\small\item\em Creates view based on user input and closes the \hyperlink{classNewView}{New\-View} window. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classNewView_aa364531816409ad712b7ea54eba38ee4}{set\-Current\-View\-Type} (const Q\-String \&)
+\begin{DoxyCompactList}\small\item\em Sets the provided type name to be the current one in the view type Combo\-Box. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Ui\-::\-New\-View $\ast$ \hyperlink{classNewView_ab8a3d70ca1c0826d69d4411a21f365e0}{m\-\_\-ui}
+\item 
+\hyperlink{classMainWindow}{Main\-Window} $\ast$ \hyperlink{classNewView_a086dc0337a001800ccd5abaef3f7d815}{m\-\_\-mw}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+The \hyperlink{classNewView}{New\-View} class creates a dialog box where user can select which view to be created. 
+
+
+
+ 
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classNewView_adf346776d2dbb084ffd8fae4239d85f3}{\index{New\-View@{New\-View}!New\-View@{New\-View}}
+\index{New\-View@{New\-View}!NewView@{New\-View}}
+\subsubsection[{New\-View}]{\setlength{\rightskip}{0pt plus 5cm}New\-View\-::\-New\-View (
+\begin{DoxyParamCaption}
+\item[{Q\-Widget $\ast$}]{parent = {\ttfamily 0}, }
+\item[{const Q\-String \&}]{lib\-Name = {\ttfamily \char`\"{}\char`\"{}}, }
+\item[{const Q\-String \&}]{cell\-Name = {\ttfamily \char`\"{}\char`\"{}}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [explicit]}}}\label{classNewView_adf346776d2dbb084ffd8fae4239d85f3}
+
+
+Constracts a \hyperlink{classNewView}{New\-View} dialog window to let user select which type of views to create. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em parent} & Parent widget, by default is N\-U\-L\-L. \\
+\hline
+{\em lib\-Name} & Name of the library. Be default, it is empty. \\
+\hline
+{\em cell\-Name} & Name of the cell. Be default, it is empty. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classNewView_ab2bb30c39ce51c8a246dcdeb5c72ef72}{\index{New\-View@{New\-View}!$\sim$\-New\-View@{$\sim$\-New\-View}}
+\index{$\sim$\-New\-View@{$\sim$\-New\-View}!NewView@{New\-View}}
+\subsubsection[{$\sim$\-New\-View}]{\setlength{\rightskip}{0pt plus 5cm}New\-View\-::$\sim$\-New\-View (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{classNewView_ab2bb30c39ce51c8a246dcdeb5c72ef72}
+
+
+Destructs \hyperlink{classNewView}{New\-View} obejct and clears up U\-I members. 
+
+
+
+ 
+
+\subsection{Member Function Documentation}
+\hypertarget{classNewView_a1420ad9f114c7a5ff01f55195d7378bd}{\index{New\-View@{New\-View}!on\-\_\-btn\-Cancel\-\_\-clicked@{on\-\_\-btn\-Cancel\-\_\-clicked}}
+\index{on\-\_\-btn\-Cancel\-\_\-clicked@{on\-\_\-btn\-Cancel\-\_\-clicked}!NewView@{New\-View}}
+\subsubsection[{on\-\_\-btn\-Cancel\-\_\-clicked}]{\setlength{\rightskip}{0pt plus 5cm}void New\-View\-::on\-\_\-btn\-Cancel\-\_\-clicked (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classNewView_a1420ad9f114c7a5ff01f55195d7378bd}
+
+
+Closes \hyperlink{classNewView}{New\-View} window. 
+
+
+
+ \hypertarget{classNewView_a0a34135b4013988f3276bce43782c8ea}{\index{New\-View@{New\-View}!on\-\_\-btn\-Create\-\_\-clicked@{on\-\_\-btn\-Create\-\_\-clicked}}
+\index{on\-\_\-btn\-Create\-\_\-clicked@{on\-\_\-btn\-Create\-\_\-clicked}!NewView@{New\-View}}
+\subsubsection[{on\-\_\-btn\-Create\-\_\-clicked}]{\setlength{\rightskip}{0pt plus 5cm}void New\-View\-::on\-\_\-btn\-Create\-\_\-clicked (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classNewView_a0a34135b4013988f3276bce43782c8ea}
+
+
+Creates view based on user input and closes the \hyperlink{classNewView}{New\-View} window. 
+
+
+
+ \hypertarget{classNewView_aa364531816409ad712b7ea54eba38ee4}{\index{New\-View@{New\-View}!set\-Current\-View\-Type@{set\-Current\-View\-Type}}
+\index{set\-Current\-View\-Type@{set\-Current\-View\-Type}!NewView@{New\-View}}
+\subsubsection[{set\-Current\-View\-Type}]{\setlength{\rightskip}{0pt plus 5cm}void New\-View\-::set\-Current\-View\-Type (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{type}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classNewView_aa364531816409ad712b7ea54eba38ee4}
+
+
+Sets the provided type name to be the current one in the view type Combo\-Box. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em type} & Name of view type (ex., cdl, gds, spice, etc.). \\
+\hline
+\end{DoxyParams}
+
+
+\subsection{Member Data Documentation}
+\hypertarget{classNewView_a086dc0337a001800ccd5abaef3f7d815}{\index{New\-View@{New\-View}!m\-\_\-mw@{m\-\_\-mw}}
+\index{m\-\_\-mw@{m\-\_\-mw}!NewView@{New\-View}}
+\subsubsection[{m\-\_\-mw}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Main\-Window}$\ast$ New\-View\-::m\-\_\-mw\hspace{0.3cm}{\ttfamily [private]}}}\label{classNewView_a086dc0337a001800ccd5abaef3f7d815}
+A pointer to \hyperlink{classMainWindow}{Main\-Window} object. \hypertarget{classNewView_ab8a3d70ca1c0826d69d4411a21f365e0}{\index{New\-View@{New\-View}!m\-\_\-ui@{m\-\_\-ui}}
+\index{m\-\_\-ui@{m\-\_\-ui}!NewView@{New\-View}}
+\subsubsection[{m\-\_\-ui}]{\setlength{\rightskip}{0pt plus 5cm}Ui\-::\-New\-View$\ast$ New\-View\-::m\-\_\-ui\hspace{0.3cm}{\ttfamily [private]}}}\label{classNewView_ab8a3d70ca1c0826d69d4411a21f365e0}
+A pointer to access \hyperlink{classNewView}{New\-View} graphic items. 
+
+The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+\item 
+newview.\-h\item 
+newview.\-cpp\end{DoxyCompactItemize}

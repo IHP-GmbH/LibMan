@@ -1,0 +1,234 @@
+\hypertarget{classProjectManager}{\section{Project\-Manager Class Reference}
+\label{classProjectManager}\index{Project\-Manager@{Project\-Manager}}
+}
+
+
+The \hyperlink{classProjectManager}{Project\-Manager} class creates a dialog window to allow user controlling Lib\-Man projects.  
+
+
+
+
+{\ttfamily \#include $<$projectmanager.\-h$>$}
+
+Inheritance diagram for Project\-Manager\-:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classProjectManager}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classProjectManager_a6a4f1ae5a6cda6ad872aaac00612f9da}{Project\-Manager} (Q\-Widget $\ast$parent, \hyperlink{classProperties}{Properties} $\ast$properties)
+\begin{DoxyCompactList}\small\item\em Creates \hyperlink{classToolManager}{Tool\-Manager} object to give user an opportunity to add, rename and remove projects from a dialog window. \end{DoxyCompactList}\item 
+\hyperlink{classProjectManager_ac127c8454c7c2caa948ad270930efa86}{$\sim$\-Project\-Manager} ()
+\begin{DoxyCompactList}\small\item\em Destructs \hyperlink{classProjectManager}{Project\-Manager} obejct and clears up U\-I members. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Slots}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classProjectManager_ad03d75a04852c5f4d85dd5ede30c2a71}{close\-Event} (Q\-Close\-Event $\ast$)
+\begin{DoxyCompactList}\small\item\em If state of the \hyperlink{classProjectManager}{Project\-Manager} has been changed the dialog window pops up to ask user for saving of the changes. \end{DoxyCompactList}\item 
+void \hyperlink{classProjectManager_ad8697c2b5edaa3aeda168de093139254}{settings\-Changed} (Qt\-Property $\ast$, Q\-Variant)
+\begin{DoxyCompactList}\small\item\em The slot is triggered once user changes projects (add, remove, rename). \end{DoxyCompactList}\item 
+void \hyperlink{classProjectManager_acbe13c3a4fd77ebbc0437d3c9ecfe78e}{on\-\_\-btn\-Ok\-\_\-clicked} ()
+\begin{DoxyCompactList}\small\item\em Saves current tool projects into properties of \hyperlink{classMainWindow}{Main\-Window} object and closes the window. \end{DoxyCompactList}\item 
+void \hyperlink{classProjectManager_a808da17a51773b55f6330f7c11cbdbef}{on\-\_\-btn\-Cancel\-\_\-clicked} ()
+\begin{DoxyCompactList}\small\item\em closes \hyperlink{classProjectManager}{Project\-Manager} window. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classProjectManager_afdb622867c005d726057a288fcf56d33}{init} ()
+\begin{DoxyCompactList}\small\item\em Initializes Qt\-Tree\-Property\-Browser and creates its properties. It's used to manage a list of projects that can be chosen by user for further work. \end{DoxyCompactList}\item 
+\hypertarget{classProjectManager_ad397c063f9164728884beaf221ce03b0}{bool {\bfseries is\-State\-Changed} () const }\label{classProjectManager_ad397c063f9164728884beaf221ce03b0}
+
+\item 
+void \hyperlink{classProjectManager_a89c55c9616362e13ef4fd81de2a2389b}{set\-State\-Saved} ()
+\begin{DoxyCompactList}\small\item\em Set state of \hyperlink{classProjectManager}{Project\-Manager} dialog window saved (unchanged). \end{DoxyCompactList}\item 
+void \hyperlink{classProjectManager_ac178fe4a0ff88ce4b860fa92373f6e23}{set\-State\-Changed} ()
+\begin{DoxyCompactList}\small\item\em Sets the state chaged if project(s) has(have) been modified. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Ui\-::\-Project\-Manager $\ast$ \hyperlink{classProjectManager_a522b0621f0ca1978d0cef23fc553fd5e}{m\-\_\-ui}
+\item 
+\hyperlink{classMainWindow}{Main\-Window} $\ast$ \hyperlink{classProjectManager_a854e94a40ac35e0dc3fe45ef12ff855a}{m\-\_\-mw}
+\item 
+bool \hyperlink{classProjectManager_aa7cad9fe90b6a9bbaa0ae6d727d12e7c}{m\-\_\-is\-State\-Changed}
+\item 
+\hyperlink{classProperties}{Properties} $\ast$ \hyperlink{classProjectManager_afa1e791a680f491f89aa215a5198f06a}{m\-\_\-properties}
+\item 
+Qt\-Tree\-Property\-Browser $\ast$ \hyperlink{classProjectManager_a9c23c2284358dd111bc1b29f6ca6f611}{m\-\_\-pb\-Settings}
+\item 
+Qt\-Variant\-Property\-Manager $\ast$ \hyperlink{classProjectManager_a713a455e7c92cc5875d590c6d4bb0bf0}{m\-\_\-vm\-Settings}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+The \hyperlink{classProjectManager}{Project\-Manager} class creates a dialog window to allow user controlling Lib\-Man projects. 
+
+
+
+ 
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classProjectManager_a6a4f1ae5a6cda6ad872aaac00612f9da}{\index{Project\-Manager@{Project\-Manager}!Project\-Manager@{Project\-Manager}}
+\index{Project\-Manager@{Project\-Manager}!ProjectManager@{Project\-Manager}}
+\subsubsection[{Project\-Manager}]{\setlength{\rightskip}{0pt plus 5cm}Project\-Manager\-::\-Project\-Manager (
+\begin{DoxyParamCaption}
+\item[{Q\-Widget $\ast$}]{parent, }
+\item[{{\bf Properties} $\ast$}]{properties}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [explicit]}}}\label{classProjectManager_a6a4f1ae5a6cda6ad872aaac00612f9da}
+
+
+Creates \hyperlink{classToolManager}{Tool\-Manager} object to give user an opportunity to add, rename and remove projects from a dialog window. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em parent} & Parent widget, by default is N\-U\-L\-L. \\
+\hline
+{\em properties} & Container of Lib\-Man settings. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classProjectManager_ac127c8454c7c2caa948ad270930efa86}{\index{Project\-Manager@{Project\-Manager}!$\sim$\-Project\-Manager@{$\sim$\-Project\-Manager}}
+\index{$\sim$\-Project\-Manager@{$\sim$\-Project\-Manager}!ProjectManager@{Project\-Manager}}
+\subsubsection[{$\sim$\-Project\-Manager}]{\setlength{\rightskip}{0pt plus 5cm}Project\-Manager\-::$\sim$\-Project\-Manager (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{classProjectManager_ac127c8454c7c2caa948ad270930efa86}
+
+
+Destructs \hyperlink{classProjectManager}{Project\-Manager} obejct and clears up U\-I members. 
+
+
+
+ 
+
+\subsection{Member Function Documentation}
+\hypertarget{classProjectManager_ad03d75a04852c5f4d85dd5ede30c2a71}{\index{Project\-Manager@{Project\-Manager}!close\-Event@{close\-Event}}
+\index{close\-Event@{close\-Event}!ProjectManager@{Project\-Manager}}
+\subsubsection[{close\-Event}]{\setlength{\rightskip}{0pt plus 5cm}void Project\-Manager\-::close\-Event (
+\begin{DoxyParamCaption}
+\item[{Q\-Close\-Event $\ast$}]{event}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classProjectManager_ad03d75a04852c5f4d85dd5ede30c2a71}
+
+
+If state of the \hyperlink{classProjectManager}{Project\-Manager} has been changed the dialog window pops up to ask user for saving of the changes. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em event} & Variable is used to either accept to close the window or ignore to prevent closing it. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classProjectManager_afdb622867c005d726057a288fcf56d33}{\index{Project\-Manager@{Project\-Manager}!init@{init}}
+\index{init@{init}!ProjectManager@{Project\-Manager}}
+\subsubsection[{init}]{\setlength{\rightskip}{0pt plus 5cm}void Project\-Manager\-::init (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classProjectManager_afdb622867c005d726057a288fcf56d33}
+
+
+Initializes Qt\-Tree\-Property\-Browser and creates its properties. It's used to manage a list of projects that can be chosen by user for further work. 
+
+
+
+ \hypertarget{classProjectManager_a808da17a51773b55f6330f7c11cbdbef}{\index{Project\-Manager@{Project\-Manager}!on\-\_\-btn\-Cancel\-\_\-clicked@{on\-\_\-btn\-Cancel\-\_\-clicked}}
+\index{on\-\_\-btn\-Cancel\-\_\-clicked@{on\-\_\-btn\-Cancel\-\_\-clicked}!ProjectManager@{Project\-Manager}}
+\subsubsection[{on\-\_\-btn\-Cancel\-\_\-clicked}]{\setlength{\rightskip}{0pt plus 5cm}void Project\-Manager\-::on\-\_\-btn\-Cancel\-\_\-clicked (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classProjectManager_a808da17a51773b55f6330f7c11cbdbef}
+
+
+closes \hyperlink{classProjectManager}{Project\-Manager} window. 
+
+
+
+ \hypertarget{classProjectManager_acbe13c3a4fd77ebbc0437d3c9ecfe78e}{\index{Project\-Manager@{Project\-Manager}!on\-\_\-btn\-Ok\-\_\-clicked@{on\-\_\-btn\-Ok\-\_\-clicked}}
+\index{on\-\_\-btn\-Ok\-\_\-clicked@{on\-\_\-btn\-Ok\-\_\-clicked}!ProjectManager@{Project\-Manager}}
+\subsubsection[{on\-\_\-btn\-Ok\-\_\-clicked}]{\setlength{\rightskip}{0pt plus 5cm}void Project\-Manager\-::on\-\_\-btn\-Ok\-\_\-clicked (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classProjectManager_acbe13c3a4fd77ebbc0437d3c9ecfe78e}
+
+
+Saves current tool projects into properties of \hyperlink{classMainWindow}{Main\-Window} object and closes the window. 
+
+
+
+ \hypertarget{classProjectManager_ac178fe4a0ff88ce4b860fa92373f6e23}{\index{Project\-Manager@{Project\-Manager}!set\-State\-Changed@{set\-State\-Changed}}
+\index{set\-State\-Changed@{set\-State\-Changed}!ProjectManager@{Project\-Manager}}
+\subsubsection[{set\-State\-Changed}]{\setlength{\rightskip}{0pt plus 5cm}void Project\-Manager\-::set\-State\-Changed (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classProjectManager_ac178fe4a0ff88ce4b860fa92373f6e23}
+
+
+Sets the state chaged if project(s) has(have) been modified. 
+
+
+
+ \hypertarget{classProjectManager_a89c55c9616362e13ef4fd81de2a2389b}{\index{Project\-Manager@{Project\-Manager}!set\-State\-Saved@{set\-State\-Saved}}
+\index{set\-State\-Saved@{set\-State\-Saved}!ProjectManager@{Project\-Manager}}
+\subsubsection[{set\-State\-Saved}]{\setlength{\rightskip}{0pt plus 5cm}void Project\-Manager\-::set\-State\-Saved (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classProjectManager_a89c55c9616362e13ef4fd81de2a2389b}
+
+
+Set state of \hyperlink{classProjectManager}{Project\-Manager} dialog window saved (unchanged). 
+
+
+
+ \hypertarget{classProjectManager_ad8697c2b5edaa3aeda168de093139254}{\index{Project\-Manager@{Project\-Manager}!settings\-Changed@{settings\-Changed}}
+\index{settings\-Changed@{settings\-Changed}!ProjectManager@{Project\-Manager}}
+\subsubsection[{settings\-Changed}]{\setlength{\rightskip}{0pt plus 5cm}void Project\-Manager\-::settings\-Changed (
+\begin{DoxyParamCaption}
+\item[{Qt\-Property $\ast$}]{, }
+\item[{Q\-Variant}]{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classProjectManager_ad8697c2b5edaa3aeda168de093139254}
+
+
+The slot is triggered once user changes projects (add, remove, rename). 
+
+
+
+ 
+
+\subsection{Member Data Documentation}
+\hypertarget{classProjectManager_aa7cad9fe90b6a9bbaa0ae6d727d12e7c}{\index{Project\-Manager@{Project\-Manager}!m\-\_\-is\-State\-Changed@{m\-\_\-is\-State\-Changed}}
+\index{m\-\_\-is\-State\-Changed@{m\-\_\-is\-State\-Changed}!ProjectManager@{Project\-Manager}}
+\subsubsection[{m\-\_\-is\-State\-Changed}]{\setlength{\rightskip}{0pt plus 5cm}bool Project\-Manager\-::m\-\_\-is\-State\-Changed\hspace{0.3cm}{\ttfamily [private]}}}\label{classProjectManager_aa7cad9fe90b6a9bbaa0ae6d727d12e7c}
+Keeps the state of the \hyperlink{classProjectManager}{Project\-Manager} dialog window session. \hypertarget{classProjectManager_a854e94a40ac35e0dc3fe45ef12ff855a}{\index{Project\-Manager@{Project\-Manager}!m\-\_\-mw@{m\-\_\-mw}}
+\index{m\-\_\-mw@{m\-\_\-mw}!ProjectManager@{Project\-Manager}}
+\subsubsection[{m\-\_\-mw}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Main\-Window}$\ast$ Project\-Manager\-::m\-\_\-mw\hspace{0.3cm}{\ttfamily [private]}}}\label{classProjectManager_a854e94a40ac35e0dc3fe45ef12ff855a}
+A pointer to acess \hyperlink{classMainWindow}{Main\-Window} items as it's a friend class. \hypertarget{classProjectManager_a9c23c2284358dd111bc1b29f6ca6f611}{\index{Project\-Manager@{Project\-Manager}!m\-\_\-pb\-Settings@{m\-\_\-pb\-Settings}}
+\index{m\-\_\-pb\-Settings@{m\-\_\-pb\-Settings}!ProjectManager@{Project\-Manager}}
+\subsubsection[{m\-\_\-pb\-Settings}]{\setlength{\rightskip}{0pt plus 5cm}Qt\-Tree\-Property\-Browser$\ast$ Project\-Manager\-::m\-\_\-pb\-Settings\hspace{0.3cm}{\ttfamily [private]}}}\label{classProjectManager_a9c23c2284358dd111bc1b29f6ca6f611}
+A property browser framework enabling the user to edit a set of properties. \hypertarget{classProjectManager_afa1e791a680f491f89aa215a5198f06a}{\index{Project\-Manager@{Project\-Manager}!m\-\_\-properties@{m\-\_\-properties}}
+\index{m\-\_\-properties@{m\-\_\-properties}!ProjectManager@{Project\-Manager}}
+\subsubsection[{m\-\_\-properties}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Properties}$\ast$ Project\-Manager\-::m\-\_\-properties\hspace{0.3cm}{\ttfamily [private]}}}\label{classProjectManager_afa1e791a680f491f89aa215a5198f06a}
+Container to store Lib\-Man settings. \hypertarget{classProjectManager_a522b0621f0ca1978d0cef23fc553fd5e}{\index{Project\-Manager@{Project\-Manager}!m\-\_\-ui@{m\-\_\-ui}}
+\index{m\-\_\-ui@{m\-\_\-ui}!ProjectManager@{Project\-Manager}}
+\subsubsection[{m\-\_\-ui}]{\setlength{\rightskip}{0pt plus 5cm}Ui\-::\-Project\-Manager$\ast$ Project\-Manager\-::m\-\_\-ui\hspace{0.3cm}{\ttfamily [private]}}}\label{classProjectManager_a522b0621f0ca1978d0cef23fc553fd5e}
+A pointer to acess \hyperlink{classProjectManager}{Project\-Manager} graphic items. \hypertarget{classProjectManager_a713a455e7c92cc5875d590c6d4bb0bf0}{\index{Project\-Manager@{Project\-Manager}!m\-\_\-vm\-Settings@{m\-\_\-vm\-Settings}}
+\index{m\-\_\-vm\-Settings@{m\-\_\-vm\-Settings}!ProjectManager@{Project\-Manager}}
+\subsubsection[{m\-\_\-vm\-Settings}]{\setlength{\rightskip}{0pt plus 5cm}Qt\-Variant\-Property\-Manager$\ast$ Project\-Manager\-::m\-\_\-vm\-Settings\hspace{0.3cm}{\ttfamily [private]}}}\label{classProjectManager_a713a455e7c92cc5875d590c6d4bb0bf0}
+Each property type, the framework provides a property manager associated with editor factory. 
+
+The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+\item 
+projectmanager.\-h\item 
+projectmanager.\-cpp\end{DoxyCompactItemize}

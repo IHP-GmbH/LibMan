@@ -1,0 +1,138 @@
+\hypertarget{classPropertyItem}{\section{Property\-Item Class Reference}
+\label{classPropertyItem}\index{Property\-Item@{Property\-Item}}
+}
+
+
+The \hyperlink{classPropertyItem}{Property\-Item} class creates a single object of any type used by the \hyperlink{classProperties}{Properties} class.  
+
+
+
+
+{\ttfamily \#include $<$property.\-h$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classPropertyItem_aba8c67d9932b6cebec39d46853e9c5e0}{Property\-Item} (const Q\-Variant, bool modyfied=false)
+\begin{DoxyCompactList}\small\item\em Constructs \hyperlink{classPropertyItem}{Property\-Item} object. \end{DoxyCompactList}\item 
+\hyperlink{classPropertyItem_a0359155d78184d85b2e0360490b2ffe0}{$\sim$\-Property\-Item} ()
+\begin{DoxyCompactList}\small\item\em Destructs \hyperlink{classPropertyItem}{Property\-Item} obejct and clears up the property items values. \end{DoxyCompactList}\item 
+Q\-List$<$ Q\-Variant $>$ \hyperlink{classPropertyItem_a02d785cac9092258b7899f9a3a6f1bdd}{get\-Value} () const 
+\begin{DoxyCompactList}\small\item\em Returns item's property value. \end{DoxyCompactList}\item 
+bool \hyperlink{classPropertyItem_aac35d432deca70783d3e45ab26d06e33}{is\-Modified} () const 
+\begin{DoxyCompactList}\small\item\em Returns the state if property has been modified or not. \end{DoxyCompactList}\item 
+void \hyperlink{classPropertyItem_aaf7e9ff216f4136ed04be644f6755a82}{add\-Value} (const Q\-Variant)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classPropertyItem_aaf7e9ff216f4136ed04be644f6755a82}{Property\-Item\-::add\-Value}. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Q\-List$<$ Q\-Variant $>$ \hyperlink{classPropertyItem_aa9c03a1e9828de471e73df1d30e4abdb}{m\-\_\-value}
+\item 
+bool \hyperlink{classPropertyItem_a464bcb9ada09b86548daa191c9225ead}{m\-\_\-status}
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+The \hyperlink{classPropertyItem}{Property\-Item} class creates a single object of any type used by the \hyperlink{classProperties}{Properties} class. 
+
+
+
+ 
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classPropertyItem_aba8c67d9932b6cebec39d46853e9c5e0}{\index{Property\-Item@{Property\-Item}!Property\-Item@{Property\-Item}}
+\index{Property\-Item@{Property\-Item}!PropertyItem@{Property\-Item}}
+\subsubsection[{Property\-Item}]{\setlength{\rightskip}{0pt plus 5cm}Property\-Item\-::\-Property\-Item (
+\begin{DoxyParamCaption}
+\item[{const Q\-Variant}]{value, }
+\item[{bool}]{modyfied = {\ttfamily false}}
+\end{DoxyParamCaption}
+)}}\label{classPropertyItem_aba8c67d9932b6cebec39d46853e9c5e0}
+
+
+Constructs \hyperlink{classPropertyItem}{Property\-Item} object. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em value} & Name of the property item. \\
+\hline
+{\em modyfied} & Flag value if item has been modified. Allows setting it to false by adding new value. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classPropertyItem_a0359155d78184d85b2e0360490b2ffe0}{\index{Property\-Item@{Property\-Item}!$\sim$\-Property\-Item@{$\sim$\-Property\-Item}}
+\index{$\sim$\-Property\-Item@{$\sim$\-Property\-Item}!PropertyItem@{Property\-Item}}
+\subsubsection[{$\sim$\-Property\-Item}]{\setlength{\rightskip}{0pt plus 5cm}Property\-Item\-::$\sim$\-Property\-Item (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{classPropertyItem_a0359155d78184d85b2e0360490b2ffe0}
+
+
+Destructs \hyperlink{classPropertyItem}{Property\-Item} obejct and clears up the property items values. 
+
+
+
+ 
+
+\subsection{Member Function Documentation}
+\hypertarget{classPropertyItem_aaf7e9ff216f4136ed04be644f6755a82}{\index{Property\-Item@{Property\-Item}!add\-Value@{add\-Value}}
+\index{add\-Value@{add\-Value}!PropertyItem@{Property\-Item}}
+\subsubsection[{add\-Value}]{\setlength{\rightskip}{0pt plus 5cm}void Property\-Item\-::add\-Value (
+\begin{DoxyParamCaption}
+\item[{const Q\-Variant}]{value}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}}\label{classPropertyItem_aaf7e9ff216f4136ed04be644f6755a82}
+
+
+\hyperlink{classPropertyItem_aaf7e9ff216f4136ed04be644f6755a82}{Property\-Item\-::add\-Value}. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em value} & \\
+\hline
+\end{DoxyParams}
+\hypertarget{classPropertyItem_a02d785cac9092258b7899f9a3a6f1bdd}{\index{Property\-Item@{Property\-Item}!get\-Value@{get\-Value}}
+\index{get\-Value@{get\-Value}!PropertyItem@{Property\-Item}}
+\subsubsection[{get\-Value}]{\setlength{\rightskip}{0pt plus 5cm}Q\-List$<$ Q\-Variant $>$ Property\-Item\-::get\-Value (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}}\label{classPropertyItem_a02d785cac9092258b7899f9a3a6f1bdd}
+
+
+Returns item's property value. 
+
+
+
+ \hypertarget{classPropertyItem_aac35d432deca70783d3e45ab26d06e33}{\index{Property\-Item@{Property\-Item}!is\-Modified@{is\-Modified}}
+\index{is\-Modified@{is\-Modified}!PropertyItem@{Property\-Item}}
+\subsubsection[{is\-Modified}]{\setlength{\rightskip}{0pt plus 5cm}bool Property\-Item\-::is\-Modified (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}}\label{classPropertyItem_aac35d432deca70783d3e45ab26d06e33}
+
+
+Returns the state if property has been modified or not. 
+
+
+
+ 
+
+\subsection{Member Data Documentation}
+\hypertarget{classPropertyItem_a464bcb9ada09b86548daa191c9225ead}{\index{Property\-Item@{Property\-Item}!m\-\_\-status@{m\-\_\-status}}
+\index{m\-\_\-status@{m\-\_\-status}!PropertyItem@{Property\-Item}}
+\subsubsection[{m\-\_\-status}]{\setlength{\rightskip}{0pt plus 5cm}bool Property\-Item\-::m\-\_\-status\hspace{0.3cm}{\ttfamily [private]}}}\label{classPropertyItem_a464bcb9ada09b86548daa191c9225ead}
+State if item has been modified or not. \hypertarget{classPropertyItem_aa9c03a1e9828de471e73df1d30e4abdb}{\index{Property\-Item@{Property\-Item}!m\-\_\-value@{m\-\_\-value}}
+\index{m\-\_\-value@{m\-\_\-value}!PropertyItem@{Property\-Item}}
+\subsubsection[{m\-\_\-value}]{\setlength{\rightskip}{0pt plus 5cm}Q\-List$<$Q\-Variant$>$ Property\-Item\-::m\-\_\-value\hspace{0.3cm}{\ttfamily [private]}}}\label{classPropertyItem_aa9c03a1e9828de471e73df1d30e4abdb}
+List of property values to store. 
+
+The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+\item 
+property.\-h\item 
+property.\-cpp\end{DoxyCompactItemize}

@@ -1,0 +1,2219 @@
+\hypertarget{classMainWindow}{\section{Main\-Window Class Reference}
+\label{classMainWindow}\index{Main\-Window@{Main\-Window}}
+}
+
+
+The \hyperlink{classMainWindow}{Main\-Window} class is responsible for creating main framework of Lib\-Man and controlls all slots and signals.  
+
+
+
+
+{\ttfamily \#include $<$mainwindow.\-h$>$}
+
+Inheritance diagram for Main\-Window\-:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classMainWindow}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classMainWindow_a5e929afe3d79ebd9b7c48d89799308ca}{Main\-Window} (const Q\-String \&proj\-File, const Q\-String \&run\-Dir, Q\-Widget $\ast$parent=0)
+\begin{DoxyCompactList}\small\item\em Constructs a Lib\-Man \hyperlink{classMainWindow}{Main\-Window} object with the given arguments. \end{DoxyCompactList}\item 
+\hyperlink{classMainWindow_ae98d00a93bc118200eeef9f9bba1dba7}{$\sim$\-Main\-Window} ()
+\begin{DoxyCompactList}\small\item\em Destroys the main window. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Types}
+\begin{DoxyCompactItemize}
+\item 
+enum \hyperlink{classMainWindow_aacc2f9b3beef5cc127f1234c65e3c21b}{R\-E\-C\-E\-N\-T\-\_\-\-F\-I\-L\-E\-S} \{ {\bfseries P\-R\-O\-J\-\_\-\-M\-A\-X\-\_\-\-C\-O\-U\-N\-T} = 5
+ \}
+\begin{DoxyCompactList}\small\item\em The R\-E\-C\-E\-N\-T\-\_\-\-F\-I\-L\-E\-S enum specifies maximum number of recent project files. \end{DoxyCompactList}\item 
+enum \hyperlink{classMainWindow_afed3bafbe5c97894b6661920e82526f9}{C\-O\-P\-Y\-\_\-\-S\-T\-A\-T\-E} \{ {\bfseries N\-O\-N\-E} = 1000, 
+{\bfseries P\-R\-O\-J\-E\-C\-T}, 
+{\bfseries G\-R\-O\-U\-P}, 
+{\bfseries V\-I\-E\-W}
+ \}
+\begin{DoxyCompactList}\small\item\em The C\-O\-P\-Y\-\_\-\-S\-T\-A\-T\-E enum specifies different states used for coping project/group/view (library/cell/view). \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Slots}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classMainWindow_a4e20a4a065fbb0e4d3532a45a0a91425}{close\-Event} (Q\-Close\-Event $\ast$event)
+\begin{DoxyCompactList}\small\item\em This event handler is called with the given event when Qt receives a window close request for a top-\/level widget from the window system. The function is used to save the projects settings. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a9a11decabf7bc3f32641bc59431bee3c}{show\-View\-Menu} (const Q\-Point \&pos)
+\begin{DoxyCompactList}\small\item\em Displays menu for view widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a19879440aaeb18585b7fac488e540c49}{show\-Group\-Menu} (const Q\-Point \&pos)
+\begin{DoxyCompactList}\small\item\em Displays menu for group (cell) widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_aefeae0de6c70fcace6f9f4b3836d8a84}{show\-Library\-Menu} (const Q\-Point \&pos)
+\begin{DoxyCompactList}\small\item\em Creates and displays menu for project (library) tree widget. It is used for projects management. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_acd00c7003f796ac714582e3238788872}{show\-Category\-Menu} (const Q\-Point \&pos)
+\begin{DoxyCompactList}\small\item\em Displays menu for category widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a565b14903c7bc11126bce1307afaa2e2}{add\-New\-Group} ()
+\begin{DoxyCompactList}\small\item\em Creates new group (cell) and adds it to the list widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a80f2c79d5fd4ef7c0a5cf55e5a2bdb78}{add\-New\-Project} ()
+\begin{DoxyCompactList}\small\item\em Creates new project (library) and adds it to the tree widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a24f572a26e33ee7b4115efd4ab6658e9}{add\-New\-Category} ()
+\begin{DoxyCompactList}\small\item\em Creates new category and adds it to the tree widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a4525ad9b4f0f3df104a1f558f653f4a0}{add\-New\-Spice\-View} ()
+\begin{DoxyCompactList}\small\item\em Creates new spice model view and adds it to the list widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_ab2e15383545f27e0f07fdb84e714d18e}{add\-New\-Layout\-View} ()
+\begin{DoxyCompactList}\small\item\em Creates new layout view and adds it to the list widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_ad3a1c8710698214361128232cbde335d}{add\-New\-Schematic\-View} ()
+\begin{DoxyCompactList}\small\item\em Creates new schematic view and adds it to the list widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_ae8d8ed40aae7c5b596efac98925792ee}{remove\-Selected\-View} ()
+\begin{DoxyCompactList}\small\item\em Removes selected view. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_ae91780a31e7118b44feb428b0de0dba3}{remove\-Selected\-Group} ()
+\begin{DoxyCompactList}\small\item\em Removes selected group (cell). \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_aa77bfbfc58c63a5f3ce5d6f718a55a40}{remove\-Selected\-Project} ()
+\begin{DoxyCompactList}\small\item\em Removes selected project (library). \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_ac091629e8f90351cc3543337aefc80ea}{remove\-Selected\-Category} ()
+\begin{DoxyCompactList}\small\item\em Removes selected category. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a6e334fe603796652be44d5df952e0f4a}{show\-View\-Info} ()
+\begin{DoxyCompactList}\small\item\em Prints view file Unix information into the \hyperlink{classMainWindow}{Main\-Window} output window. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a7792544db8869842840c6e4716f8cbec}{show\-Group\-Info} ()
+\begin{DoxyCompactList}\small\item\em Prints group folder Unix information into the \hyperlink{classMainWindow}{Main\-Window} output window. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a2fbeb11fb0bbe28be62403ef732931a7}{show\-Project\-Info} ()
+\begin{DoxyCompactList}\small\item\em Prints library folder Unix information into the \hyperlink{classMainWindow}{Main\-Window} output window. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_ad63d5f418c4d55c90d63269162782ac4}{show\-Category\-Info} ()
+\begin{DoxyCompactList}\small\item\em Prints category file Unix information into the \hyperlink{classMainWindow}{Main\-Window} output window. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a41872370d39dc3c6dc8b996d42196432}{remove\-From\-Group} ()
+\begin{DoxyCompactList}\small\item\em Eliminates project from the nested group. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a1829103fc2661a8c1f0a2c2a730da53a}{remove\-Group\-Union} ()
+\begin{DoxyCompactList}\small\item\em Delets group (nested projects) from the tree widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a38f2a589547d744fe8effcd86d56522f}{show\-Folder\-Info} (const Q\-String \&, const Q\-String \&, const Q\-String \&, bool clear=true)
+\begin{DoxyCompactList}\small\item\em Prints folder Unix information into the \hyperlink{classMainWindow}{Main\-Window} output window. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_aedcf4e7322932599339fd7213751e653}{merge\-Project\-Into\-Group} ()
+\begin{DoxyCompactList}\small\item\em Merges project into a nested group. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a003d3ff529129c1613cabc25dcbb3450}{paste\-Selected\-Data} ()
+\begin{DoxyCompactList}\small\item\em Pastes selected data (could be project, group or file. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a6da44654044153535dabe1cfd21714be}{copy\-Selected\-View} ()
+\begin{DoxyCompactList}\small\item\em Adds selected view to the buffer for coping. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a0eb4ce1b63db072df36b119b0488d8ce}{copy\-Selected\-Group} ()
+\begin{DoxyCompactList}\small\item\em Adds selected group to the buffer for coping. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a519a38c202ac69dbc0c2e5d0ae971768}{copy\-Selected\-Project} ()
+\begin{DoxyCompactList}\small\item\em Copies selected project to the buffer. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_af2fb86d1f28ac5f40c0cfdc40280b08c}{clear\-Current\-Copy\-State} ()
+\begin{DoxyCompactList}\small\item\em Clears current buffer used for coping of data. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a5fc888265a0d9c20a6a5fc4828d3b434}{add\-View\-To\-Be\-Copied} (const Q\-String \&)
+\begin{DoxyCompactList}\small\item\em Adds group to the buffer for later coping. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a34d6f30b3ac4af259e64a141200f49da}{add\-Project\-To\-Be\-Copied} (const Q\-String \&)
+\begin{DoxyCompactList}\small\item\em Adds project to the buffer for later coping. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_af85f171e5a269a87031d100455b78b82}{add\-Group\-To\-Be\-Copied} (const Q\-String \&, const Q\-String \&)
+\begin{DoxyCompactList}\small\item\em Adds group to the buffer for later coping. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_aad64417dd963cf8816a47097df343297}{load\-Recent\-Project} ()
+\begin{DoxyCompactList}\small\item\em Loads the most recent project file into Lib\-Man environment. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_ad8c228fb00728ea101b53f2778c96a1a}{update\-Recent\-Project\-Actions} ()
+\begin{DoxyCompactList}\small\item\em Updates File-\/$>$Recent menu items. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a0b51bc62adc32da1189785375d888595}{load\-Project\-File} (const Q\-String \&)
+\begin{DoxyCompactList}\small\item\em Loads project file contence into Lib\-Man. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a8513c227af4759727cdaff0528760411}{save\-Project\-File} (const Q\-String \&)
+\begin{DoxyCompactList}\small\item\em Saves Lib\-Man Library/\-Cell/\-View data into project file. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_aafa974e05a80e493c719909da5e5b76d}{set\-Recent\-Project} (const Q\-String \&)
+\begin{DoxyCompactList}\small\item\em Sets the name of the last loaded project to the upper recent file list. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_ad550c61cfa05c7e528dedc6cf636ed10}{on\-\_\-action\-Save\-\_\-triggered} ()
+\begin{DoxyCompactList}\small\item\em Saves the current project file or executes on\-\_\-action\-Save\-\_\-\-As\-\_\-triggered if no current file specified. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a98e86ef6104b6e2910328af2f878438d}{on\-\_\-action\-Save\-\_\-\-As\-\_\-triggered} ()
+\begin{DoxyCompactList}\small\item\em Pops up dialog box where user can specify the file to save the project libraries. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_ab4487c4b02224acd4a0193d38b704ddb}{on\-\_\-action\-Exit\-\_\-triggered} ()
+\begin{DoxyCompactList}\small\item\em Closes Lib\-Man. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_ad1c8aa9c6519123e3f314c84d46a8317}{on\-\_\-action\-Show\-\_\-\-Categories\-\_\-toggled} (bool)
+\begin{DoxyCompactList}\small\item\em Slot is triggered to show or hide the categories tree widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_adc9158772dde195daaa1d04276d6889a}{on\-\_\-action\-Show\-\_\-\-Documents\-\_\-toggled} (bool)
+\begin{DoxyCompactList}\small\item\em Slot is triggered to show or hide the documentation tree widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_afd40b73a712b16f9c77dd029024b75ce}{on\-\_\-action\-Tools\-\_\-triggered} ()
+\begin{DoxyCompactList}\small\item\em Triggers execution of \hyperlink{classToolManager}{Tool\-Manager} dialog window. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_aa1d84c313076357330d8f2f9c0b0b96d}{on\-\_\-action\-Projects\-\_\-triggered} ()
+\begin{DoxyCompactList}\small\item\em Triggers execution of \hyperlink{classProjectManager}{Project\-Manager} dialog window. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a48ed0a16f674e38e0e2a24274852a9af}{on\-\_\-action\-Open\-\_\-triggered} ()
+\begin{DoxyCompactList}\small\item\em Launches a dialog window to select a project file to load. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a00f1c23c161a4384060fc8ee682e76ba}{on\-\_\-action\-Clear\-\_\-\-Recent\-\_\-\-File\-\_\-\-Stack\-\_\-triggered} ()
+\begin{DoxyCompactList}\small\item\em Removes all the project file items from the menu. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a6559de64b12cdf8254275d87a4babc0a}{on\-\_\-tree\-Libs\-\_\-item\-Clicked} (Q\-Tree\-Widget\-Item $\ast$item, int column)
+\begin{DoxyCompactList}\small\item\em Slot to load all groups (cells) for selected project (library) into the group (cell) list widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_ad95e75085713bdbfa441172f267e7ea2}{on\-\_\-list\-Groups\-\_\-item\-Clicked} (Q\-List\-Widget\-Item $\ast$item)
+\begin{DoxyCompactList}\small\item\em Slot to load all views for selected group (cell) into the view list widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a56d68978d07e45cffe0d6d925b647744}{on\-\_\-list\-Views\-\_\-item\-Double\-Clicked} (Q\-List\-Widget\-Item $\ast$item)
+\begin{DoxyCompactList}\small\item\em Slot to execute a tool based on the selected item (schematic, layout, cdl, spice, etc.). \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_aca2a1d9becfed505821bb7e7a945d5b5}{on\-\_\-list\-Documentation\-\_\-item\-Double\-Clicked} (Q\-Tree\-Widget\-Item $\ast$item)
+\begin{DoxyCompactList}\small\item\em Slot is to execute document viewer with specified documentation. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a466c34043cd652304aa4e7e0e31ccf0f}{on\-\_\-list\-Views\-\_\-item\-Clicked} (Q\-List\-Widget\-Item $\ast$item)
+\begin{DoxyCompactList}\small\item\em Sets the name of the selected item into the view filter line edit. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_ab6bac75e491c0ff6399d8761a4d9b291}{on\-\_\-list\-Categories\-\_\-item\-Clicked} (Q\-Tree\-Widget\-Item $\ast$item)
+\begin{DoxyCompactList}\small\item\em Slot is to load groups (cells) located into the specified category file. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a53c77b4bec2f9f9e5ee2a9f3c1100caf}{on\-\_\-tree\-Libs\-\_\-item\-Changed} (Q\-Tree\-Widget\-Item $\ast$item, int column)
+\begin{DoxyCompactList}\small\item\em Slot is triggered when tree item is changed. Used for storing the project names after renaming. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_aa829e818519a2d617c78b3e832e3a4ea}{on\-\_\-list\-Categories\-\_\-item\-Double\-Clicked} (Q\-Tree\-Widget\-Item $\ast$item, int column)
+\begin{DoxyCompactList}\small\item\em Slot to execute a tool to view ctegory content. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a3d411ebea0a66c65174a7918a5317881}{on\-\_\-txt\-Lib\-Search\-\_\-text\-Edited} (const Q\-String \&arg1)
+\begin{DoxyCompactList}\small\item\em Filters projects (libraries) based on user input. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_ab678d8f29e983817bedf692d399f8f22}{on\-\_\-txt\-Cat\-Search\-\_\-text\-Edited} (const Q\-String \&arg1)
+\begin{DoxyCompactList}\small\item\em Filters categories based on user input. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_aa083f16ffe18dc0d31fabece8d9decff}{on\-\_\-txt\-Cell\-Search\-\_\-text\-Edited} (const Q\-String \&arg1)
+\begin{DoxyCompactList}\small\item\em Filters groups (cells) based on user input. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a468a4eb5ab08b6472e6c32b35490aeeb}{on\-\_\-txt\-View\-Search\-\_\-text\-Edited} (const Q\-String \&arg1)
+\begin{DoxyCompactList}\small\item\em Filters views based on user input. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a4f3ebda1ba39e0ef4d678b44893c9c7f}{on\-\_\-action\-About\-\_\-triggered} ()
+\begin{DoxyCompactList}\small\item\em Triggers execution of \hyperlink{classAbout}{About} dialog window. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a72557ed75b052bdf4f7f8d87b70fc579}{on\-\_\-action\-Project\-\_\-triggered} ()
+\begin{DoxyCompactList}\small\item\em Triggers creation of new project (library). \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a9a3efa0112bdda7a589525d160ca625b}{on\-\_\-action\-Group\-\_\-triggered} ()
+\begin{DoxyCompactList}\small\item\em Triggers creation of new group (cell). \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_ab7c8299c50bb97eaedcb225e90f9bcf4}{on\-\_\-action\-Union\-\_\-triggered} ()
+\begin{DoxyCompactList}\small\item\em Triggers execution of \hyperlink{classNewView}{New\-View} dialog window. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a2812d2f0350ea5a0da583953fa25b19f}{on\-\_\-action\-Category\-\_\-triggered} ()
+\begin{DoxyCompactList}\small\item\em Triggers creation of new category. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a541e1460680230409808d47585c4b8b4}{on\-\_\-action\-Session\-\_\-triggered} ()
+\begin{DoxyCompactList}\small\item\em Creates new session and clears up all current project settings. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classMainWindow_a9bb1f3b7f6b5360abfd2dc01fc1c8930}{load\-Settings} ()
+\begin{DoxyCompactList}\small\item\em Loads Lib\-Man settings (geometry, tools, widget states etc.) and aplies them accordingly. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_adc87dcfb242d83a35794e011f8c29e41}{info} (const Q\-String \&msg, bool clear=true)
+\begin{DoxyCompactList}\small\item\em Displays basic message in the output text widget of Lib\-Man. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_aa3bc340f4289a4ef73e5feaa6c5b1a9a}{error} (const Q\-String \&msg, bool clear=true)
+\begin{DoxyCompactList}\small\item\em Displays error message in the output text widget of Lib\-Man. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a5459d4fe95a19b1cf74aef261168c31d}{init\-Recent\-Project\-Menu} ()
+\begin{DoxyCompactList}\small\item\em Initializes recent menu and assigns menu items with assotiated project files. \end{DoxyCompactList}\item 
+bool \hyperlink{classMainWindow_a0045ab02ba4ef6bb3d777236983219bc}{create\-New\-File} (const Q\-String \&)
+\begin{DoxyCompactList}\small\item\em Creates an empty project file. \end{DoxyCompactList}\item 
+bool \hyperlink{classMainWindow_ab01cf882613a0b0ea2a35700be933143}{is\-State\-Changed} () const 
+\begin{DoxyCompactList}\small\item\em Returns true the Lib\-Man window state has been changed, otherwise false. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a5fb61a8cf4108faeb224c8f2d99b6ee3}{set\-State\-Saved} ()
+\begin{DoxyCompactList}\small\item\em Set Lib\-Man state saved and updates the window titel accordingly. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a281bfe571e3ce2af52bf79bb4fa44fde}{set\-State\-Changed} ()
+\begin{DoxyCompactList}\small\item\em Set Lib\-Man state changed and updates the window titel accordingly. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a8c2508cb0a54eab87a3c5c5471676f4a}{check\-And\-Save\-Project\-Data} (Q\-Close\-Event $\ast$)
+\begin{DoxyCompactList}\small\item\em If state of the Lib\-Man has been changed the dialog window pops up to ask user for saving of the changes. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_aff15de0c74551acef80d0a588c254b7e}{create\-Project\-Union\-Menu} ()
+\begin{DoxyCompactList}\small\item\em Creates and displays menu for project group (nested projects). \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a63962c76c33dd60e0b354dd48724a9f5}{load\-Libraries} ()
+\begin{DoxyCompactList}\small\item\em Adds project (libraries) into the project tree widget from the Lib\-Man settings. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a57bf47c514d40fcbc2cc301599fd419e}{load\-Groups} (const Q\-String \&lib\-Path)
+\begin{DoxyCompactList}\small\item\em Adds group (cell) for the given project (library) into the group list widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a953304e2b85e660d11bb875f5e9f3738}{load\-Documents} (const Q\-String \&lib\-Path)
+\begin{DoxyCompactList}\small\item\em Adds documents for the given project (library) into the document tree widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a75030b8780aaa7a2a1f44af3ae72feed}{load\-Categories} (const Q\-String \&lib\-Path)
+\begin{DoxyCompactList}\small\item\em Adds categories for the given project (library) into the category tree widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a5ebd5eb51726eb69e0e0243750c926a9}{load\-Combined\-Libs} (const Q\-Map$<$ Q\-String, Q\-String\-List $>$ \&)
+\begin{DoxyCompactList}\small\item\em Adds given nested projects (libraries) into the project tree widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a4124c5b7d11a382c1d131b93787d397a}{load\-Views} (const Q\-String \&lib\-Path, const Q\-String \&group\-Name)
+\begin{DoxyCompactList}\small\item\em Adds views for the given group (cell) into the view list widget. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a4d19d583bbd0cdfe6db28d7253e98c69}{hide\-Tree\-Item} (Q\-Tree\-Widget $\ast$, const Q\-String \&filter)
+\begin{DoxyCompactList}\small\item\em Hides tree item during filtering. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_afd7b30dc6f95760354af27809bc86a53}{hide\-List\-Item} (Q\-List\-Widget $\ast$, const Q\-String \&filter)
+\begin{DoxyCompactList}\small\item\em Hides list item during filtering. \end{DoxyCompactList}\item 
+bool \hyperlink{classMainWindow_a477c0c286505480fa0ecab597cc928aa}{is\-View\-Copied} () const 
+\begin{DoxyCompactList}\small\item\em Returns true the Lib\-Man view state has been changed, otherwise false. \end{DoxyCompactList}\item 
+bool \hyperlink{classMainWindow_a2b97dc2343a874c73c6c8453c89a98ae}{is\-Group\-Copied} () const 
+\begin{DoxyCompactList}\small\item\em Returns true the Lib\-Man group (cell) state has been changed, otherwise false. \end{DoxyCompactList}\item 
+bool \hyperlink{classMainWindow_a35f6e8e6d58371d363fcb7fc199e86ba}{is\-Project\-Copied} () const 
+\begin{DoxyCompactList}\small\item\em Returns true the Lib\-Man project (library) state has been changed, otherwise false. \end{DoxyCompactList}\item 
+bool \hyperlink{classMainWindow_a6cc24c7cd36704cdf570e26b5621fc66}{ask\-For\-File\-Replacement} () const 
+\begin{DoxyCompactList}\small\item\em Displays a dialog box to confirm file replacement. \end{DoxyCompactList}\item 
+bool \hyperlink{classMainWindow_afbea101d81d3423e32bcd200f6dd7c39}{ask\-For\-Permanent\-Delete} () const 
+\begin{DoxyCompactList}\small\item\em Displays a dialog box to confirm permanent removing of file. \end{DoxyCompactList}\item 
+bool \hyperlink{classMainWindow_a380a7f848e6a3b97d21d94643e02c046}{ask\-User\-For\-Action} (const Q\-String \&title) const 
+\begin{DoxyCompactList}\small\item\em Displays a dialog box to confirm user action. For ex., removing folder or file. \end{DoxyCompactList}\item 
+bool \hyperlink{classMainWindow_a488161a7ea31be35bf87091772c5a235}{remove\-Dir} (const Q\-String \&) const 
+\begin{DoxyCompactList}\small\item\em Deletes folder recursevly. \end{DoxyCompactList}\item 
+void \hyperlink{classMainWindow_a9a8e06194b0035c089c872646b5cb4b6}{copy\-Dir} (const Q\-String \&, const Q\-String \&) const 
+\begin{DoxyCompactList}\small\item\em Copies folder recursevly. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_aa4dfdf9b2b26f558e0edcd10604d7607}{get\-Library\-Path} (const Q\-String \&) const 
+\begin{DoxyCompactList}\small\item\em Returns library path based on the project (library) name. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_a651742fa870b7fd7ec990f12f5f385d7}{get\-Library\-Key\-Prefix} () const 
+\begin{DoxyCompactList}\small\item\em Returns prefix for storing libraries in the Lib\-Man settings collection. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_a731c741711ec82b6d0d83e80850aaa33}{get\-Project\-File\-From\-Dir} (const Q\-String \&) const 
+\begin{DoxyCompactList}\small\item\em Searches for $\ast$.projects-\/files in the specified directory and returns the first found one. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_a3a8c2f752b4590008e2d729aa215045d}{generate\-Copy\-Name} (const Q\-String \&, const Q\-String \&, const Q\-String \&suffix=\char`\"{}\char`\"{}) const 
+\begin{DoxyCompactList}\small\item\em Generates unexisting name based on the given information. Used when coping an item. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_a644755d8ccb3af92b9219b7c93920afd}{get\-View\-Path} (const Q\-String \&, const Q\-String \&, const Q\-String \&) const 
+\begin{DoxyCompactList}\small\item\em Returns absolute path of the view based on given project/group/view (library/cell/view) information. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_a43a1dca579bdf54ec0728022ba5bcef4}{get\-Current\-View\-Name} () const 
+\begin{DoxyCompactList}\small\item\em Returns currently selected view name. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_ab7deaf83db422f4124d9e48f6b950278}{get\-Current\-Group\-Name} () const 
+\begin{DoxyCompactList}\small\item\em Returns currently selected group (cell) name. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_a3ad77a7c895c3a37cb022d124057c5e8}{get\-Current\-Union\-Name} () const 
+\begin{DoxyCompactList}\small\item\em Returns currently selected project union (nested projects) name. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_a122007410ead45d63e205e4aa612ac77}{get\-Current\-Working\-Dir} () const 
+\begin{DoxyCompactList}\small\item\em Returns current working directory from where the project file has been loaded, otherwise user home path. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_afae5dfaa6de8707fde2c2cc530a462b4}{get\-Current\-Library\-Name} () const 
+\begin{DoxyCompactList}\small\item\em Returns currently selected project (library) name. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_a0cb5632672f6e9f8091fcbb6ed7d8614}{get\-Current\-Project\-File} () const 
+\begin{DoxyCompactList}\small\item\em Returns path to the current project file. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_a2db5fde30507e1eb136ef3eeb17307dc}{get\-Current\-Library\-Path} () const 
+\begin{DoxyCompactList}\small\item\em Returns absolute path of the currently selected project (library) \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_adf5753c529cbbe719f41d2fb456e7cea}{get\-Current\-Category\-Name} () const 
+\begin{DoxyCompactList}\small\item\em Returns currently selected name of category. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_a603c56475b8ef3f6eb34ad8396abfbea}{get\-Current\-View\-File\-Path} (const Q\-String \&) const 
+\begin{DoxyCompactList}\small\item\em Returns absolute path of the view for currently selected project/group (library/cell). \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_aa821e37fd6ba03b3e920e3bcf9290f56}{get\-Current\-Document\-File\-Path} (const Q\-String \&) const 
+\begin{DoxyCompactList}\small\item\em Returns absolute documentation file path based on the given library path and document name. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_a627010ec88cbfea1f08d7eb828df8497}{get\-Current\-Group\-Path} (const Q\-String \&view\-Name, bool to\-Be\-Created=false)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classMainWindow_a627010ec88cbfea1f08d7eb828df8497}{Main\-Window\-::get\-Current\-Group\-Path}. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_ad191fe52bbc3ce40d18fb61f5655e562}{get\-Settings\-Header\-Name} () const 
+\begin{DoxyCompactList}\small\item\em Returns header name used for storing Lib\-Man settings. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_a37460aa0e52d6f1f7e4141824d371946}{get\-Tool\-By\-View} (const Q\-String \&) const 
+\begin{DoxyCompactList}\small\item\em Returns specified by user tool for displaying views based on view name. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_a1454fa08837579178f9a561675950f13}{get\-Document\-Tool} (const Q\-String \&) const 
+\begin{DoxyCompactList}\small\item\em Returns specified by user tool for viewing documents based on doument name. \end{DoxyCompactList}\item 
+Q\-String \hyperlink{classMainWindow_a4cf32e9db205b35bec796aeb55d2759a}{get\-Lib\-Man\-Title} () const 
+\begin{DoxyCompactList}\small\item\em Returns titel of the Lib\-Man. \end{DoxyCompactList}\item 
+Q\-String\-List \hyperlink{classMainWindow_a2e94b321482f5d6a970f0924f74859a3}{get\-Valid\-View\-List} () const 
+\begin{DoxyCompactList}\small\item\em Returns list of valid view names. \end{DoxyCompactList}\item 
+Q\-String\-List \hyperlink{classMainWindow_aadfbacf644193df620f494f5bf8106be}{get\-Current\-Groups} (const Q\-String \&) const 
+\begin{DoxyCompactList}\small\item\em Returns project group (cell) list. \end{DoxyCompactList}\item 
+Q\-String\-List \hyperlink{classMainWindow_a31c68c1e82618ac86398afd52f58c04e}{get\-Current\-Views} (const Q\-String \&, const Q\-String \&) const 
+\begin{DoxyCompactList}\small\item\em Returns valid view paths for the carent project/ group (library/cell). \end{DoxyCompactList}\item 
+Q\-String\-List \hyperlink{classMainWindow_a5f419797d8b22ee1c713e841931a23a4}{read\-Library\-Categories} (const Q\-String \&, const Q\-String \&)
+\begin{DoxyCompactList}\small\item\em Reads library category and returns it's cells. \end{DoxyCompactList}\item 
+Q\-Tree\-Widget\-Item $\ast$ \hyperlink{classMainWindow_ae23d791628eb7fb2d9edf8ee0649113c}{get\-Tree\-Item\-By\-Name} (const Q\-String \&name)
+\begin{DoxyCompactList}\small\item\em Returns pointer to tree item. \end{DoxyCompactList}\item 
+Q\-Map$<$ Q\-String, Q\-String $>$ \hyperlink{classMainWindow_ac6106cd3a58bfc4453ada97dd49cff63}{get\-Current\-Libraries} () const 
+\begin{DoxyCompactList}\small\item\em Returns list of the currently loaded projects (libraries). \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Ui\-::\-Main\-Window $\ast$ \hyperlink{classMainWindow_a5a3eb262660797d9a4d52ed16edb6d11}{m\-\_\-ui}
+\item 
+\hyperlink{classProperties}{Properties} $\ast$ \hyperlink{classMainWindow_a22f004bec556234a5eb739cfa1819647}{m\-\_\-properties}
+\item 
+bool \hyperlink{classMainWindow_a3c61f9d7deec39afb315e57ef159ba18}{m\-\_\-is\-State\-Changed}
+\item 
+Q\-String \hyperlink{classMainWindow_a494664d1901f3d94237411b34e7a2a16}{m\-\_\-item\-Text}
+\item 
+Q\-String \hyperlink{classMainWindow_a9294c8737725afe7b0b7dcc311881959}{m\-\_\-run\-Directory}
+\item 
+Q\-String \hyperlink{classMainWindow_ade3f7ebe5eb1bf67444cd41b2bc38aca}{m\-\_\-current\-Proj\-File}
+\item 
+Q\-List$<$ Q\-Action $\ast$ $>$ \hyperlink{classMainWindow_a4135ecd5a58b2679333740dddc8d2cf8}{m\-\_\-recent\-Projects}
+\item 
+Q\-String\-List \hyperlink{classMainWindow_a306adca5f257e5aeaa50ff06605a7a86}{m\-\_\-copy\-Data}
+\item 
+\hyperlink{classMainWindow_afed3bafbe5c97894b6661920e82526f9}{C\-O\-P\-Y\-\_\-\-S\-T\-A\-T\-E} \hyperlink{classMainWindow_a77153a35340c4a8a40f8528301bd96ad}{m\-\_\-current\-Copy\-State}
+\end{DoxyCompactItemize}
+\subsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classMainWindow_a132813282374dcbc6788609035b58c5a}{class {\bfseries New\-View}}\label{classMainWindow_a132813282374dcbc6788609035b58c5a}
+
+\item 
+\hypertarget{classMainWindow_aa860c957116c15c1b786357fbcd19fc7}{class {\bfseries Project\-Manager}}\label{classMainWindow_aa860c957116c15c1b786357fbcd19fc7}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+The \hyperlink{classMainWindow}{Main\-Window} class is responsible for creating main framework of Lib\-Man and controlls all slots and signals. 
+
+
+
+ 
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classMainWindow_a5e929afe3d79ebd9b7c48d89799308ca}{\index{Main\-Window@{Main\-Window}!Main\-Window@{Main\-Window}}
+\index{Main\-Window@{Main\-Window}!MainWindow@{Main\-Window}}
+\subsubsection[{Main\-Window}]{\setlength{\rightskip}{0pt plus 5cm}Main\-Window\-::\-Main\-Window (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{proj\-File, }
+\item[{const Q\-String \&}]{run\-Dir, }
+\item[{Q\-Widget $\ast$}]{parent = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [explicit]}}}\label{classMainWindow_a5e929afe3d79ebd9b7c48d89799308ca}
+
+
+Constructs a Lib\-Man \hyperlink{classMainWindow}{Main\-Window} object with the given arguments. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em proj\-File} & Path to the project file. Be default, it will be searched in the current folder. \\
+\hline
+{\em run\-Dir} & Path to the directory, where application was executed. \\
+\hline
+{\em parent} & Parent widget, by default is N\-U\-L\-L. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_ae98d00a93bc118200eeef9f9bba1dba7}{\index{Main\-Window@{Main\-Window}!$\sim$\-Main\-Window@{$\sim$\-Main\-Window}}
+\index{$\sim$\-Main\-Window@{$\sim$\-Main\-Window}!MainWindow@{Main\-Window}}
+\subsubsection[{$\sim$\-Main\-Window}]{\setlength{\rightskip}{0pt plus 5cm}Main\-Window\-::$\sim$\-Main\-Window (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}}\label{classMainWindow_ae98d00a93bc118200eeef9f9bba1dba7}
+
+
+Destroys the main window. 
+
+
+
+ 
+
+\subsection{Member Function Documentation}
+\hypertarget{classMainWindow_af85f171e5a269a87031d100455b78b82}{\index{Main\-Window@{Main\-Window}!add\-Group\-To\-Be\-Copied@{add\-Group\-To\-Be\-Copied}}
+\index{add\-Group\-To\-Be\-Copied@{add\-Group\-To\-Be\-Copied}!MainWindow@{Main\-Window}}
+\subsubsection[{add\-Group\-To\-Be\-Copied}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::add\-Group\-To\-Be\-Copied (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{group\-Name, }
+\item[{const Q\-String \&}]{group\-Path}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_af85f171e5a269a87031d100455b78b82}
+
+
+Adds group to the buffer for later coping. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em group\-Name} & Name of the group to copy. \\
+\hline
+{\em group\-Path} & Path of the group from where to copy. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a24f572a26e33ee7b4115efd4ab6658e9}{\index{Main\-Window@{Main\-Window}!add\-New\-Category@{add\-New\-Category}}
+\index{add\-New\-Category@{add\-New\-Category}!MainWindow@{Main\-Window}}
+\subsubsection[{add\-New\-Category}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::add\-New\-Category (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a24f572a26e33ee7b4115efd4ab6658e9}
+
+
+Creates new category and adds it to the tree widget. 
+
+
+
+ \hypertarget{classMainWindow_a565b14903c7bc11126bce1307afaa2e2}{\index{Main\-Window@{Main\-Window}!add\-New\-Group@{add\-New\-Group}}
+\index{add\-New\-Group@{add\-New\-Group}!MainWindow@{Main\-Window}}
+\subsubsection[{add\-New\-Group}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::add\-New\-Group (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a565b14903c7bc11126bce1307afaa2e2}
+
+
+Creates new group (cell) and adds it to the list widget. 
+
+
+
+ \hypertarget{classMainWindow_ab2e15383545f27e0f07fdb84e714d18e}{\index{Main\-Window@{Main\-Window}!add\-New\-Layout\-View@{add\-New\-Layout\-View}}
+\index{add\-New\-Layout\-View@{add\-New\-Layout\-View}!MainWindow@{Main\-Window}}
+\subsubsection[{add\-New\-Layout\-View}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::add\-New\-Layout\-View (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_ab2e15383545f27e0f07fdb84e714d18e}
+
+
+Creates new layout view and adds it to the list widget. 
+
+
+
+ \hypertarget{classMainWindow_a80f2c79d5fd4ef7c0a5cf55e5a2bdb78}{\index{Main\-Window@{Main\-Window}!add\-New\-Project@{add\-New\-Project}}
+\index{add\-New\-Project@{add\-New\-Project}!MainWindow@{Main\-Window}}
+\subsubsection[{add\-New\-Project}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::add\-New\-Project (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a80f2c79d5fd4ef7c0a5cf55e5a2bdb78}
+
+
+Creates new project (library) and adds it to the tree widget. 
+
+
+
+ \hypertarget{classMainWindow_ad3a1c8710698214361128232cbde335d}{\index{Main\-Window@{Main\-Window}!add\-New\-Schematic\-View@{add\-New\-Schematic\-View}}
+\index{add\-New\-Schematic\-View@{add\-New\-Schematic\-View}!MainWindow@{Main\-Window}}
+\subsubsection[{add\-New\-Schematic\-View}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::add\-New\-Schematic\-View (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_ad3a1c8710698214361128232cbde335d}
+
+
+Creates new schematic view and adds it to the list widget. 
+
+
+
+ \hypertarget{classMainWindow_a4525ad9b4f0f3df104a1f558f653f4a0}{\index{Main\-Window@{Main\-Window}!add\-New\-Spice\-View@{add\-New\-Spice\-View}}
+\index{add\-New\-Spice\-View@{add\-New\-Spice\-View}!MainWindow@{Main\-Window}}
+\subsubsection[{add\-New\-Spice\-View}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::add\-New\-Spice\-View (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a4525ad9b4f0f3df104a1f558f653f4a0}
+
+
+Creates new spice model view and adds it to the list widget. 
+
+
+
+ \hypertarget{classMainWindow_a34d6f30b3ac4af259e64a141200f49da}{\index{Main\-Window@{Main\-Window}!add\-Project\-To\-Be\-Copied@{add\-Project\-To\-Be\-Copied}}
+\index{add\-Project\-To\-Be\-Copied@{add\-Project\-To\-Be\-Copied}!MainWindow@{Main\-Window}}
+\subsubsection[{add\-Project\-To\-Be\-Copied}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::add\-Project\-To\-Be\-Copied (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{proj\-Name}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a34d6f30b3ac4af259e64a141200f49da}
+
+
+Adds project to the buffer for later coping. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em proj\-Name} & Name of the project (library) to be copied. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a5fc888265a0d9c20a6a5fc4828d3b434}{\index{Main\-Window@{Main\-Window}!add\-View\-To\-Be\-Copied@{add\-View\-To\-Be\-Copied}}
+\index{add\-View\-To\-Be\-Copied@{add\-View\-To\-Be\-Copied}!MainWindow@{Main\-Window}}
+\subsubsection[{add\-View\-To\-Be\-Copied}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::add\-View\-To\-Be\-Copied (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{view\-Path}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a5fc888265a0d9c20a6a5fc4828d3b434}
+
+
+Adds group to the buffer for later coping. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em view\-Path} & Path of the view from where to copy. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a6cc24c7cd36704cdf570e26b5621fc66}{\index{Main\-Window@{Main\-Window}!ask\-For\-File\-Replacement@{ask\-For\-File\-Replacement}}
+\index{ask\-For\-File\-Replacement@{ask\-For\-File\-Replacement}!MainWindow@{Main\-Window}}
+\subsubsection[{ask\-For\-File\-Replacement}]{\setlength{\rightskip}{0pt plus 5cm}bool Main\-Window\-::ask\-For\-File\-Replacement (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a6cc24c7cd36704cdf570e26b5621fc66}
+
+
+Displays a dialog box to confirm file replacement. 
+
+
+
+ \hypertarget{classMainWindow_afbea101d81d3423e32bcd200f6dd7c39}{\index{Main\-Window@{Main\-Window}!ask\-For\-Permanent\-Delete@{ask\-For\-Permanent\-Delete}}
+\index{ask\-For\-Permanent\-Delete@{ask\-For\-Permanent\-Delete}!MainWindow@{Main\-Window}}
+\subsubsection[{ask\-For\-Permanent\-Delete}]{\setlength{\rightskip}{0pt plus 5cm}bool Main\-Window\-::ask\-For\-Permanent\-Delete (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_afbea101d81d3423e32bcd200f6dd7c39}
+
+
+Displays a dialog box to confirm permanent removing of file. 
+
+
+
+ \begin{DoxyReturn}{Returns}
+
+\end{DoxyReturn}
+\hypertarget{classMainWindow_a380a7f848e6a3b97d21d94643e02c046}{\index{Main\-Window@{Main\-Window}!ask\-User\-For\-Action@{ask\-User\-For\-Action}}
+\index{ask\-User\-For\-Action@{ask\-User\-For\-Action}!MainWindow@{Main\-Window}}
+\subsubsection[{ask\-User\-For\-Action}]{\setlength{\rightskip}{0pt plus 5cm}bool Main\-Window\-::ask\-User\-For\-Action (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{title}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a380a7f848e6a3b97d21d94643e02c046}
+
+
+Displays a dialog box to confirm user action. For ex., removing folder or file. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em title} & Title to be display for user with action description. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a8c2508cb0a54eab87a3c5c5471676f4a}{\index{Main\-Window@{Main\-Window}!check\-And\-Save\-Project\-Data@{check\-And\-Save\-Project\-Data}}
+\index{check\-And\-Save\-Project\-Data@{check\-And\-Save\-Project\-Data}!MainWindow@{Main\-Window}}
+\subsubsection[{check\-And\-Save\-Project\-Data}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::check\-And\-Save\-Project\-Data (
+\begin{DoxyParamCaption}
+\item[{Q\-Close\-Event $\ast$}]{event}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a8c2508cb0a54eab87a3c5c5471676f4a}
+
+
+If state of the Lib\-Man has been changed the dialog window pops up to ask user for saving of the changes. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em event} & Variable is used to either accept to close the window or ignore to prevent closing it. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_af2fb86d1f28ac5f40c0cfdc40280b08c}{\index{Main\-Window@{Main\-Window}!clear\-Current\-Copy\-State@{clear\-Current\-Copy\-State}}
+\index{clear\-Current\-Copy\-State@{clear\-Current\-Copy\-State}!MainWindow@{Main\-Window}}
+\subsubsection[{clear\-Current\-Copy\-State}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::clear\-Current\-Copy\-State (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_af2fb86d1f28ac5f40c0cfdc40280b08c}
+
+
+Clears current buffer used for coping of data. 
+
+
+
+ \hypertarget{classMainWindow_a4e20a4a065fbb0e4d3532a45a0a91425}{\index{Main\-Window@{Main\-Window}!close\-Event@{close\-Event}}
+\index{close\-Event@{close\-Event}!MainWindow@{Main\-Window}}
+\subsubsection[{close\-Event}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::close\-Event (
+\begin{DoxyParamCaption}
+\item[{Q\-Close\-Event $\ast$}]{event}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a4e20a4a065fbb0e4d3532a45a0a91425}
+
+
+This event handler is called with the given event when Qt receives a window close request for a top-\/level widget from the window system. The function is used to save the projects settings. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em event} & Variable is used to either accept to close the window or ignore to prevent closing it. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a9a8e06194b0035c089c872646b5cb4b6}{\index{Main\-Window@{Main\-Window}!copy\-Dir@{copy\-Dir}}
+\index{copy\-Dir@{copy\-Dir}!MainWindow@{Main\-Window}}
+\subsubsection[{copy\-Dir}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::copy\-Dir (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{source\-Folder, }
+\item[{const Q\-String \&}]{dest\-Folder}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a9a8e06194b0035c089c872646b5cb4b6}
+
+
+Copies folder recursevly. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em source\-Folder} & Name of the source folder. \\
+\hline
+{\em dest\-Folder} & Name of the target folder. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a0eb4ce1b63db072df36b119b0488d8ce}{\index{Main\-Window@{Main\-Window}!copy\-Selected\-Group@{copy\-Selected\-Group}}
+\index{copy\-Selected\-Group@{copy\-Selected\-Group}!MainWindow@{Main\-Window}}
+\subsubsection[{copy\-Selected\-Group}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::copy\-Selected\-Group (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a0eb4ce1b63db072df36b119b0488d8ce}
+
+
+Adds selected group to the buffer for coping. 
+
+
+
+ \hypertarget{classMainWindow_a519a38c202ac69dbc0c2e5d0ae971768}{\index{Main\-Window@{Main\-Window}!copy\-Selected\-Project@{copy\-Selected\-Project}}
+\index{copy\-Selected\-Project@{copy\-Selected\-Project}!MainWindow@{Main\-Window}}
+\subsubsection[{copy\-Selected\-Project}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::copy\-Selected\-Project (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a519a38c202ac69dbc0c2e5d0ae971768}
+
+
+Copies selected project to the buffer. 
+
+
+
+ \hypertarget{classMainWindow_a6da44654044153535dabe1cfd21714be}{\index{Main\-Window@{Main\-Window}!copy\-Selected\-View@{copy\-Selected\-View}}
+\index{copy\-Selected\-View@{copy\-Selected\-View}!MainWindow@{Main\-Window}}
+\subsubsection[{copy\-Selected\-View}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::copy\-Selected\-View (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a6da44654044153535dabe1cfd21714be}
+
+
+Adds selected view to the buffer for coping. 
+
+
+
+ \hypertarget{classMainWindow_a0045ab02ba4ef6bb3d777236983219bc}{\index{Main\-Window@{Main\-Window}!create\-New\-File@{create\-New\-File}}
+\index{create\-New\-File@{create\-New\-File}!MainWindow@{Main\-Window}}
+\subsubsection[{create\-New\-File}]{\setlength{\rightskip}{0pt plus 5cm}bool Main\-Window\-::create\-New\-File (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{file\-Name}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a0045ab02ba4ef6bb3d777236983219bc}
+
+
+Creates an empty project file. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em file\-Name} & Path to the file to be created. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_aff15de0c74551acef80d0a588c254b7e}{\index{Main\-Window@{Main\-Window}!create\-Project\-Union\-Menu@{create\-Project\-Union\-Menu}}
+\index{create\-Project\-Union\-Menu@{create\-Project\-Union\-Menu}!MainWindow@{Main\-Window}}
+\subsubsection[{create\-Project\-Union\-Menu}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::create\-Project\-Union\-Menu (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_aff15de0c74551acef80d0a588c254b7e}
+
+
+Creates and displays menu for project group (nested projects). 
+
+
+
+ \hypertarget{classMainWindow_aa3bc340f4289a4ef73e5feaa6c5b1a9a}{\index{Main\-Window@{Main\-Window}!error@{error}}
+\index{error@{error}!MainWindow@{Main\-Window}}
+\subsubsection[{error}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::error (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{msg, }
+\item[{bool}]{clear = {\ttfamily true}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_aa3bc340f4289a4ef73e5feaa6c5b1a9a}
+
+
+Displays error message in the output text widget of Lib\-Man. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em msg} & Message to output. \\
+\hline
+{\em clear} & Flag to clear the output text widget of Lib\-Man before displaying the message. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a3a8c2f752b4590008e2d729aa215045d}{\index{Main\-Window@{Main\-Window}!generate\-Copy\-Name@{generate\-Copy\-Name}}
+\index{generate\-Copy\-Name@{generate\-Copy\-Name}!MainWindow@{Main\-Window}}
+\subsubsection[{generate\-Copy\-Name}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::generate\-Copy\-Name (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{name, }
+\item[{const Q\-String \&}]{path, }
+\item[{const Q\-String \&}]{suffix = {\ttfamily \char`\"{}\char`\"{}}}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a3a8c2f752b4590008e2d729aa215045d}
+
+
+Generates unexisting name based on the given information. Used when coping an item. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em name} & Name of the item (project, cell, view). \\
+\hline
+{\em path} & Path to the folder where the item (project, cell, view) exists. \\
+\hline
+{\em suffix} & Suffix of the output file (used for view name generation). \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_adf5753c529cbbe719f41d2fb456e7cea}{\index{Main\-Window@{Main\-Window}!get\-Current\-Category\-Name@{get\-Current\-Category\-Name}}
+\index{get\-Current\-Category\-Name@{get\-Current\-Category\-Name}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Current\-Category\-Name}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Current\-Category\-Name (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_adf5753c529cbbe719f41d2fb456e7cea}
+
+
+Returns currently selected name of category. 
+
+
+
+ \hypertarget{classMainWindow_aa821e37fd6ba03b3e920e3bcf9290f56}{\index{Main\-Window@{Main\-Window}!get\-Current\-Document\-File\-Path@{get\-Current\-Document\-File\-Path}}
+\index{get\-Current\-Document\-File\-Path@{get\-Current\-Document\-File\-Path}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Current\-Document\-File\-Path}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Current\-Document\-File\-Path (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{doc\-Name}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_aa821e37fd6ba03b3e920e3bcf9290f56}
+
+
+Returns absolute documentation file path based on the given library path and document name. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em doc\-Name} & Name of the document. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_ab7deaf83db422f4124d9e48f6b950278}{\index{Main\-Window@{Main\-Window}!get\-Current\-Group\-Name@{get\-Current\-Group\-Name}}
+\index{get\-Current\-Group\-Name@{get\-Current\-Group\-Name}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Current\-Group\-Name}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Current\-Group\-Name (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_ab7deaf83db422f4124d9e48f6b950278}
+
+
+Returns currently selected group (cell) name. 
+
+
+
+ \hypertarget{classMainWindow_a627010ec88cbfea1f08d7eb828df8497}{\index{Main\-Window@{Main\-Window}!get\-Current\-Group\-Path@{get\-Current\-Group\-Path}}
+\index{get\-Current\-Group\-Path@{get\-Current\-Group\-Path}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Current\-Group\-Path}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Current\-Group\-Path (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{view\-Name, }
+\item[{bool}]{to\-Be\-Created = {\ttfamily false}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a627010ec88cbfea1f08d7eb828df8497}
+
+
+\hyperlink{classMainWindow_a627010ec88cbfea1f08d7eb828df8497}{Main\-Window\-::get\-Current\-Group\-Path}. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em view\-Name} & \\
+\hline
+{\em to\-Be\-Created} & \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+
+\end{DoxyReturn}
+\hypertarget{classMainWindow_aadfbacf644193df620f494f5bf8106be}{\index{Main\-Window@{Main\-Window}!get\-Current\-Groups@{get\-Current\-Groups}}
+\index{get\-Current\-Groups@{get\-Current\-Groups}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Current\-Groups}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String\-List Main\-Window\-::get\-Current\-Groups (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{lib\-Path}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_aadfbacf644193df620f494f5bf8106be}
+
+
+Returns project group (cell) list. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em lib\-Path} & Path to the library, where group (cell) is located. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_ac6106cd3a58bfc4453ada97dd49cff63}{\index{Main\-Window@{Main\-Window}!get\-Current\-Libraries@{get\-Current\-Libraries}}
+\index{get\-Current\-Libraries@{get\-Current\-Libraries}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Current\-Libraries}]{\setlength{\rightskip}{0pt plus 5cm}Q\-Map$<$ Q\-String, Q\-String $>$ Main\-Window\-::get\-Current\-Libraries (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_ac6106cd3a58bfc4453ada97dd49cff63}
+
+
+Returns list of the currently loaded projects (libraries). 
+
+
+
+ \hypertarget{classMainWindow_afae5dfaa6de8707fde2c2cc530a462b4}{\index{Main\-Window@{Main\-Window}!get\-Current\-Library\-Name@{get\-Current\-Library\-Name}}
+\index{get\-Current\-Library\-Name@{get\-Current\-Library\-Name}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Current\-Library\-Name}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Current\-Library\-Name (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_afae5dfaa6de8707fde2c2cc530a462b4}
+
+
+Returns currently selected project (library) name. 
+
+
+
+ \hypertarget{classMainWindow_a2db5fde30507e1eb136ef3eeb17307dc}{\index{Main\-Window@{Main\-Window}!get\-Current\-Library\-Path@{get\-Current\-Library\-Path}}
+\index{get\-Current\-Library\-Path@{get\-Current\-Library\-Path}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Current\-Library\-Path}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Current\-Library\-Path (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a2db5fde30507e1eb136ef3eeb17307dc}
+
+
+Returns absolute path of the currently selected project (library) 
+
+
+
+ \hypertarget{classMainWindow_a0cb5632672f6e9f8091fcbb6ed7d8614}{\index{Main\-Window@{Main\-Window}!get\-Current\-Project\-File@{get\-Current\-Project\-File}}
+\index{get\-Current\-Project\-File@{get\-Current\-Project\-File}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Current\-Project\-File}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Current\-Project\-File (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}}\label{classMainWindow_a0cb5632672f6e9f8091fcbb6ed7d8614}
+
+
+Returns path to the current project file. 
+
+
+
+ \hypertarget{classMainWindow_a3ad77a7c895c3a37cb022d124057c5e8}{\index{Main\-Window@{Main\-Window}!get\-Current\-Union\-Name@{get\-Current\-Union\-Name}}
+\index{get\-Current\-Union\-Name@{get\-Current\-Union\-Name}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Current\-Union\-Name}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Current\-Union\-Name (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a3ad77a7c895c3a37cb022d124057c5e8}
+
+
+Returns currently selected project union (nested projects) name. 
+
+
+
+ \hypertarget{classMainWindow_a603c56475b8ef3f6eb34ad8396abfbea}{\index{Main\-Window@{Main\-Window}!get\-Current\-View\-File\-Path@{get\-Current\-View\-File\-Path}}
+\index{get\-Current\-View\-File\-Path@{get\-Current\-View\-File\-Path}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Current\-View\-File\-Path}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Current\-View\-File\-Path (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{view\-Name}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a603c56475b8ef3f6eb34ad8396abfbea}
+
+
+Returns absolute path of the view for currently selected project/group (library/cell). 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em view\-Name} & Name of the view. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a43a1dca579bdf54ec0728022ba5bcef4}{\index{Main\-Window@{Main\-Window}!get\-Current\-View\-Name@{get\-Current\-View\-Name}}
+\index{get\-Current\-View\-Name@{get\-Current\-View\-Name}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Current\-View\-Name}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Current\-View\-Name (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a43a1dca579bdf54ec0728022ba5bcef4}
+
+
+Returns currently selected view name. 
+
+
+
+ \hypertarget{classMainWindow_a31c68c1e82618ac86398afd52f58c04e}{\index{Main\-Window@{Main\-Window}!get\-Current\-Views@{get\-Current\-Views}}
+\index{get\-Current\-Views@{get\-Current\-Views}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Current\-Views}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String\-List Main\-Window\-::get\-Current\-Views (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{lib\-Path, }
+\item[{const Q\-String \&}]{group\-Name}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a31c68c1e82618ac86398afd52f58c04e}
+
+
+Returns valid view paths for the carent project/ group (library/cell). 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em lib\-Path} & Path to the library, where group (cell) is located. \\
+\hline
+{\em group\-Name} & Name of group (cell) to read for its view(s). \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a122007410ead45d63e205e4aa612ac77}{\index{Main\-Window@{Main\-Window}!get\-Current\-Working\-Dir@{get\-Current\-Working\-Dir}}
+\index{get\-Current\-Working\-Dir@{get\-Current\-Working\-Dir}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Current\-Working\-Dir}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Current\-Working\-Dir (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a122007410ead45d63e205e4aa612ac77}
+
+
+Returns current working directory from where the project file has been loaded, otherwise user home path. 
+
+
+
+ \hypertarget{classMainWindow_a1454fa08837579178f9a561675950f13}{\index{Main\-Window@{Main\-Window}!get\-Document\-Tool@{get\-Document\-Tool}}
+\index{get\-Document\-Tool@{get\-Document\-Tool}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Document\-Tool}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Document\-Tool (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{document\-Name}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a1454fa08837579178f9a561675950f13}
+
+
+Returns specified by user tool for viewing documents based on doument name. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em document\-Name} & Name of the document to return an appropriate tool. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a4cf32e9db205b35bec796aeb55d2759a}{\index{Main\-Window@{Main\-Window}!get\-Lib\-Man\-Title@{get\-Lib\-Man\-Title}}
+\index{get\-Lib\-Man\-Title@{get\-Lib\-Man\-Title}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Lib\-Man\-Title}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Lib\-Man\-Title (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}}\label{classMainWindow_a4cf32e9db205b35bec796aeb55d2759a}
+
+
+Returns titel of the Lib\-Man. 
+
+
+
+ \hypertarget{classMainWindow_a651742fa870b7fd7ec990f12f5f385d7}{\index{Main\-Window@{Main\-Window}!get\-Library\-Key\-Prefix@{get\-Library\-Key\-Prefix}}
+\index{get\-Library\-Key\-Prefix@{get\-Library\-Key\-Prefix}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Library\-Key\-Prefix}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Library\-Key\-Prefix (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}}\label{classMainWindow_a651742fa870b7fd7ec990f12f5f385d7}
+
+
+Returns prefix for storing libraries in the Lib\-Man settings collection. 
+
+
+
+ \hypertarget{classMainWindow_aa4dfdf9b2b26f558e0edcd10604d7607}{\index{Main\-Window@{Main\-Window}!get\-Library\-Path@{get\-Library\-Path}}
+\index{get\-Library\-Path@{get\-Library\-Path}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Library\-Path}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Library\-Path (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{lib\-Name}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_aa4dfdf9b2b26f558e0edcd10604d7607}
+
+
+Returns library path based on the project (library) name. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em lib\-Name} & Name of the library. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a731c741711ec82b6d0d83e80850aaa33}{\index{Main\-Window@{Main\-Window}!get\-Project\-File\-From\-Dir@{get\-Project\-File\-From\-Dir}}
+\index{get\-Project\-File\-From\-Dir@{get\-Project\-File\-From\-Dir}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Project\-File\-From\-Dir}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Project\-File\-From\-Dir (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{dir\-Name}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a731c741711ec82b6d0d83e80850aaa33}
+
+
+Searches for $\ast$.projects-\/files in the specified directory and returns the first found one. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em dir\-Name} & Name of folder to search for project file. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_ad191fe52bbc3ce40d18fb61f5655e562}{\index{Main\-Window@{Main\-Window}!get\-Settings\-Header\-Name@{get\-Settings\-Header\-Name}}
+\index{get\-Settings\-Header\-Name@{get\-Settings\-Header\-Name}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Settings\-Header\-Name}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Settings\-Header\-Name (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}}\label{classMainWindow_ad191fe52bbc3ce40d18fb61f5655e562}
+
+
+Returns header name used for storing Lib\-Man settings. 
+
+
+
+ \hypertarget{classMainWindow_a37460aa0e52d6f1f7e4141824d371946}{\index{Main\-Window@{Main\-Window}!get\-Tool\-By\-View@{get\-Tool\-By\-View}}
+\index{get\-Tool\-By\-View@{get\-Tool\-By\-View}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Tool\-By\-View}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-Tool\-By\-View (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{view\-Name}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a37460aa0e52d6f1f7e4141824d371946}
+
+
+Returns specified by user tool for displaying views based on view name. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em view\-Name} & Name of the view to return an appropriate tool. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_ae23d791628eb7fb2d9edf8ee0649113c}{\index{Main\-Window@{Main\-Window}!get\-Tree\-Item\-By\-Name@{get\-Tree\-Item\-By\-Name}}
+\index{get\-Tree\-Item\-By\-Name@{get\-Tree\-Item\-By\-Name}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Tree\-Item\-By\-Name}]{\setlength{\rightskip}{0pt plus 5cm}Q\-Tree\-Widget\-Item $\ast$ Main\-Window\-::get\-Tree\-Item\-By\-Name (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{name}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_ae23d791628eb7fb2d9edf8ee0649113c}
+
+
+Returns pointer to tree item. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em name} & Name of the item to look for. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a2e94b321482f5d6a970f0924f74859a3}{\index{Main\-Window@{Main\-Window}!get\-Valid\-View\-List@{get\-Valid\-View\-List}}
+\index{get\-Valid\-View\-List@{get\-Valid\-View\-List}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-Valid\-View\-List}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String\-List Main\-Window\-::get\-Valid\-View\-List (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a2e94b321482f5d6a970f0924f74859a3}
+
+
+Returns list of valid view names. 
+
+
+
+ \hypertarget{classMainWindow_a644755d8ccb3af92b9219b7c93920afd}{\index{Main\-Window@{Main\-Window}!get\-View\-Path@{get\-View\-Path}}
+\index{get\-View\-Path@{get\-View\-Path}!MainWindow@{Main\-Window}}
+\subsubsection[{get\-View\-Path}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::get\-View\-Path (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{lib\-Name, }
+\item[{const Q\-String \&}]{group\-Name, }
+\item[{const Q\-String \&}]{view\-Name}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a644755d8ccb3af92b9219b7c93920afd}
+
+
+Returns absolute path of the view based on given project/group/view (library/cell/view) information. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em lib\-Name} & Name of the project (library). \\
+\hline
+{\em group\-Name} & Name of the group (cell). \\
+\hline
+{\em view\-Name} & Name of the view. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_afd7b30dc6f95760354af27809bc86a53}{\index{Main\-Window@{Main\-Window}!hide\-List\-Item@{hide\-List\-Item}}
+\index{hide\-List\-Item@{hide\-List\-Item}!MainWindow@{Main\-Window}}
+\subsubsection[{hide\-List\-Item}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::hide\-List\-Item (
+\begin{DoxyParamCaption}
+\item[{Q\-List\-Widget $\ast$}]{list, }
+\item[{const Q\-String \&}]{filter}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_afd7b30dc6f95760354af27809bc86a53}
+
+
+Hides list item during filtering. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em list} & List pointer used for filtering. \\
+\hline
+{\em filter} & Text string used to filter list items. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a4d19d583bbd0cdfe6db28d7253e98c69}{\index{Main\-Window@{Main\-Window}!hide\-Tree\-Item@{hide\-Tree\-Item}}
+\index{hide\-Tree\-Item@{hide\-Tree\-Item}!MainWindow@{Main\-Window}}
+\subsubsection[{hide\-Tree\-Item}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::hide\-Tree\-Item (
+\begin{DoxyParamCaption}
+\item[{Q\-Tree\-Widget $\ast$}]{tree, }
+\item[{const Q\-String \&}]{filter}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a4d19d583bbd0cdfe6db28d7253e98c69}
+
+
+Hides tree item during filtering. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em tree} & Tree pointer used for filtering. \\
+\hline
+{\em filter} & Text string used to filter tree items. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_adc87dcfb242d83a35794e011f8c29e41}{\index{Main\-Window@{Main\-Window}!info@{info}}
+\index{info@{info}!MainWindow@{Main\-Window}}
+\subsubsection[{info}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::info (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{msg, }
+\item[{bool}]{clear = {\ttfamily true}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_adc87dcfb242d83a35794e011f8c29e41}
+
+
+Displays basic message in the output text widget of Lib\-Man. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em msg} & Message to output. \\
+\hline
+{\em clear} & Flag to clear the output text widget of Lib\-Man before displaying the message. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a5459d4fe95a19b1cf74aef261168c31d}{\index{Main\-Window@{Main\-Window}!init\-Recent\-Project\-Menu@{init\-Recent\-Project\-Menu}}
+\index{init\-Recent\-Project\-Menu@{init\-Recent\-Project\-Menu}!MainWindow@{Main\-Window}}
+\subsubsection[{init\-Recent\-Project\-Menu}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::init\-Recent\-Project\-Menu (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a5459d4fe95a19b1cf74aef261168c31d}
+
+
+Initializes recent menu and assigns menu items with assotiated project files. 
+
+
+
+ \hypertarget{classMainWindow_a2b97dc2343a874c73c6c8453c89a98ae}{\index{Main\-Window@{Main\-Window}!is\-Group\-Copied@{is\-Group\-Copied}}
+\index{is\-Group\-Copied@{is\-Group\-Copied}!MainWindow@{Main\-Window}}
+\subsubsection[{is\-Group\-Copied}]{\setlength{\rightskip}{0pt plus 5cm}bool Main\-Window\-::is\-Group\-Copied (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}}\label{classMainWindow_a2b97dc2343a874c73c6c8453c89a98ae}
+
+
+Returns true the Lib\-Man group (cell) state has been changed, otherwise false. 
+
+
+
+ \hypertarget{classMainWindow_a35f6e8e6d58371d363fcb7fc199e86ba}{\index{Main\-Window@{Main\-Window}!is\-Project\-Copied@{is\-Project\-Copied}}
+\index{is\-Project\-Copied@{is\-Project\-Copied}!MainWindow@{Main\-Window}}
+\subsubsection[{is\-Project\-Copied}]{\setlength{\rightskip}{0pt plus 5cm}bool Main\-Window\-::is\-Project\-Copied (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}}\label{classMainWindow_a35f6e8e6d58371d363fcb7fc199e86ba}
+
+
+Returns true the Lib\-Man project (library) state has been changed, otherwise false. 
+
+
+
+ \hypertarget{classMainWindow_ab01cf882613a0b0ea2a35700be933143}{\index{Main\-Window@{Main\-Window}!is\-State\-Changed@{is\-State\-Changed}}
+\index{is\-State\-Changed@{is\-State\-Changed}!MainWindow@{Main\-Window}}
+\subsubsection[{is\-State\-Changed}]{\setlength{\rightskip}{0pt plus 5cm}bool Main\-Window\-::is\-State\-Changed (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}}\label{classMainWindow_ab01cf882613a0b0ea2a35700be933143}
+
+
+Returns true the Lib\-Man window state has been changed, otherwise false. 
+
+
+
+ \hypertarget{classMainWindow_a477c0c286505480fa0ecab597cc928aa}{\index{Main\-Window@{Main\-Window}!is\-View\-Copied@{is\-View\-Copied}}
+\index{is\-View\-Copied@{is\-View\-Copied}!MainWindow@{Main\-Window}}
+\subsubsection[{is\-View\-Copied}]{\setlength{\rightskip}{0pt plus 5cm}bool Main\-Window\-::is\-View\-Copied (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [private]}}}\label{classMainWindow_a477c0c286505480fa0ecab597cc928aa}
+
+
+Returns true the Lib\-Man view state has been changed, otherwise false. 
+
+
+
+ \hypertarget{classMainWindow_a75030b8780aaa7a2a1f44af3ae72feed}{\index{Main\-Window@{Main\-Window}!load\-Categories@{load\-Categories}}
+\index{load\-Categories@{load\-Categories}!MainWindow@{Main\-Window}}
+\subsubsection[{load\-Categories}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::load\-Categories (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{lib\-Path}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a75030b8780aaa7a2a1f44af3ae72feed}
+
+
+Adds categories for the given project (library) into the category tree widget. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em lib\-Path} & Path to the library, where category is located. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a5ebd5eb51726eb69e0e0243750c926a9}{\index{Main\-Window@{Main\-Window}!load\-Combined\-Libs@{load\-Combined\-Libs}}
+\index{load\-Combined\-Libs@{load\-Combined\-Libs}!MainWindow@{Main\-Window}}
+\subsubsection[{load\-Combined\-Libs}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::load\-Combined\-Libs (
+\begin{DoxyParamCaption}
+\item[{const Q\-Map$<$ Q\-String, Q\-String\-List $>$ \&}]{combined\-Libs}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a5ebd5eb51726eb69e0e0243750c926a9}
+
+
+Adds given nested projects (libraries) into the project tree widget. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em combined\-Libs} & Map of combined libraries, where key -\/ is name of the library, values -\/ is library path. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a953304e2b85e660d11bb875f5e9f3738}{\index{Main\-Window@{Main\-Window}!load\-Documents@{load\-Documents}}
+\index{load\-Documents@{load\-Documents}!MainWindow@{Main\-Window}}
+\subsubsection[{load\-Documents}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::load\-Documents (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{lib\-Path}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a953304e2b85e660d11bb875f5e9f3738}
+
+
+Adds documents for the given project (library) into the document tree widget. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em lib\-Path} & Path to the library, where documentation is located. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a57bf47c514d40fcbc2cc301599fd419e}{\index{Main\-Window@{Main\-Window}!load\-Groups@{load\-Groups}}
+\index{load\-Groups@{load\-Groups}!MainWindow@{Main\-Window}}
+\subsubsection[{load\-Groups}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::load\-Groups (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{lib\-Path}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a57bf47c514d40fcbc2cc301599fd419e}
+
+
+Adds group (cell) for the given project (library) into the group list widget. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em lib\-Path} & Path to the library, where group (cell) is located. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a63962c76c33dd60e0b354dd48724a9f5}{\index{Main\-Window@{Main\-Window}!load\-Libraries@{load\-Libraries}}
+\index{load\-Libraries@{load\-Libraries}!MainWindow@{Main\-Window}}
+\subsubsection[{load\-Libraries}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::load\-Libraries (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a63962c76c33dd60e0b354dd48724a9f5}
+
+
+Adds project (libraries) into the project tree widget from the Lib\-Man settings. 
+
+
+
+ \hypertarget{classMainWindow_a0b51bc62adc32da1189785375d888595}{\index{Main\-Window@{Main\-Window}!load\-Project\-File@{load\-Project\-File}}
+\index{load\-Project\-File@{load\-Project\-File}!MainWindow@{Main\-Window}}
+\subsubsection[{load\-Project\-File}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::load\-Project\-File (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{file\-Name}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a0b51bc62adc32da1189785375d888595}
+
+
+Loads project file contence into Lib\-Man. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em file\-Name} & Path to the file to be loaded. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_aad64417dd963cf8816a47097df343297}{\index{Main\-Window@{Main\-Window}!load\-Recent\-Project@{load\-Recent\-Project}}
+\index{load\-Recent\-Project@{load\-Recent\-Project}!MainWindow@{Main\-Window}}
+\subsubsection[{load\-Recent\-Project}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::load\-Recent\-Project (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_aad64417dd963cf8816a47097df343297}
+
+
+Loads the most recent project file into Lib\-Man environment. 
+
+
+
+ \hypertarget{classMainWindow_a9bb1f3b7f6b5360abfd2dc01fc1c8930}{\index{Main\-Window@{Main\-Window}!load\-Settings@{load\-Settings}}
+\index{load\-Settings@{load\-Settings}!MainWindow@{Main\-Window}}
+\subsubsection[{load\-Settings}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::load\-Settings (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a9bb1f3b7f6b5360abfd2dc01fc1c8930}
+
+
+Loads Lib\-Man settings (geometry, tools, widget states etc.) and aplies them accordingly. 
+
+
+
+ \hypertarget{classMainWindow_a4124c5b7d11a382c1d131b93787d397a}{\index{Main\-Window@{Main\-Window}!load\-Views@{load\-Views}}
+\index{load\-Views@{load\-Views}!MainWindow@{Main\-Window}}
+\subsubsection[{load\-Views}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::load\-Views (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{lib\-Path, }
+\item[{const Q\-String \&}]{group\-Name}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a4124c5b7d11a382c1d131b93787d397a}
+
+
+Adds views for the given group (cell) into the view list widget. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em lib\-Path} & Path to the library, where group (cell) is located. \\
+\hline
+{\em group\-Name} & Name of group (cell) to load its view(s). \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_aedcf4e7322932599339fd7213751e653}{\index{Main\-Window@{Main\-Window}!merge\-Project\-Into\-Group@{merge\-Project\-Into\-Group}}
+\index{merge\-Project\-Into\-Group@{merge\-Project\-Into\-Group}!MainWindow@{Main\-Window}}
+\subsubsection[{merge\-Project\-Into\-Group}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::merge\-Project\-Into\-Group (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_aedcf4e7322932599339fd7213751e653}
+
+
+Merges project into a nested group. 
+
+
+
+ \hypertarget{classMainWindow_a4f3ebda1ba39e0ef4d678b44893c9c7f}{\index{Main\-Window@{Main\-Window}!on\-\_\-action\-About\-\_\-triggered@{on\-\_\-action\-About\-\_\-triggered}}
+\index{on\-\_\-action\-About\-\_\-triggered@{on\-\_\-action\-About\-\_\-triggered}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-action\-About\-\_\-triggered}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-action\-About\-\_\-triggered (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a4f3ebda1ba39e0ef4d678b44893c9c7f}
+
+
+Triggers execution of \hyperlink{classAbout}{About} dialog window. 
+
+
+
+ \hypertarget{classMainWindow_a2812d2f0350ea5a0da583953fa25b19f}{\index{Main\-Window@{Main\-Window}!on\-\_\-action\-Category\-\_\-triggered@{on\-\_\-action\-Category\-\_\-triggered}}
+\index{on\-\_\-action\-Category\-\_\-triggered@{on\-\_\-action\-Category\-\_\-triggered}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-action\-Category\-\_\-triggered}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-action\-Category\-\_\-triggered (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a2812d2f0350ea5a0da583953fa25b19f}
+
+
+Triggers creation of new category. 
+
+
+
+ \hypertarget{classMainWindow_a00f1c23c161a4384060fc8ee682e76ba}{\index{Main\-Window@{Main\-Window}!on\-\_\-action\-Clear\-\_\-\-Recent\-\_\-\-File\-\_\-\-Stack\-\_\-triggered@{on\-\_\-action\-Clear\-\_\-\-Recent\-\_\-\-File\-\_\-\-Stack\-\_\-triggered}}
+\index{on\-\_\-action\-Clear\-\_\-\-Recent\-\_\-\-File\-\_\-\-Stack\-\_\-triggered@{on\-\_\-action\-Clear\-\_\-\-Recent\-\_\-\-File\-\_\-\-Stack\-\_\-triggered}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-action\-Clear\-\_\-\-Recent\-\_\-\-File\-\_\-\-Stack\-\_\-triggered}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-action\-Clear\-\_\-\-Recent\-\_\-\-File\-\_\-\-Stack\-\_\-triggered (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a00f1c23c161a4384060fc8ee682e76ba}
+
+
+Removes all the project file items from the menu. 
+
+
+
+ \hypertarget{classMainWindow_ab4487c4b02224acd4a0193d38b704ddb}{\index{Main\-Window@{Main\-Window}!on\-\_\-action\-Exit\-\_\-triggered@{on\-\_\-action\-Exit\-\_\-triggered}}
+\index{on\-\_\-action\-Exit\-\_\-triggered@{on\-\_\-action\-Exit\-\_\-triggered}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-action\-Exit\-\_\-triggered}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-action\-Exit\-\_\-triggered (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_ab4487c4b02224acd4a0193d38b704ddb}
+
+
+Closes Lib\-Man. 
+
+
+
+ \hypertarget{classMainWindow_a9a3efa0112bdda7a589525d160ca625b}{\index{Main\-Window@{Main\-Window}!on\-\_\-action\-Group\-\_\-triggered@{on\-\_\-action\-Group\-\_\-triggered}}
+\index{on\-\_\-action\-Group\-\_\-triggered@{on\-\_\-action\-Group\-\_\-triggered}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-action\-Group\-\_\-triggered}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-action\-Group\-\_\-triggered (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a9a3efa0112bdda7a589525d160ca625b}
+
+
+Triggers creation of new group (cell). 
+
+
+
+ \hypertarget{classMainWindow_a48ed0a16f674e38e0e2a24274852a9af}{\index{Main\-Window@{Main\-Window}!on\-\_\-action\-Open\-\_\-triggered@{on\-\_\-action\-Open\-\_\-triggered}}
+\index{on\-\_\-action\-Open\-\_\-triggered@{on\-\_\-action\-Open\-\_\-triggered}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-action\-Open\-\_\-triggered}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-action\-Open\-\_\-triggered (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a48ed0a16f674e38e0e2a24274852a9af}
+
+
+Launches a dialog window to select a project file to load. 
+
+
+
+ \hypertarget{classMainWindow_a72557ed75b052bdf4f7f8d87b70fc579}{\index{Main\-Window@{Main\-Window}!on\-\_\-action\-Project\-\_\-triggered@{on\-\_\-action\-Project\-\_\-triggered}}
+\index{on\-\_\-action\-Project\-\_\-triggered@{on\-\_\-action\-Project\-\_\-triggered}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-action\-Project\-\_\-triggered}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-action\-Project\-\_\-triggered (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a72557ed75b052bdf4f7f8d87b70fc579}
+
+
+Triggers creation of new project (library). 
+
+
+
+ \hypertarget{classMainWindow_aa1d84c313076357330d8f2f9c0b0b96d}{\index{Main\-Window@{Main\-Window}!on\-\_\-action\-Projects\-\_\-triggered@{on\-\_\-action\-Projects\-\_\-triggered}}
+\index{on\-\_\-action\-Projects\-\_\-triggered@{on\-\_\-action\-Projects\-\_\-triggered}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-action\-Projects\-\_\-triggered}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-action\-Projects\-\_\-triggered (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_aa1d84c313076357330d8f2f9c0b0b96d}
+
+
+Triggers execution of \hyperlink{classProjectManager}{Project\-Manager} dialog window. 
+
+
+
+ \hypertarget{classMainWindow_a98e86ef6104b6e2910328af2f878438d}{\index{Main\-Window@{Main\-Window}!on\-\_\-action\-Save\-\_\-\-As\-\_\-triggered@{on\-\_\-action\-Save\-\_\-\-As\-\_\-triggered}}
+\index{on\-\_\-action\-Save\-\_\-\-As\-\_\-triggered@{on\-\_\-action\-Save\-\_\-\-As\-\_\-triggered}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-action\-Save\-\_\-\-As\-\_\-triggered}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-action\-Save\-\_\-\-As\-\_\-triggered (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a98e86ef6104b6e2910328af2f878438d}
+
+
+Pops up dialog box where user can specify the file to save the project libraries. 
+
+
+
+ \hypertarget{classMainWindow_ad550c61cfa05c7e528dedc6cf636ed10}{\index{Main\-Window@{Main\-Window}!on\-\_\-action\-Save\-\_\-triggered@{on\-\_\-action\-Save\-\_\-triggered}}
+\index{on\-\_\-action\-Save\-\_\-triggered@{on\-\_\-action\-Save\-\_\-triggered}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-action\-Save\-\_\-triggered}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-action\-Save\-\_\-triggered (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_ad550c61cfa05c7e528dedc6cf636ed10}
+
+
+Saves the current project file or executes on\-\_\-action\-Save\-\_\-\-As\-\_\-triggered if no current file specified. 
+
+
+
+ \hypertarget{classMainWindow_a541e1460680230409808d47585c4b8b4}{\index{Main\-Window@{Main\-Window}!on\-\_\-action\-Session\-\_\-triggered@{on\-\_\-action\-Session\-\_\-triggered}}
+\index{on\-\_\-action\-Session\-\_\-triggered@{on\-\_\-action\-Session\-\_\-triggered}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-action\-Session\-\_\-triggered}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-action\-Session\-\_\-triggered (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a541e1460680230409808d47585c4b8b4}
+
+
+Creates new session and clears up all current project settings. 
+
+
+
+ \hypertarget{classMainWindow_ad1c8aa9c6519123e3f314c84d46a8317}{\index{Main\-Window@{Main\-Window}!on\-\_\-action\-Show\-\_\-\-Categories\-\_\-toggled@{on\-\_\-action\-Show\-\_\-\-Categories\-\_\-toggled}}
+\index{on\-\_\-action\-Show\-\_\-\-Categories\-\_\-toggled@{on\-\_\-action\-Show\-\_\-\-Categories\-\_\-toggled}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-action\-Show\-\_\-\-Categories\-\_\-toggled}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-action\-Show\-\_\-\-Categories\-\_\-toggled (
+\begin{DoxyParamCaption}
+\item[{bool}]{state}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_ad1c8aa9c6519123e3f314c84d46a8317}
+
+
+Slot is triggered to show or hide the categories tree widget. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em state} & Sate to show (true) or hide (false) the categories tree widget. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_adc9158772dde195daaa1d04276d6889a}{\index{Main\-Window@{Main\-Window}!on\-\_\-action\-Show\-\_\-\-Documents\-\_\-toggled@{on\-\_\-action\-Show\-\_\-\-Documents\-\_\-toggled}}
+\index{on\-\_\-action\-Show\-\_\-\-Documents\-\_\-toggled@{on\-\_\-action\-Show\-\_\-\-Documents\-\_\-toggled}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-action\-Show\-\_\-\-Documents\-\_\-toggled}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-action\-Show\-\_\-\-Documents\-\_\-toggled (
+\begin{DoxyParamCaption}
+\item[{bool}]{state}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_adc9158772dde195daaa1d04276d6889a}
+
+
+Slot is triggered to show or hide the documentation tree widget. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em state} & Sate to show (true) or hide (false) the documentation tree widget. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_afd40b73a712b16f9c77dd029024b75ce}{\index{Main\-Window@{Main\-Window}!on\-\_\-action\-Tools\-\_\-triggered@{on\-\_\-action\-Tools\-\_\-triggered}}
+\index{on\-\_\-action\-Tools\-\_\-triggered@{on\-\_\-action\-Tools\-\_\-triggered}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-action\-Tools\-\_\-triggered}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-action\-Tools\-\_\-triggered (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_afd40b73a712b16f9c77dd029024b75ce}
+
+
+Triggers execution of \hyperlink{classToolManager}{Tool\-Manager} dialog window. 
+
+
+
+ \hypertarget{classMainWindow_ab7c8299c50bb97eaedcb225e90f9bcf4}{\index{Main\-Window@{Main\-Window}!on\-\_\-action\-Union\-\_\-triggered@{on\-\_\-action\-Union\-\_\-triggered}}
+\index{on\-\_\-action\-Union\-\_\-triggered@{on\-\_\-action\-Union\-\_\-triggered}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-action\-Union\-\_\-triggered}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-action\-Union\-\_\-triggered (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_ab7c8299c50bb97eaedcb225e90f9bcf4}
+
+
+Triggers execution of \hyperlink{classNewView}{New\-View} dialog window. 
+
+
+
+ \hypertarget{classMainWindow_ab6bac75e491c0ff6399d8761a4d9b291}{\index{Main\-Window@{Main\-Window}!on\-\_\-list\-Categories\-\_\-item\-Clicked@{on\-\_\-list\-Categories\-\_\-item\-Clicked}}
+\index{on\-\_\-list\-Categories\-\_\-item\-Clicked@{on\-\_\-list\-Categories\-\_\-item\-Clicked}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-list\-Categories\-\_\-item\-Clicked}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-list\-Categories\-\_\-item\-Clicked (
+\begin{DoxyParamCaption}
+\item[{Q\-Tree\-Widget\-Item $\ast$}]{item}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_ab6bac75e491c0ff6399d8761a4d9b291}
+
+
+Slot is to load groups (cells) located into the specified category file. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em item} & Pointer to tree item category. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_aa829e818519a2d617c78b3e832e3a4ea}{\index{Main\-Window@{Main\-Window}!on\-\_\-list\-Categories\-\_\-item\-Double\-Clicked@{on\-\_\-list\-Categories\-\_\-item\-Double\-Clicked}}
+\index{on\-\_\-list\-Categories\-\_\-item\-Double\-Clicked@{on\-\_\-list\-Categories\-\_\-item\-Double\-Clicked}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-list\-Categories\-\_\-item\-Double\-Clicked}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-list\-Categories\-\_\-item\-Double\-Clicked (
+\begin{DoxyParamCaption}
+\item[{Q\-Tree\-Widget\-Item $\ast$}]{item, }
+\item[{int}]{column}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_aa829e818519a2d617c78b3e832e3a4ea}
+
+
+Slot to execute a tool to view ctegory content. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em item} & Pointer to tree item category. \\
+\hline
+{\em column} & Column where double click event happened. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_aca2a1d9becfed505821bb7e7a945d5b5}{\index{Main\-Window@{Main\-Window}!on\-\_\-list\-Documentation\-\_\-item\-Double\-Clicked@{on\-\_\-list\-Documentation\-\_\-item\-Double\-Clicked}}
+\index{on\-\_\-list\-Documentation\-\_\-item\-Double\-Clicked@{on\-\_\-list\-Documentation\-\_\-item\-Double\-Clicked}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-list\-Documentation\-\_\-item\-Double\-Clicked}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-list\-Documentation\-\_\-item\-Double\-Clicked (
+\begin{DoxyParamCaption}
+\item[{Q\-Tree\-Widget\-Item $\ast$}]{item}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_aca2a1d9becfed505821bb7e7a945d5b5}
+
+
+Slot is to execute document viewer with specified documentation. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em item} & Pointer to tree item document. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_ad95e75085713bdbfa441172f267e7ea2}{\index{Main\-Window@{Main\-Window}!on\-\_\-list\-Groups\-\_\-item\-Clicked@{on\-\_\-list\-Groups\-\_\-item\-Clicked}}
+\index{on\-\_\-list\-Groups\-\_\-item\-Clicked@{on\-\_\-list\-Groups\-\_\-item\-Clicked}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-list\-Groups\-\_\-item\-Clicked}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-list\-Groups\-\_\-item\-Clicked (
+\begin{DoxyParamCaption}
+\item[{Q\-List\-Widget\-Item $\ast$}]{item}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_ad95e75085713bdbfa441172f267e7ea2}
+
+
+Slot to load all views for selected group (cell) into the view list widget. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em item} & Pointer to list item group. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a466c34043cd652304aa4e7e0e31ccf0f}{\index{Main\-Window@{Main\-Window}!on\-\_\-list\-Views\-\_\-item\-Clicked@{on\-\_\-list\-Views\-\_\-item\-Clicked}}
+\index{on\-\_\-list\-Views\-\_\-item\-Clicked@{on\-\_\-list\-Views\-\_\-item\-Clicked}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-list\-Views\-\_\-item\-Clicked}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-list\-Views\-\_\-item\-Clicked (
+\begin{DoxyParamCaption}
+\item[{Q\-List\-Widget\-Item $\ast$}]{item}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a466c34043cd652304aa4e7e0e31ccf0f}
+
+
+Sets the name of the selected item into the view filter line edit. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em item} & Pointer to list item view. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a56d68978d07e45cffe0d6d925b647744}{\index{Main\-Window@{Main\-Window}!on\-\_\-list\-Views\-\_\-item\-Double\-Clicked@{on\-\_\-list\-Views\-\_\-item\-Double\-Clicked}}
+\index{on\-\_\-list\-Views\-\_\-item\-Double\-Clicked@{on\-\_\-list\-Views\-\_\-item\-Double\-Clicked}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-list\-Views\-\_\-item\-Double\-Clicked}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-list\-Views\-\_\-item\-Double\-Clicked (
+\begin{DoxyParamCaption}
+\item[{Q\-List\-Widget\-Item $\ast$}]{item}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a56d68978d07e45cffe0d6d925b647744}
+
+
+Slot to execute a tool based on the selected item (schematic, layout, cdl, spice, etc.). 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em item} & Pointer to list item view. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a53c77b4bec2f9f9e5ee2a9f3c1100caf}{\index{Main\-Window@{Main\-Window}!on\-\_\-tree\-Libs\-\_\-item\-Changed@{on\-\_\-tree\-Libs\-\_\-item\-Changed}}
+\index{on\-\_\-tree\-Libs\-\_\-item\-Changed@{on\-\_\-tree\-Libs\-\_\-item\-Changed}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-tree\-Libs\-\_\-item\-Changed}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-tree\-Libs\-\_\-item\-Changed (
+\begin{DoxyParamCaption}
+\item[{Q\-Tree\-Widget\-Item $\ast$}]{item, }
+\item[{int}]{column}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a53c77b4bec2f9f9e5ee2a9f3c1100caf}
+
+
+Slot is triggered when tree item is changed. Used for storing the project names after renaming. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em item} & Pointer to item which has been changed. \\
+\hline
+{\em column} & Column where item which has been changed. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a6559de64b12cdf8254275d87a4babc0a}{\index{Main\-Window@{Main\-Window}!on\-\_\-tree\-Libs\-\_\-item\-Clicked@{on\-\_\-tree\-Libs\-\_\-item\-Clicked}}
+\index{on\-\_\-tree\-Libs\-\_\-item\-Clicked@{on\-\_\-tree\-Libs\-\_\-item\-Clicked}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-tree\-Libs\-\_\-item\-Clicked}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-tree\-Libs\-\_\-item\-Clicked (
+\begin{DoxyParamCaption}
+\item[{Q\-Tree\-Widget\-Item $\ast$}]{item, }
+\item[{int}]{column}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a6559de64b12cdf8254275d87a4babc0a}
+
+
+Slot to load all groups (cells) for selected project (library) into the group (cell) list widget. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em item} & Pointer to list item group (cell). \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_ab678d8f29e983817bedf692d399f8f22}{\index{Main\-Window@{Main\-Window}!on\-\_\-txt\-Cat\-Search\-\_\-text\-Edited@{on\-\_\-txt\-Cat\-Search\-\_\-text\-Edited}}
+\index{on\-\_\-txt\-Cat\-Search\-\_\-text\-Edited@{on\-\_\-txt\-Cat\-Search\-\_\-text\-Edited}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-txt\-Cat\-Search\-\_\-text\-Edited}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-txt\-Cat\-Search\-\_\-text\-Edited (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{filter}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_ab678d8f29e983817bedf692d399f8f22}
+
+
+Filters categories based on user input. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em filter} & Text string used to filter categories. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_aa083f16ffe18dc0d31fabece8d9decff}{\index{Main\-Window@{Main\-Window}!on\-\_\-txt\-Cell\-Search\-\_\-text\-Edited@{on\-\_\-txt\-Cell\-Search\-\_\-text\-Edited}}
+\index{on\-\_\-txt\-Cell\-Search\-\_\-text\-Edited@{on\-\_\-txt\-Cell\-Search\-\_\-text\-Edited}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-txt\-Cell\-Search\-\_\-text\-Edited}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-txt\-Cell\-Search\-\_\-text\-Edited (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{filter}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_aa083f16ffe18dc0d31fabece8d9decff}
+
+
+Filters groups (cells) based on user input. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em filter} & Text string used to filter groups (cells). \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a3d411ebea0a66c65174a7918a5317881}{\index{Main\-Window@{Main\-Window}!on\-\_\-txt\-Lib\-Search\-\_\-text\-Edited@{on\-\_\-txt\-Lib\-Search\-\_\-text\-Edited}}
+\index{on\-\_\-txt\-Lib\-Search\-\_\-text\-Edited@{on\-\_\-txt\-Lib\-Search\-\_\-text\-Edited}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-txt\-Lib\-Search\-\_\-text\-Edited}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-txt\-Lib\-Search\-\_\-text\-Edited (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{filter}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a3d411ebea0a66c65174a7918a5317881}
+
+
+Filters projects (libraries) based on user input. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em filter} & Text string used to filter projects (libraries). \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a468a4eb5ab08b6472e6c32b35490aeeb}{\index{Main\-Window@{Main\-Window}!on\-\_\-txt\-View\-Search\-\_\-text\-Edited@{on\-\_\-txt\-View\-Search\-\_\-text\-Edited}}
+\index{on\-\_\-txt\-View\-Search\-\_\-text\-Edited@{on\-\_\-txt\-View\-Search\-\_\-text\-Edited}!MainWindow@{Main\-Window}}
+\subsubsection[{on\-\_\-txt\-View\-Search\-\_\-text\-Edited}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::on\-\_\-txt\-View\-Search\-\_\-text\-Edited (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{filter}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a468a4eb5ab08b6472e6c32b35490aeeb}
+
+
+Filters views based on user input. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em filter} & Text string used to filter views. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a003d3ff529129c1613cabc25dcbb3450}{\index{Main\-Window@{Main\-Window}!paste\-Selected\-Data@{paste\-Selected\-Data}}
+\index{paste\-Selected\-Data@{paste\-Selected\-Data}!MainWindow@{Main\-Window}}
+\subsubsection[{paste\-Selected\-Data}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::paste\-Selected\-Data (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a003d3ff529129c1613cabc25dcbb3450}
+
+
+Pastes selected data (could be project, group or file. 
+
+
+
+ \hypertarget{classMainWindow_a5f419797d8b22ee1c713e841931a23a4}{\index{Main\-Window@{Main\-Window}!read\-Library\-Categories@{read\-Library\-Categories}}
+\index{read\-Library\-Categories@{read\-Library\-Categories}!MainWindow@{Main\-Window}}
+\subsubsection[{read\-Library\-Categories}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String\-List Main\-Window\-::read\-Library\-Categories (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{lib\-Path, }
+\item[{const Q\-String \&}]{cat\-Name}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a5f419797d8b22ee1c713e841931a23a4}
+
+
+Reads library category and returns it's cells. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em lib\-Path} & Path to the project library. \\
+\hline
+{\em cat\-Name} & Name of the category. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a488161a7ea31be35bf87091772c5a235}{\index{Main\-Window@{Main\-Window}!remove\-Dir@{remove\-Dir}}
+\index{remove\-Dir@{remove\-Dir}!MainWindow@{Main\-Window}}
+\subsubsection[{remove\-Dir}]{\setlength{\rightskip}{0pt plus 5cm}bool Main\-Window\-::remove\-Dir (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{dir\-Name}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a488161a7ea31be35bf87091772c5a235}
+
+
+Deletes folder recursevly. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em dir\-Name} & Name of the folder to be deleted. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a41872370d39dc3c6dc8b996d42196432}{\index{Main\-Window@{Main\-Window}!remove\-From\-Group@{remove\-From\-Group}}
+\index{remove\-From\-Group@{remove\-From\-Group}!MainWindow@{Main\-Window}}
+\subsubsection[{remove\-From\-Group}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::remove\-From\-Group (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a41872370d39dc3c6dc8b996d42196432}
+
+
+Eliminates project from the nested group. 
+
+
+
+ \hypertarget{classMainWindow_a1829103fc2661a8c1f0a2c2a730da53a}{\index{Main\-Window@{Main\-Window}!remove\-Group\-Union@{remove\-Group\-Union}}
+\index{remove\-Group\-Union@{remove\-Group\-Union}!MainWindow@{Main\-Window}}
+\subsubsection[{remove\-Group\-Union}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::remove\-Group\-Union (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a1829103fc2661a8c1f0a2c2a730da53a}
+
+
+Delets group (nested projects) from the tree widget. 
+
+
+
+ \hypertarget{classMainWindow_ac091629e8f90351cc3543337aefc80ea}{\index{Main\-Window@{Main\-Window}!remove\-Selected\-Category@{remove\-Selected\-Category}}
+\index{remove\-Selected\-Category@{remove\-Selected\-Category}!MainWindow@{Main\-Window}}
+\subsubsection[{remove\-Selected\-Category}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::remove\-Selected\-Category (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_ac091629e8f90351cc3543337aefc80ea}
+
+
+Removes selected category. 
+
+
+
+ \hypertarget{classMainWindow_ae91780a31e7118b44feb428b0de0dba3}{\index{Main\-Window@{Main\-Window}!remove\-Selected\-Group@{remove\-Selected\-Group}}
+\index{remove\-Selected\-Group@{remove\-Selected\-Group}!MainWindow@{Main\-Window}}
+\subsubsection[{remove\-Selected\-Group}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::remove\-Selected\-Group (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_ae91780a31e7118b44feb428b0de0dba3}
+
+
+Removes selected group (cell). 
+
+
+
+ \hypertarget{classMainWindow_aa77bfbfc58c63a5f3ce5d6f718a55a40}{\index{Main\-Window@{Main\-Window}!remove\-Selected\-Project@{remove\-Selected\-Project}}
+\index{remove\-Selected\-Project@{remove\-Selected\-Project}!MainWindow@{Main\-Window}}
+\subsubsection[{remove\-Selected\-Project}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::remove\-Selected\-Project (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_aa77bfbfc58c63a5f3ce5d6f718a55a40}
+
+
+Removes selected project (library). 
+
+
+
+ \hypertarget{classMainWindow_ae8d8ed40aae7c5b596efac98925792ee}{\index{Main\-Window@{Main\-Window}!remove\-Selected\-View@{remove\-Selected\-View}}
+\index{remove\-Selected\-View@{remove\-Selected\-View}!MainWindow@{Main\-Window}}
+\subsubsection[{remove\-Selected\-View}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::remove\-Selected\-View (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_ae8d8ed40aae7c5b596efac98925792ee}
+
+
+Removes selected view. 
+
+
+
+ \hypertarget{classMainWindow_a8513c227af4759727cdaff0528760411}{\index{Main\-Window@{Main\-Window}!save\-Project\-File@{save\-Project\-File}}
+\index{save\-Project\-File@{save\-Project\-File}!MainWindow@{Main\-Window}}
+\subsubsection[{save\-Project\-File}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::save\-Project\-File (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{file\-Name}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a8513c227af4759727cdaff0528760411}
+
+
+Saves Lib\-Man Library/\-Cell/\-View data into project file. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em file\-Name} & Path to the file to be saved. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_aafa974e05a80e493c719909da5e5b76d}{\index{Main\-Window@{Main\-Window}!set\-Recent\-Project@{set\-Recent\-Project}}
+\index{set\-Recent\-Project@{set\-Recent\-Project}!MainWindow@{Main\-Window}}
+\subsubsection[{set\-Recent\-Project}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::set\-Recent\-Project (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{file\-Name}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_aafa974e05a80e493c719909da5e5b76d}
+
+
+Sets the name of the last loaded project to the upper recent file list. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em file\-Name} & Name of the project file. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a281bfe571e3ce2af52bf79bb4fa44fde}{\index{Main\-Window@{Main\-Window}!set\-State\-Changed@{set\-State\-Changed}}
+\index{set\-State\-Changed@{set\-State\-Changed}!MainWindow@{Main\-Window}}
+\subsubsection[{set\-State\-Changed}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::set\-State\-Changed (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a281bfe571e3ce2af52bf79bb4fa44fde}
+
+
+Set Lib\-Man state changed and updates the window titel accordingly. 
+
+
+
+ \hypertarget{classMainWindow_a5fb61a8cf4108faeb224c8f2d99b6ee3}{\index{Main\-Window@{Main\-Window}!set\-State\-Saved@{set\-State\-Saved}}
+\index{set\-State\-Saved@{set\-State\-Saved}!MainWindow@{Main\-Window}}
+\subsubsection[{set\-State\-Saved}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::set\-State\-Saved (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a5fb61a8cf4108faeb224c8f2d99b6ee3}
+
+
+Set Lib\-Man state saved and updates the window titel accordingly. 
+
+
+
+ \hypertarget{classMainWindow_ad63d5f418c4d55c90d63269162782ac4}{\index{Main\-Window@{Main\-Window}!show\-Category\-Info@{show\-Category\-Info}}
+\index{show\-Category\-Info@{show\-Category\-Info}!MainWindow@{Main\-Window}}
+\subsubsection[{show\-Category\-Info}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::show\-Category\-Info (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_ad63d5f418c4d55c90d63269162782ac4}
+
+
+Prints category file Unix information into the \hyperlink{classMainWindow}{Main\-Window} output window. 
+
+
+
+ \hypertarget{classMainWindow_acd00c7003f796ac714582e3238788872}{\index{Main\-Window@{Main\-Window}!show\-Category\-Menu@{show\-Category\-Menu}}
+\index{show\-Category\-Menu@{show\-Category\-Menu}!MainWindow@{Main\-Window}}
+\subsubsection[{show\-Category\-Menu}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::show\-Category\-Menu (
+\begin{DoxyParamCaption}
+\item[{const Q\-Point \&}]{pos}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_acd00c7003f796ac714582e3238788872}
+
+
+Displays menu for category widget. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em pos} & Point(x, y) where menu will be displayed. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a38f2a589547d744fe8effcd86d56522f}{\index{Main\-Window@{Main\-Window}!show\-Folder\-Info@{show\-Folder\-Info}}
+\index{show\-Folder\-Info@{show\-Folder\-Info}!MainWindow@{Main\-Window}}
+\subsubsection[{show\-Folder\-Info}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::show\-Folder\-Info (
+\begin{DoxyParamCaption}
+\item[{const Q\-String \&}]{title, }
+\item[{const Q\-String \&}]{alias, }
+\item[{const Q\-String \&}]{folder\-Path, }
+\item[{bool}]{clear = {\ttfamily true}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a38f2a589547d744fe8effcd86d56522f}
+
+
+Prints folder Unix information into the \hyperlink{classMainWindow}{Main\-Window} output window. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em title} & Title to print (for ex., Library, Cell, Category, View). \\
+\hline
+{\em alias} & If file is aliased then it prints the real (aliased) name. \\
+\hline
+{\em folder\-Path} & Path to the folder which is requested for printing its information. \\
+\hline
+{\em clear} & Clears \hyperlink{classMainWindow}{Main\-Window} output window before printing message. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a7792544db8869842840c6e4716f8cbec}{\index{Main\-Window@{Main\-Window}!show\-Group\-Info@{show\-Group\-Info}}
+\index{show\-Group\-Info@{show\-Group\-Info}!MainWindow@{Main\-Window}}
+\subsubsection[{show\-Group\-Info}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::show\-Group\-Info (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a7792544db8869842840c6e4716f8cbec}
+
+
+Prints group folder Unix information into the \hyperlink{classMainWindow}{Main\-Window} output window. 
+
+
+
+ \hypertarget{classMainWindow_a19879440aaeb18585b7fac488e540c49}{\index{Main\-Window@{Main\-Window}!show\-Group\-Menu@{show\-Group\-Menu}}
+\index{show\-Group\-Menu@{show\-Group\-Menu}!MainWindow@{Main\-Window}}
+\subsubsection[{show\-Group\-Menu}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::show\-Group\-Menu (
+\begin{DoxyParamCaption}
+\item[{const Q\-Point \&}]{pos}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a19879440aaeb18585b7fac488e540c49}
+
+
+Displays menu for group (cell) widget. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em pos} & Point(x, y) where menu will be displayed. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_aefeae0de6c70fcace6f9f4b3836d8a84}{\index{Main\-Window@{Main\-Window}!show\-Library\-Menu@{show\-Library\-Menu}}
+\index{show\-Library\-Menu@{show\-Library\-Menu}!MainWindow@{Main\-Window}}
+\subsubsection[{show\-Library\-Menu}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::show\-Library\-Menu (
+\begin{DoxyParamCaption}
+\item[{const Q\-Point \&}]{pos}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_aefeae0de6c70fcace6f9f4b3836d8a84}
+
+
+Creates and displays menu for project (library) tree widget. It is used for projects management. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em pos} & Point(x, y) where to display menu. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_a2fbeb11fb0bbe28be62403ef732931a7}{\index{Main\-Window@{Main\-Window}!show\-Project\-Info@{show\-Project\-Info}}
+\index{show\-Project\-Info@{show\-Project\-Info}!MainWindow@{Main\-Window}}
+\subsubsection[{show\-Project\-Info}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::show\-Project\-Info (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a2fbeb11fb0bbe28be62403ef732931a7}
+
+
+Prints library folder Unix information into the \hyperlink{classMainWindow}{Main\-Window} output window. 
+
+
+
+ \hypertarget{classMainWindow_a6e334fe603796652be44d5df952e0f4a}{\index{Main\-Window@{Main\-Window}!show\-View\-Info@{show\-View\-Info}}
+\index{show\-View\-Info@{show\-View\-Info}!MainWindow@{Main\-Window}}
+\subsubsection[{show\-View\-Info}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::show\-View\-Info (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a6e334fe603796652be44d5df952e0f4a}
+
+
+Prints view file Unix information into the \hyperlink{classMainWindow}{Main\-Window} output window. 
+
+
+
+ \hypertarget{classMainWindow_a9a11decabf7bc3f32641bc59431bee3c}{\index{Main\-Window@{Main\-Window}!show\-View\-Menu@{show\-View\-Menu}}
+\index{show\-View\-Menu@{show\-View\-Menu}!MainWindow@{Main\-Window}}
+\subsubsection[{show\-View\-Menu}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::show\-View\-Menu (
+\begin{DoxyParamCaption}
+\item[{const Q\-Point \&}]{pos}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_a9a11decabf7bc3f32641bc59431bee3c}
+
+
+Displays menu for view widget. 
+
+
+
+ 
+\begin{DoxyParams}{Parameters}
+{\em pos} & Point(x, y) where menu will be displayed. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classMainWindow_ad8c228fb00728ea101b53f2778c96a1a}{\index{Main\-Window@{Main\-Window}!update\-Recent\-Project\-Actions@{update\-Recent\-Project\-Actions}}
+\index{update\-Recent\-Project\-Actions@{update\-Recent\-Project\-Actions}!MainWindow@{Main\-Window}}
+\subsubsection[{update\-Recent\-Project\-Actions}]{\setlength{\rightskip}{0pt plus 5cm}void Main\-Window\-::update\-Recent\-Project\-Actions (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}, {\ttfamily [slot]}}}\label{classMainWindow_ad8c228fb00728ea101b53f2778c96a1a}
+
+
+Updates File-\/$>$Recent menu items. 
+
+
+
+ 
+
+\subsection{Member Data Documentation}
+\hypertarget{classMainWindow_a306adca5f257e5aeaa50ff06605a7a86}{\index{Main\-Window@{Main\-Window}!m\-\_\-copy\-Data@{m\-\_\-copy\-Data}}
+\index{m\-\_\-copy\-Data@{m\-\_\-copy\-Data}!MainWindow@{Main\-Window}}
+\subsubsection[{m\-\_\-copy\-Data}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String\-List Main\-Window\-::m\-\_\-copy\-Data\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a306adca5f257e5aeaa50ff06605a7a86}
+A list used as a buffer for coping data (library/cell/view). \hypertarget{classMainWindow_a77153a35340c4a8a40f8528301bd96ad}{\index{Main\-Window@{Main\-Window}!m\-\_\-current\-Copy\-State@{m\-\_\-current\-Copy\-State}}
+\index{m\-\_\-current\-Copy\-State@{m\-\_\-current\-Copy\-State}!MainWindow@{Main\-Window}}
+\subsubsection[{m\-\_\-current\-Copy\-State}]{\setlength{\rightskip}{0pt plus 5cm}{\bf C\-O\-P\-Y\-\_\-\-S\-T\-A\-T\-E} Main\-Window\-::m\-\_\-current\-Copy\-State\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a77153a35340c4a8a40f8528301bd96ad}
+State to specify what user would like to copy (library/cell/view). \hypertarget{classMainWindow_ade3f7ebe5eb1bf67444cd41b2bc38aca}{\index{Main\-Window@{Main\-Window}!m\-\_\-current\-Proj\-File@{m\-\_\-current\-Proj\-File}}
+\index{m\-\_\-current\-Proj\-File@{m\-\_\-current\-Proj\-File}!MainWindow@{Main\-Window}}
+\subsubsection[{m\-\_\-current\-Proj\-File}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::m\-\_\-current\-Proj\-File\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_ade3f7ebe5eb1bf67444cd41b2bc38aca}
+Currently loaded project files. \hypertarget{classMainWindow_a3c61f9d7deec39afb315e57ef159ba18}{\index{Main\-Window@{Main\-Window}!m\-\_\-is\-State\-Changed@{m\-\_\-is\-State\-Changed}}
+\index{m\-\_\-is\-State\-Changed@{m\-\_\-is\-State\-Changed}!MainWindow@{Main\-Window}}
+\subsubsection[{m\-\_\-is\-State\-Changed}]{\setlength{\rightskip}{0pt plus 5cm}bool Main\-Window\-::m\-\_\-is\-State\-Changed\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a3c61f9d7deec39afb315e57ef159ba18}
+State to keep if Lib\-Man was changed or not. \hypertarget{classMainWindow_a494664d1901f3d94237411b34e7a2a16}{\index{Main\-Window@{Main\-Window}!m\-\_\-item\-Text@{m\-\_\-item\-Text}}
+\index{m\-\_\-item\-Text@{m\-\_\-item\-Text}!MainWindow@{Main\-Window}}
+\subsubsection[{m\-\_\-item\-Text}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::m\-\_\-item\-Text\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a494664d1901f3d94237411b34e7a2a16}
+Name of the last selected item. \hypertarget{classMainWindow_a22f004bec556234a5eb739cfa1819647}{\index{Main\-Window@{Main\-Window}!m\-\_\-properties@{m\-\_\-properties}}
+\index{m\-\_\-properties@{m\-\_\-properties}!MainWindow@{Main\-Window}}
+\subsubsection[{m\-\_\-properties}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Properties}$\ast$ Main\-Window\-::m\-\_\-properties\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a22f004bec556234a5eb739cfa1819647}
+A pointer to acess \hyperlink{classProperties}{Properties} collection with all settings. \hypertarget{classMainWindow_a4135ecd5a58b2679333740dddc8d2cf8}{\index{Main\-Window@{Main\-Window}!m\-\_\-recent\-Projects@{m\-\_\-recent\-Projects}}
+\index{m\-\_\-recent\-Projects@{m\-\_\-recent\-Projects}!MainWindow@{Main\-Window}}
+\subsubsection[{m\-\_\-recent\-Projects}]{\setlength{\rightskip}{0pt plus 5cm}Q\-List$<$Q\-Action$\ast$$>$ Main\-Window\-::m\-\_\-recent\-Projects\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a4135ecd5a58b2679333740dddc8d2cf8}
+List of existing recent project files. \hypertarget{classMainWindow_a9294c8737725afe7b0b7dcc311881959}{\index{Main\-Window@{Main\-Window}!m\-\_\-run\-Directory@{m\-\_\-run\-Directory}}
+\index{m\-\_\-run\-Directory@{m\-\_\-run\-Directory}!MainWindow@{Main\-Window}}
+\subsubsection[{m\-\_\-run\-Directory}]{\setlength{\rightskip}{0pt plus 5cm}Q\-String Main\-Window\-::m\-\_\-run\-Directory\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a9294c8737725afe7b0b7dcc311881959}
+Directory where Lib\-Man was executed. \hypertarget{classMainWindow_a5a3eb262660797d9a4d52ed16edb6d11}{\index{Main\-Window@{Main\-Window}!m\-\_\-ui@{m\-\_\-ui}}
+\index{m\-\_\-ui@{m\-\_\-ui}!MainWindow@{Main\-Window}}
+\subsubsection[{m\-\_\-ui}]{\setlength{\rightskip}{0pt plus 5cm}Ui\-::\-Main\-Window$\ast$ Main\-Window\-::m\-\_\-ui\hspace{0.3cm}{\ttfamily [private]}}}\label{classMainWindow_a5a3eb262660797d9a4d52ed16edb6d11}
+A pointer to acess \hyperlink{classProjectManager}{Project\-Manager} graphic items. 
+
+The documentation for this class was generated from the following files\-:\begin{DoxyCompactItemize}
+\item 
+mainwindow.\-h\item 
+categories.\-cpp\item 
+categorycontextmenu.\-cpp\item 
+groupcontextmenu.\-cpp\item 
+mainwindow.\-cpp\item 
+projectcontextmenu.\-cpp\item 
+projectfile.\-cpp\item 
+viewcontextmenu.\-cpp\end{DoxyCompactItemize}
