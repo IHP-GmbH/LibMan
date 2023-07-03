@@ -47,6 +47,12 @@ Example of project file:
 - QtCreator version of 4.0.3 (or later)
 - Doxygen version of 1.8.5 (or later)
 
+### Building project
+```bash
+qmake libman.pro
+make
+```
+
 ### Building project with QtCreator
 
 1. Open QtCreator and go to "Tools > Options > Kits"
