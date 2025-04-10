@@ -17,7 +17,7 @@ CONFIG += c++17
 DEFINES += QT_NO_DEPRECATED_WARNINGS
 
 # Allow large object files (fixes "too many sections" error)
-QMAKE_CXXFLAGS += -Wa,-mbig-obj
+win32:QMAKE_CXXFLAGS += -Wa,-mbig-obj
 
 # Reduce Debug symbols (optional, for Debug mode)
 QMAKE_CXXFLAGS += -g1
