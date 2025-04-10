@@ -26,7 +26,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        qmake ../LibMan.pro
+        qmake ../src/LibMan.pro
 
     - name: Build project
       run: |
