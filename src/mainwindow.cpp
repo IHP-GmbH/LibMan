@@ -1,6 +1,7 @@
 #include <QMenu>
 #include <QFile>
 #include <QDebug>
+#include <QScreen>
 #include <QProcess>
 #include <QVariant>
 #include <QFileInfo>
@@ -8,7 +9,8 @@
 #include <QMouseEvent>
 #include <QTextStream>
 #include <QFileDialog>
-#include <QDesktopWidget>
+#include <QGuiApplication>
+
 #include <QListWidgetItem>
 
 #if QT_VERSION >= 0x050000
@@ -130,8 +132,20 @@ void MainWindow::closeEvent(QCloseEvent *event)
         pdfReader = m_properties->get<QString>("PdfReader");
     }
 
-    settings.setValue("Schematic", schematic);
-    settings.setValue("Layout", layout);
+    if(m_properties->exists("ToolList")) {
+        QStringList tools = m_properties->get<QString>("ToolList").split(",");
+        settings.setValue("ToolList", tools);
+        foreach(const QString &name, tools) {
+            if(m_properties->exists(name)) {
+                settings.setValue(name, m_properties->get<QString>(name));
+            }
+
+            if(m_properties->exists(name + "Views")) {
+                settings.setValue(name + "Views", m_properties->get<QString>(name + "Views"));
+            }
+        }
+    }
+
     settings.setValue("Editor", editor);
     settings.setValue("PdfReader", pdfReader);
     settings.endGroup();
@@ -154,12 +168,15 @@ void MainWindow::checkAndSaveProjectData(QCloseEvent *event)
     msgBox.setDefaultButton(QMessageBox::Save);
 
     QString windowTitle = this->windowTitle();
-    if(windowTitle.contains("*")) {        
-#if QT_VERSION >= 0x050000
-        QScreen* pScreen = QGuiApplication::screenAt(this->mapToGlobal({this->width()/2,0}));
-        QRect screenRect = pScreen->availableGeometry();
+    if(windowTitle.contains("*")) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        QScreen* pScreen = QGuiApplication::screenAt(this->mapToGlobal(QPoint(this->width() / 2, 0)));
+        QRect screenRect = pScreen ? pScreen->availableGeometry() : QRect();
+#elif QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+        QScreen* pScreen = QGuiApplication::screenAt(this->mapToGlobal(QPoint(this->width() / 2, 0)));
+        QRect screenRect = pScreen ? pScreen->availableGeometry() : QRect();
 #else
-        QRect screenRect = QDesktopWidget().screen()->rect();
+        QRect screenRect = QApplication::desktop()->screenGeometry(this);
 #endif
 
         msgBox.move(QPoint(screenRect.width()/2, screenRect.height()/2));
@@ -203,18 +220,6 @@ void MainWindow::loadSettings()
 
     settings.beginGroup("Tools");
 
-    QString schematic = "nedit";
-    if(settings.contains("Schematic")) {
-        schematic = settings.value("Schematic").toString();
-    }
-    m_properties->set("Schematic", schematic);
-
-    QString layout = "klayout";
-    if(settings.contains("Layout")) {
-        layout = settings.value("Layout").toString();
-    }
-    m_properties->set("Layout", layout);
-
     QString editor = "nedit";
     if(settings.contains("Editor")) {
         editor = settings.value("Editor").toString();
@@ -225,6 +230,23 @@ void MainWindow::loadSettings()
     if(settings.contains("PdfReader")) {
         pdfReader = settings.value("PdfReader").toString();
     }
+
+    if(settings.contains("ToolList")) {
+        QStringList tools = settings.value("ToolList").toStringList();
+        if(tools.count()) {
+            m_properties->set("ToolList", tools.join(","));
+            foreach(const QString name, tools) {
+                if(settings.contains(name)) {
+                    QString tool = settings.value(name).toString();
+                    QString views = settings.value(name + "Views").toString();
+
+                    m_properties->set(name, tool);
+                    m_properties->set(name + "Views", views);
+                }
+            }
+        }
+    }
+
     m_properties->set("PdfReader", pdfReader);
 
     settings.endGroup();
@@ -459,14 +481,16 @@ QString MainWindow::getToolByView(const QString &viewName) const
 {
     QString tool;
 
-    if(viewName.toLower() == "gds") {
-        tool = m_properties->get<QString> ("Layout");
-    }
-    else if(viewName.toLower() == "cdl") {
-        tool = m_properties->get<QString> ("Schematic");
-    }
-    else {
-        tool = m_properties->get<QString> ("Editor");
+    QStringList tools = m_properties->get<QString>("ToolList").split(",");
+    foreach(const QString &name, tools) {
+        if(m_properties->exists(name + "Views")) {
+            QStringList views = m_properties->get<QString>(name + "Views").remove(" ").split(",");
+            if(views.contains(viewName)) {
+                if(m_properties->exists(name)) {
+                    return(m_properties->get<QString>(name));
+                }
+            }
+        }
     }
 
     return tool;
@@ -1149,6 +1173,7 @@ void MainWindow::on_listViews_itemDoubleClicked(QListWidgetItem *item)
         return;
     }
 
+    qDebug()<<viewName;
 
     QString tool = getToolByView(viewName);
     if(tool.isEmpty()) {

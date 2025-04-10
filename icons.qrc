@@ -6,5 +6,7 @@
         <file alias="exit">icons/exit.png</file>
         <file alias="pdf">icons/pdf.png</file>
         <file alias="logo">icons/logo.png</file>
+        <file alias="documents">icons/documents.png</file>
+        <file alias="categories">icons/categories.png</file>
     </qresource>
 </RCC>

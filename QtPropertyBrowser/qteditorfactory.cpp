@@ -66,6 +66,12 @@
 
 #include <QWidget>
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+#include <QRegExp>
+#else
+#include <QRegularExpression>
+#endif
+
 #if defined(Q_CC_MSVC)
 #    pragma warning(disable: 4786) /* MS VS 6: truncating debug info after 255 characters */
 #endif
@@ -927,7 +933,11 @@ class QtLineEditFactoryPrivate : public EditorFactoryPrivate<QLineEdit>
 public:
 
     void slotPropertyChanged(QtProperty *property, const QString &value);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     void slotRegExpChanged(QtProperty *property, const QRegExp &regExp);
+#else
+    void slotRegExpChanged(QtProperty *property, const QRegularExpression &regExp);
+#endif
     void slotSetValue(const QString &value);
 };
 
@@ -945,8 +955,11 @@ void QtLineEditFactoryPrivate::slotPropertyChanged(QtProperty *property,
     }
 }
 
-void QtLineEditFactoryPrivate::slotRegExpChanged(QtProperty *property,
-            const QRegExp &regExp)
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+void QtLineEditFactoryPrivate::slotRegExpChanged(QtProperty *property, const QRegExp &regExp)
+#else
+void QtLineEditFactoryPrivate::slotRegExpChanged(QtProperty *property, const QRegularExpression &regExp)
+#endif
 {
     if (!m_createdEditors.contains(property))
         return;
@@ -962,7 +975,11 @@ void QtLineEditFactoryPrivate::slotRegExpChanged(QtProperty *property,
         const QValidator *oldValidator = editor->validator();
         QValidator *newValidator = 0;
         if (regExp.isValid()) {
-            newValidator = new QRegExpValidator(regExp, editor);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+            newValidator = new QRegExpValidator(regExp, editor);  // Qt5
+#else
+            newValidator = new QRegularExpressionValidator(regExp, editor);  // Qt6
+#endif
         }
         editor->setValidator(newValidator);
         if (oldValidator)
@@ -1037,9 +1054,17 @@ QWidget *QtLineEditFactory::createEditor(QtStringPropertyManager *manager,
 {
 
     QLineEdit *editor = d_ptr->createEditor(property, parent);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QRegExp regExp = manager->regExp(property);
+#else
+    QRegularExpression regExp = manager->regExp(property);
+#endif
     if (regExp.isValid()) {
-        QValidator *validator = new QRegExpValidator(regExp, editor);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+        QValidator *validator = new QRegExpValidator(regExp, editor);  // Qt5
+#else
+        QValidator *validator = new QRegularExpressionValidator(regExp, editor);  // Qt6
+#endif
         editor->setValidator(validator);
     }
 
@@ -1567,7 +1592,11 @@ QtCharEdit::QtCharEdit(QWidget *parent)
 {
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->addWidget(m_lineEdit);
-    layout->setMargin(0);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    layout->setMargin(0);  // Qt5
+#else
+    layout->setContentsMargins(0, 0, 0, 0);  // Qt6
+#endif
     m_lineEdit->installEventFilter(this);    
     m_lineEdit->setReadOnly(true);
     m_lineEdit->setFocusProxy(this);

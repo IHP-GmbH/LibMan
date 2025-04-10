@@ -1,5 +1,6 @@
 #include <QMenu>
 #include <QFile>
+#include <QScreen>
 #include <QProcess>
 #include <QVariant>
 #include <QFileInfo>
@@ -8,7 +9,7 @@
 #include <QMouseEvent>
 #include <QTextStream>
 #include <QFileDialog>
-#include <QDesktopWidget>
+#include <QGuiApplication>
 #include <QListWidgetItem>
 
 #include "mainwindow.h"

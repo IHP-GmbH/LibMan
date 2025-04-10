@@ -454,7 +454,11 @@ static QIcon drawIndicatorIcon(const QPalette &palette, QStyle *style)
 void QtTreePropertyBrowserPrivate::init(QWidget *parent)
 {
     QHBoxLayout *layout = new QHBoxLayout(parent);
-    layout->setMargin(0);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    layout->setMargin(0);  // Qt5
+#else
+    layout->setContentsMargins(0, 0, 0, 0);  // Qt6
+#endif
     m_treeWidget = new QtPropertyEditorView(parent);
     m_treeWidget->setEditorPrivate(this);
     m_treeWidget->setIconSize(QSize(18, 18));

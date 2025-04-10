@@ -11,6 +11,17 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = libman
 TEMPLATE = app
 
+# Enable C++17
+CONFIG += c++17
+
+DEFINES += QT_NO_DEPRECATED_WARNINGS
+
+# Allow large object files (fixes "too many sections" error)
+QMAKE_CXXFLAGS += -Wa,-mbig-obj
+
+# Reduce Debug symbols (optional, for Debug mode)
+QMAKE_CXXFLAGS += -g1
+
 
 SOURCES += src/main.cpp\
         src/mainwindow.cpp \
@@ -31,6 +42,7 @@ SOURCES += src/main.cpp\
     gds/gdsreader.cpp \
     src/projectmanager.cpp \
     src/property.cpp \
+    src/toolcustomtool.cpp \
     src/toolmanager.cpp \
     src/projectfile.cpp \
     src/categories.cpp \

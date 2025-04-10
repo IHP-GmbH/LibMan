@@ -17,7 +17,11 @@ FileEdit::FileEdit(QWidget *parent, TYPE type)
       type(type)
 {
     QHBoxLayout *layout = new QHBoxLayout(this);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     layout->setMargin(0);
+#else
+    layout->setContentsMargins(0, 0, 0, 0);
+#endif
     layout->setSpacing(0);
     theLineEdit = new QLineEditD2(this);    
     theLineEdit->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred));

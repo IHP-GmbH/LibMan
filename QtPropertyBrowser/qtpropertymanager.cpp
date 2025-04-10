@@ -1270,11 +1270,24 @@ public:
 
     struct Data
     {
-        Data() : regExp(QString(QLatin1Char('*')),  Qt::CaseSensitive, QRegExp::Wildcard)
+    #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+        Data() : regExp(QString(QLatin1Char('*')), Qt::CaseSensitive, QRegExp::Wildcard)
         {
         }
+    #else
+        Data()
+        {
+            // Convert wildcard pattern to QRegularExpression
+            regExp = QRegularExpression::fromWildcard(QString(QLatin1Char('*')), Qt::CaseSensitive, QRegularExpression::DefaultWildcardConversion);
+        }
+    #endif
+
         QString val;
+    #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         QRegExp regExp;
+    #else
+        QRegularExpression regExp;
+    #endif
         QColor color;
     };
 
@@ -1362,10 +1375,18 @@ QString QtStringPropertyManager::value(const QtProperty *property) const
 
     \sa setRegExp()
 */
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 QRegExp QtStringPropertyManager::regExp(const QtProperty *property) const
 {
     return getData<QRegExp>(d_ptr->m_values, &QtStringPropertyManagerPrivate::Data::regExp, property, QRegExp());
 }
+#else
+QRegularExpression QtStringPropertyManager::regExp(const QtProperty *property) const
+{
+    return getData<QRegularExpression>(d_ptr->m_values, &QtStringPropertyManagerPrivate::Data::regExp, property, QRegularExpression());
+}
+#endif
+
 
 /*!
     \reimp
@@ -1401,8 +1422,14 @@ void QtStringPropertyManager::setValue(QtProperty *property, const QString &val)
     if (data.val == val)
         return;
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     if (data.regExp.isValid() && !data.regExp.exactMatch(val))
         return;
+#else
+    if (data.regExp.isValid() && !data.regExp.match(val).hasMatch())
+        return;
+#endif
+
 
     data.val = val;
 
@@ -1417,23 +1444,42 @@ void QtStringPropertyManager::setValue(QtProperty *property, const QString &val)
 
     \sa regExp(), setValue(), regExpChanged()
 */
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 void QtStringPropertyManager::setRegExp(QtProperty *property, const QRegExp &regExp)
 {
     const QtStringPropertyManagerPrivate::PropertyValueMap::iterator it = d_ptr->m_values.find(property);
     if (it == d_ptr->m_values.end())
         return;
 
-    QtStringPropertyManagerPrivate::Data data = it.value() ;
+    QtStringPropertyManagerPrivate::Data data = it.value();
 
     if (data.regExp == regExp)
         return;
 
     data.regExp = regExp;
-
     it.value() = data;
 
     emit regExpChanged(property, data.regExp);
 }
+#else
+void QtStringPropertyManager::setRegExp(QtProperty *property, const QRegularExpression &regExp)
+{
+    const QtStringPropertyManagerPrivate::PropertyValueMap::iterator it = d_ptr->m_values.find(property);
+    if (it == d_ptr->m_values.end())
+        return;
+
+    QtStringPropertyManagerPrivate::Data data = it.value();
+
+    if (data.regExp == regExp)
+        return;
+
+    data.regExp = regExp;
+    it.value() = data;
+
+    emit regExpChanged(property, data.regExp);
+}
+#endif
+
 
 /*!
     \reimp
@@ -5924,8 +5970,14 @@ void QtFontPropertyManager::setValue(QtProperty *property, const QFont &val)
         return;
 
     const QFont oldVal = it.value();
-    if (oldVal == val && oldVal.resolve() == val.resolve())
-        return;
+
+    #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+        if (oldVal == val && oldVal.resolve() == val.resolve()) // Qt5
+    #else
+        if (oldVal == val)  // Qt6 (No resolve())
+    #endif
+            return;
+
 
     it.value() = val;
 

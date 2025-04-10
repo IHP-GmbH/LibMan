@@ -15,6 +15,34 @@
 #include "property.h"
 
 /*!******************************************************************************************************************
+ * \brief Expands shell-style environment variables in a given path string.
+ *
+ * This function replaces variables like $VAR and ${VAR} with their actual values
+ * from the current system environment (e.g. $HOME -> /home/user).
+ *
+ * \param path         Input path containing shell-style variables.
+ * \return             A string with all environment variables expanded.
+ *******************************************************************************************************************/
+QString MainWindow::expandShellVariables(const QString& path) const
+{
+    QString result = path;
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+
+    // Handle ${VAR} and $VAR
+    QRegularExpression re(R"(\$(\{([^}]+)\}|([A-Za-z_][A-Za-z0-9_]*)))");
+    QRegularExpressionMatchIterator it = re.globalMatch(result);
+
+    while (it.hasNext()) {
+        QRegularExpressionMatch match = it.next();
+        QString varName = match.captured(2).isEmpty() ? match.captured(3) : match.captured(2);
+        QString varValue = env.value(varName);
+        result.replace(match.captured(0), varValue);
+    }
+
+    return result;
+}
+
+/*!******************************************************************************************************************
  * \brief Loads project file contence into LibMan.
  * \param fileName     Path to the file to be loaded.
  *******************************************************************************************************************/
@@ -64,7 +92,7 @@ void MainWindow::loadProjectFile(const QString &fileName)
             #endif
             if(words.count() == 3) {
                 QString libName = words[1];
-                QString libPath = words[2];
+                QString libPath = expandShellVariables(words[2]);
 
                 if(!libName.isEmpty() && QFileInfo(libPath).exists() && QFileInfo(libPath).isDir()) {
                     QString key = getLibraryKeyPrefix() + libName;

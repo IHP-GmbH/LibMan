@@ -158,6 +158,7 @@ private:
     QString                             getLibraryKeyPrefix() const;
 
     QString                             getProjectFileFromDir(const QString &) const;
+    QString                             expandShellVariables(const QString& path) const;
 
     QString                             generateCopyName(const QString &, const QString &, const QString &suffix = "") const;
 

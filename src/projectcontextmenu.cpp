@@ -1,13 +1,14 @@
 #include <QMenu>
 #include <QFile>
 #include <QDebug>
+#include <QScreen>
 #include <QDateTime>
 #include <QFileInfo>
 #include <QSettings>
 #include <QMouseEvent>
 #include <QTextStream>
 #include <QFileDialog>
-#include <QDesktopWidget>
+#include <QGuiApplication>
 #include <QListWidgetItem>
 
 #if QT_VERSION >= 0x050000
@@ -92,12 +93,19 @@ bool MainWindow::askUserForAction(const QString &title) const
     msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     msgBox.setDefaultButton(QMessageBox::No);
 
-#if QT_VERSION >= 0x050000
-    QScreen* pScreen = QGuiApplication::screenAt(this->mapToGlobal({this->width()/2,0}));
-    QRect screenRect = pScreen->availableGeometry();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QScreen* pScreen = QGuiApplication::screenAt(this->mapToGlobal(QPoint(this->width() / 2, 0)));
+    QRect screenRect = pScreen ? pScreen->availableGeometry() : QRect();
+#elif QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    QScreen* pScreen = QGuiApplication::screenAt(this->mapToGlobal(QPoint(this->width() / 2, 0)));
+    QRect screenRect = pScreen ? pScreen->availableGeometry() : QRect();
+#elif QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    QDesktopWidget desktop;
+    QRect screenRect = desktop.screenGeometry(this);
 #else
     QRect screenRect = QDesktopWidget().screen()->rect();
 #endif
+
 
     msgBox.move(QPoint(screenRect.width()/2, screenRect.height()/2));
 

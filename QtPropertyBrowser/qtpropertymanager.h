@@ -180,14 +180,27 @@ public:
     ~QtStringPropertyManager();
 
     QString value(const QtProperty *property) const;
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QRegExp regExp(const QtProperty *property) const;
+#else
+    QRegularExpression regExp(const QtProperty *property) const;
+#endif
+
 
 public Q_SLOTS:
     void setValue(QtProperty *property, const QString &val);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     void setRegExp(QtProperty *property, const QRegExp &regExp);
+#else
+    void setRegExp(QtProperty *property, const QRegularExpression &regExp);
+#endif
 Q_SIGNALS:
     void valueChanged(QtProperty *property, const QString &val);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     void regExpChanged(QtProperty *property, const QRegExp &regExp);
+#else
+    void regExpChanged(QtProperty *property, const QRegularExpression &regExp);
+#endif
 protected:
     QString valueText(const QtProperty *property) const;
     virtual void initializeProperty(QtProperty *property);
