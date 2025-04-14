@@ -1,12 +1,15 @@
 #include <QMenu>
 #include <QFile>
+#include <QDebug>
 #include <QScreen>
+#include <QProcess>
 #include <QDateTime>
 #include <QFileInfo>
 #include <QSettings>
 #include <QMouseEvent>
 #include <QTextStream>
 #include <QFileDialog>
+#include <QInputDialog>
 #include <QGuiApplication>
 #include <QListWidgetItem>
 

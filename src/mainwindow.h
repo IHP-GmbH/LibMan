@@ -85,6 +85,14 @@ private slots:
     void                                saveProjectFile(const QString &);
     void                                setRecentProject(const QString &);
 
+    void                                gitShowStatus();
+    void                                gitCommitChanges();
+    void                                gitShowLog();
+    void                                gitShowDiff();
+    void                                gitPull();
+    void                                gitPush();
+    void                                gitCheckout();
+
     void                                on_actionSave_triggered();
     void                                on_actionSave_As_triggered();
     void                                on_actionExit_triggered();
@@ -172,6 +180,7 @@ private:
     QString                             getCurrentProjectFile() const;
     QString                             getCurrentLibraryPath() const;
     QString                             getCurrentCategoryName() const;
+    QString                             getCurrentGitPathForView() const;
     QString                             getCurrentViewFilePath(const QString &) const;
     QString                             getCurrentDocumentFilePath(const QString &) const;
     QString                             getCurrentGroupPath(const QString &viewName, bool toBeCreated = false);

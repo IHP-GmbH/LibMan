@@ -1,19 +1,21 @@
 #include <QMenu>
 #include <QFile>
+#include <QDebug>
 #include <QScreen>
+#include <QProcess>
 #include <QDateTime>
 #include <QFileInfo>
 #include <QSettings>
 #include <QMouseEvent>
 #include <QTextStream>
 #include <QFileDialog>
+#include <QInputDialog>
 #include <QGuiApplication>
 #include <QListWidgetItem>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include "property.h"
 #include "gds/gdsreader.h"
 
 /*!*********************************************************************************************************************
@@ -86,6 +88,36 @@ void MainWindow::showViewMenu(const QPoint &pos)
         connect(viewInfo, SIGNAL(triggered()), this, SLOT(showViewInfo()));
         menu->addAction(viewInfo);
     }
+
+    QMenu *gitMenu = menu->addMenu("Git");
+
+    QAction *gitStatus = new QAction(tr("Status"), this);
+    connect(gitStatus, SIGNAL(triggered()), this, SLOT(gitShowStatus()));
+    gitMenu->addAction(gitStatus);
+
+    QAction *gitCommit = new QAction(tr("Commit"), this);
+    connect(gitCommit, SIGNAL(triggered()), this, SLOT(gitCommitChanges()));
+    gitMenu->addAction(gitCommit);
+
+    QAction *gitLog = new QAction(tr("Log"), this);
+    connect(gitLog, SIGNAL(triggered()), this, SLOT(gitShowLog()));
+    gitMenu->addAction(gitLog);
+
+    QAction *gitDiff = new QAction(tr("Diff"), this);
+    connect(gitDiff, SIGNAL(triggered()), this, SLOT(gitShowDiff()));
+    gitMenu->addAction(gitDiff);
+
+    QAction *gitPull = new QAction(tr("Pull"), this);
+    connect(gitPull, SIGNAL(triggered()), this, SLOT(gitPull()));
+    gitMenu->addAction(gitPull);
+
+    QAction *gitPush = new QAction(tr("Push"), this);
+    connect(gitPush, SIGNAL(triggered()), this, SLOT(gitPush()));
+    gitMenu->addAction(gitPush);
+
+    QAction *gitCheckout = new QAction(tr("Checkout..."), this);
+    connect(gitCheckout, SIGNAL(triggered()), this, SLOT(gitCheckout()));
+    gitMenu->addAction(gitCheckout);
 
     menu->popup(QCursor::pos());
     menu->exec();
@@ -322,3 +354,142 @@ void MainWindow::showViewInfo()
     showFolderInfo("View", viewName, viewPath);
 }
 
+/*!*********************************************************************************************************************
+ * \brief Returns the absolute directory path of the currently selected view file.
+ *
+ * This path is used as the working directory for Git operations related to the active view.
+ * If no item is selected, the user's home directory is returned as a fallback.
+ *
+ * \return Absolute path to the view file's parent directory, or QDir::homePath() if no item is selected.
+ **********************************************************************************************************************/
+QString MainWindow::getCurrentGitPathForView() const
+{
+    QListWidgetItem *item = m_ui->listViews->currentItem();
+    if(!item) {
+        return QDir::homePath();
+    }
+
+    return(QFileInfo(getCurrentViewFilePath(item->text())).absolutePath());
+}
+
+/*!*********************************************************************************************************************
+ * \brief Shows the current Git status for the active library.
+ **********************************************************************************************************************/
+void MainWindow::gitShowStatus()
+{
+    QListWidgetItem *item = m_ui->listViews->currentItem();
+    if(!item) {
+        return;
+    }
+
+    QProcess git;
+    git.setWorkingDirectory(getCurrentGitPathForView());
+    git.start("git", QStringList() << "status");
+    git.waitForFinished();
+
+    QString output = git.readAllStandardOutput();
+    info(output, true);
+}
+
+/*!*********************************************************************************************************************
+ * \brief Commits changes in the active library with a message entered by the user.
+ *        Automatically stages all changes before committing.
+ **********************************************************************************************************************/
+void MainWindow::gitCommitChanges()
+{
+    bool ok;
+    QString message = QInputDialog::getText(this, tr("Commit Message"),
+                                            tr("Enter commit message:"), QLineEdit::Normal,
+                                            "", &ok);
+    if (!ok || message.isEmpty())
+        return;
+
+    QProcess git;
+    git.setWorkingDirectory(getCurrentGitPathForView());
+
+    git.start("git", QStringList() << "add" << ".");
+    git.waitForFinished();
+
+    git.start("git", QStringList() << "commit" << "-m" << message);
+    git.waitForFinished();
+
+    QString output = git.readAllStandardOutput() + git.readAllStandardError();
+    info(output, true);
+}
+
+/*!*********************************************************************************************************************
+ * \brief Displays the recent Git commit log for the active library.
+ **********************************************************************************************************************/
+void MainWindow::gitShowLog()
+{
+    QProcess git;
+    git.setWorkingDirectory(getCurrentGitPathForView());
+    git.start("git", QStringList() << "log" << "--oneline" << "-n" << "10");
+    git.waitForFinished();
+
+    QString output = git.readAllStandardOutput();
+    info(output, true);
+}
+
+/*!*********************************************************************************************************************
+ * \brief Shows unstaged changes in the active library using 'git diff'.
+ **********************************************************************************************************************/
+void MainWindow::gitShowDiff()
+{
+    QProcess git;
+    git.setWorkingDirectory(getCurrentGitPathForView());
+    git.start("git", QStringList() << "diff");
+    git.waitForFinished();
+
+    QString output = git.readAllStandardOutput();
+    info(output, true);
+}
+
+/*!*********************************************************************************************************************
+ * \brief Performs a 'git pull' to update the active library with remote changes.
+ **********************************************************************************************************************/
+void MainWindow::gitPull()
+{
+    QProcess git;
+    git.setWorkingDirectory(getCurrentGitPathForView());
+    git.start("git", QStringList() << "pull");
+    git.waitForFinished();
+
+    QString output = git.readAllStandardOutput() + git.readAllStandardError();
+    info(output, true);
+}
+
+/*!*********************************************************************************************************************
+ * \brief Pushes local commits in the active library to the remote repository.
+ **********************************************************************************************************************/
+void MainWindow::gitPush()
+{
+    QProcess git;
+    git.setWorkingDirectory(getCurrentGitPathForView());
+    git.start("git", QStringList() << "push");
+    git.waitForFinished();
+
+    QString output = git.readAllStandardOutput() + git.readAllStandardError();
+    info(output, true);
+}
+
+/*!*********************************************************************************************************************
+ * \brief Allows user to checkout a branch by name using 'git checkout'.
+ **********************************************************************************************************************/
+void MainWindow::gitCheckout()
+{
+    bool ok;
+    QString branch = QInputDialog::getText(this, tr("Checkout Branch"),
+                                           tr("Enter branch name:"), QLineEdit::Normal,
+                                           "", &ok);
+    if (!ok || branch.isEmpty())
+        return;
+
+    QProcess git;
+    git.setWorkingDirectory(getCurrentGitPathForView());
+    git.start("git", QStringList() << "checkout" << branch);
+    git.waitForFinished();
+
+    QString output = git.readAllStandardOutput() + git.readAllStandardError();
+    info(output, true);
+}
