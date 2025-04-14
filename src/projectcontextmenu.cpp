@@ -283,6 +283,36 @@ void MainWindow::showLibraryMenu(const QPoint &pos)
         }
     }
 
+    QMenu *gitMenu = menu->addMenu("Git");
+
+    QAction *gitStatus = new QAction(tr("Status"), this);
+    connect(gitStatus, SIGNAL(triggered()), this, SLOT(gitShowStatus()));
+    gitMenu->addAction(gitStatus);
+
+    QAction *gitCommit = new QAction(tr("Commit"), this);
+    connect(gitCommit, SIGNAL(triggered()), this, SLOT(gitCommitChanges()));
+    gitMenu->addAction(gitCommit);
+
+    QAction *gitLog = new QAction(tr("Log"), this);
+    connect(gitLog, SIGNAL(triggered()), this, SLOT(gitShowLog()));
+    gitMenu->addAction(gitLog);
+
+    QAction *gitDiff = new QAction(tr("Diff"), this);
+    connect(gitDiff, SIGNAL(triggered()), this, SLOT(gitShowDiff()));
+    gitMenu->addAction(gitDiff);
+
+    QAction *gitPull = new QAction(tr("Pull"), this);
+    connect(gitPull, SIGNAL(triggered()), this, SLOT(gitPull()));
+    gitMenu->addAction(gitPull);
+
+    QAction *gitPush = new QAction(tr("Push"), this);
+    connect(gitPush, SIGNAL(triggered()), this, SLOT(gitPush()));
+    gitMenu->addAction(gitPush);
+
+    QAction *gitCheckout = new QAction(tr("Checkout..."), this);
+    connect(gitCheckout, SIGNAL(triggered()), this, SLOT(gitCheckout()));
+    gitMenu->addAction(gitCheckout);
+
     menu->popup(QCursor::pos());
     menu->exec();
 

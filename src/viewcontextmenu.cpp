@@ -355,18 +355,34 @@ void MainWindow::showViewInfo()
 }
 
 /*!*********************************************************************************************************************
- * \brief Returns the absolute directory path of the currently selected view file.
+ * \brief Returns the most relevant directory path for Git operations based on the current selection.
  *
- * This path is used as the working directory for Git operations related to the active view.
- * If no item is selected, the user's home directory is returned as a fallback.
+ * This function checks the currently selected item in the following order:
+ * - View item (from listViews): returns the parent directory of the selected view file.
+ * - Group item (from listGroups): returns the parent directory of the selected group view file.
+ * - Library item (from treeLibs): returns the current library path.
  *
- * \return Absolute path to the view file's parent directory, or QDir::homePath() if no item is selected.
+ * If none of the above are selected, the user's home directory is returned as a fallback.
+ *
+ * \return A directory path suitable as a working directory for Git operations.
  **********************************************************************************************************************/
-QString MainWindow::getCurrentGitPathForView() const
+QString MainWindow::getCurrentGitPathForItem() const
 {
     QListWidgetItem *item = m_ui->listViews->currentItem();
     if(!item) {
-        return QDir::homePath();
+        QListWidgetItem *item = m_ui->listGroups->currentItem();
+        if(!item) {
+            QTreeWidgetItem *libItem = m_ui->treeLibs->currentItem();
+            if(libItem) {
+                return(getCurrentLibraryPath());
+            }
+            else {
+                QDir::homePath();
+            }
+        }
+        else {
+            return(QFileInfo(getCurrentViewFilePath(item->text())).absolutePath());
+        }
     }
 
     return(QFileInfo(getCurrentViewFilePath(item->text())).absolutePath());
@@ -377,13 +393,8 @@ QString MainWindow::getCurrentGitPathForView() const
  **********************************************************************************************************************/
 void MainWindow::gitShowStatus()
 {
-    QListWidgetItem *item = m_ui->listViews->currentItem();
-    if(!item) {
-        return;
-    }
-
     QProcess git;
-    git.setWorkingDirectory(getCurrentGitPathForView());
+    git.setWorkingDirectory(getCurrentGitPathForItem());
     git.start("git", QStringList() << "status");
     git.waitForFinished();
 
@@ -405,7 +416,7 @@ void MainWindow::gitCommitChanges()
         return;
 
     QProcess git;
-    git.setWorkingDirectory(getCurrentGitPathForView());
+    git.setWorkingDirectory(getCurrentGitPathForItem());
 
     git.start("git", QStringList() << "add" << ".");
     git.waitForFinished();
@@ -423,7 +434,7 @@ void MainWindow::gitCommitChanges()
 void MainWindow::gitShowLog()
 {
     QProcess git;
-    git.setWorkingDirectory(getCurrentGitPathForView());
+    git.setWorkingDirectory(getCurrentGitPathForItem());
     git.start("git", QStringList() << "log" << "--oneline" << "-n" << "10");
     git.waitForFinished();
 
@@ -437,7 +448,7 @@ void MainWindow::gitShowLog()
 void MainWindow::gitShowDiff()
 {
     QProcess git;
-    git.setWorkingDirectory(getCurrentGitPathForView());
+    git.setWorkingDirectory(getCurrentGitPathForItem());
     git.start("git", QStringList() << "diff");
     git.waitForFinished();
 
@@ -451,7 +462,7 @@ void MainWindow::gitShowDiff()
 void MainWindow::gitPull()
 {
     QProcess git;
-    git.setWorkingDirectory(getCurrentGitPathForView());
+    git.setWorkingDirectory(getCurrentGitPathForItem());
     git.start("git", QStringList() << "pull");
     git.waitForFinished();
 
@@ -465,7 +476,7 @@ void MainWindow::gitPull()
 void MainWindow::gitPush()
 {
     QProcess git;
-    git.setWorkingDirectory(getCurrentGitPathForView());
+    git.setWorkingDirectory(getCurrentGitPathForItem());
     git.start("git", QStringList() << "push");
     git.waitForFinished();
 
@@ -486,7 +497,7 @@ void MainWindow::gitCheckout()
         return;
 
     QProcess git;
-    git.setWorkingDirectory(getCurrentGitPathForView());
+    git.setWorkingDirectory(getCurrentGitPathForItem());
     git.start("git", QStringList() << "checkout" << branch);
     git.waitForFinished();
 

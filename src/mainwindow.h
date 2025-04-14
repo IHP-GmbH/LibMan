@@ -180,7 +180,7 @@ private:
     QString                             getCurrentProjectFile() const;
     QString                             getCurrentLibraryPath() const;
     QString                             getCurrentCategoryName() const;
-    QString                             getCurrentGitPathForView() const;
+    QString                             getCurrentGitPathForItem() const;
     QString                             getCurrentViewFilePath(const QString &) const;
     QString                             getCurrentDocumentFilePath(const QString &) const;
     QString                             getCurrentGroupPath(const QString &viewName, bool toBeCreated = false);
