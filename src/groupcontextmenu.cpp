@@ -14,6 +14,7 @@
 #include "ui_mainwindow.h"
 
 #include "property.h"
+#include "gds/gdsreader.h"
 
 /*!*********************************************************************************************************************
  * \brief Displays menu for group (cell) widget.
@@ -223,4 +224,57 @@ void MainWindow::addGroupToBeCopied(const QString &groupName, const QString &gro
 {
     m_copyData<<groupName<<groupPath;
     m_currentCopyState = GROUP;
+}
+
+/*!*******************************************************************************************************************
+ * \brief Handles expansion of a view item in the view tree widget.
+ *
+ * This slot is triggered when a tree item is expanded by the user.
+ * It lazily loads GDS hierarchy for the "gds" view:
+ *  - parses the GDS file only on first expansion,
+ *  - inserts top-level GDS cells as child items,
+ *  - marks cells with children as expandable.
+ *
+ * Non-GDS items and already populated items are ignored.
+ *
+ * \param item     Pointer to the expanded tree widget item.
+ **********************************************************************************************************************/
+void MainWindow::on_viewItemExpanded(QTreeWidgetItem *item)
+{
+    if (!item) {
+        return;
+    }
+
+    // Only react on GDS view node
+    if (item->text(0) != "gds") {
+        return;
+    }
+
+    // Lazy loading: hierarchy already created
+    if (item->childCount() > 0) {
+        return;
+    }
+
+    const QString gdsPath = item->data(0, RoleGdsPath).toString();
+    GdsReader reader(gdsPath);
+
+    GdsReader::GdsHierarchy hierarchy;
+    if (!reader.readHierarchy(hierarchy)) {
+        for (const QString &err : reader.getErrors()) {
+            error(err, false);
+        }
+        return;
+    }
+
+    for (const QString &topCell : hierarchy.topCells) {
+        QTreeWidgetItem *cellItem = new QTreeWidgetItem(item);
+        cellItem->setText(0, topCell);
+        cellItem->setData(0, RoleType, ItemCell);
+        cellItem->setData(0, RoleCellName, topCell);
+
+        if (hierarchy.children.contains(topCell) &&
+            !hierarchy.children[topCell].isEmpty()) {
+            cellItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+        }
+    }
 }

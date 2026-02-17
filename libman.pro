@@ -48,7 +48,7 @@ SOURCES += src/main.cpp\
     src/categories.cpp \
     src/viewcontextmenu.cpp \
     src/groupcontextmenu.cpp \
-    src/projectcontextmenu.cpp \    
+    src/projectcontextmenu.cpp \
     src/categorycontextmenu.cpp \
     src/about.cpp \
     src/newview.cpp
@@ -71,7 +71,7 @@ HEADERS  += src/mainwindow.h \
     gds/gdsreader.h \
     src/projectmanager.h \
     src/property.h \
-    src/toolmanager.h \    
+    src/toolmanager.h \
     src/about.h \
     src/newview.h
 

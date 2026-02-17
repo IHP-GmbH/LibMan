@@ -71,7 +71,7 @@ void MainWindow::showViewMenu(const QPoint &pos)
         }
     }
 
-    QList<QListWidgetItem *> items = m_ui->listViews->selectedItems();
+    QList<QTreeWidgetItem *> items = m_ui->listViews->selectedItems();
     if(items.count()) {
         QAction *copyView = new QAction(tr("&Copy"), this);
         copyView->setStatusTip(tr("Copy view."));
@@ -152,12 +152,11 @@ void MainWindow::addNewSpiceView()
 
     QString viewPath = QDir::toNativeSeparators(groupPath + "/" + groupName + ".spice");
     if(createNewFile(viewPath)) {
-        QListWidgetItem *viewId = new QListWidgetItem;
-        viewId->setText("spice");
-        m_ui->listViews->addItem(viewId);
+        QTreeWidgetItem *viewItem = new QTreeWidgetItem(m_ui->listViews);
+        viewItem->setText(0, "spice");
     }
 
-    m_ui->listViews->sortItems();
+    m_ui->listViews->sortItems(0, Qt::AscendingOrder);
 }
 
 /*!*********************************************************************************************************************
@@ -198,17 +197,15 @@ void MainWindow::addNewLayoutView()
         foreach(const QString &explain, errors) {
             error(explain, false);
         }
-
         return;
     }
 
     if(QFileInfo(viewPath).exists()) {
-        QListWidgetItem *viewId = new QListWidgetItem;
-        viewId->setText("gds");
-        m_ui->listViews->addItem(viewId);
+        QTreeWidgetItem *viewItem = new QTreeWidgetItem(m_ui->listViews);
+        viewItem->setText(0, "gds");
     }
 
-    m_ui->listViews->sortItems();
+    m_ui->listViews->sortItems(0, Qt::AscendingOrder);
 }
 
 /*!*********************************************************************************************************************
@@ -238,12 +235,11 @@ void MainWindow::addNewSchematicView()
 
     QString viewPath = QDir::toNativeSeparators(groupPath + "/" + groupName + ".cdl");
     if(createNewFile(viewPath)) {
-        QListWidgetItem *viewId = new QListWidgetItem;
-        viewId->setText("cdl");
-        m_ui->listViews->addItem(viewId);
+        QTreeWidgetItem *viewItem = new QTreeWidgetItem(m_ui->listViews);
+        viewItem->setText(0, "cdl");
     }
 
-    m_ui->listViews->sortItems();
+    m_ui->listViews->sortItems(0, Qt::AscendingOrder);
 }
 
 /*!*********************************************************************************************************************
@@ -300,7 +296,7 @@ void MainWindow::removeSelectedView()
         return;
     }
 
-    QList<QListWidgetItem *> items = m_ui->listViews->selectedItems();
+    QList<QTreeWidgetItem*> items = m_ui->listViews->selectedItems();
     if(!items.count()) {
         return;
     }
@@ -308,25 +304,42 @@ void MainWindow::removeSelectedView()
     bool deleteFiles = askForPermanentDelete();
 
     for(int i = 0; i < items.count(); ++i) {
-        QString refText = items[i]->text();
-        for(int j = 0; j < m_ui->listViews->count(); ++j) {
-            QListWidgetItem *item = m_ui->listViews->item(j);
-            if(refText == item->text()) {
-                if(deleteFiles) {
-                    QString viewPath = getViewPath(libPath, groupName, refText);
-                    if(QFileInfo(viewPath).exists()) {
-                        info(QString("Removing view '%1'").arg(viewPath));
-                        QFile::remove(viewPath);
-                    }
-                }
+        QTreeWidgetItem *item = items[i];
+        if(!item) {
+            continue;
+        }
 
-                m_ui->listViews->takeItem(j);
-                break;
+        QString refText = item->text(0);
+        if(refText.isEmpty()) {
+            continue;
+        }
+
+        if(deleteFiles) {
+            QString viewPath = getViewPath(libPath, groupName, refText);
+            if(QFileInfo(viewPath).exists()) {
+                info(QString("Removing view '%1'").arg(viewPath));
+                QFile::remove(viewPath);
+            }
+        }
+
+        QTreeWidgetItem *parent = item->parent();
+        if(parent) {
+            parent->removeChild(item);
+            delete item;
+        }
+        else {
+            int idx = m_ui->listViews->indexOfTopLevelItem(item);
+            if(idx >= 0) {
+                QTreeWidgetItem *taken = m_ui->listViews->takeTopLevelItem(idx);
+                delete taken;
+            }
+            else {
+                delete item;
             }
         }
     }
 
-    m_ui->listViews->sortItems();
+    m_ui->listViews->sortItems(0, Qt::AscendingOrder);
 }
 
 /*!*********************************************************************************************************************
@@ -368,25 +381,40 @@ void MainWindow::showViewInfo()
  **********************************************************************************************************************/
 QString MainWindow::getCurrentGitPathForItem() const
 {
-    QListWidgetItem *item = m_ui->listViews->currentItem();
-    if(!item) {
-        QListWidgetItem *item = m_ui->listGroups->currentItem();
-        if(!item) {
-            QTreeWidgetItem *libItem = m_ui->treeLibs->currentItem();
-            if(libItem) {
-                return(getCurrentLibraryPath());
-            }
-            else {
-                QDir::homePath();
+    if (QTreeWidgetItem *viewItem = m_ui->listViews->currentItem()) {
+
+        if (viewItem->data(0, RoleType).toInt() == ItemCell) {
+            QTreeWidgetItem *parent = viewItem->parent();
+            if (parent) {
+                viewItem = parent;
             }
         }
-        else {
-            return(QFileInfo(getCurrentViewFilePath(item->text())).absolutePath());
+
+        const QString viewName = viewItem->text(0);
+        const QString viewPath = getCurrentViewFilePath(viewName);
+
+        if (!viewPath.isEmpty()) {
+            return QFileInfo(viewPath).absolutePath();
         }
     }
 
-    return(QFileInfo(getCurrentViewFilePath(item->text())).absolutePath());
+    if (QListWidgetItem *groupItem = m_ui->listGroups->currentItem()) {
+        const QString groupName = groupItem->text();
+        const QString libPath   = getCurrentLibraryPath();
+
+        if (!libPath.isEmpty() && !groupName.isEmpty()) {
+            return QFileInfo(libPath + "/" + groupName).absolutePath();
+        }
+    }
+
+    if (QTreeWidgetItem *libItem = m_ui->treeLibs->currentItem()) {
+        Q_UNUSED(libItem);
+        return getCurrentLibraryPath();
+    }
+
+    return QDir::homePath();
 }
+
 
 /*!*********************************************************************************************************************
  * \brief Shows the current Git status for the active library.

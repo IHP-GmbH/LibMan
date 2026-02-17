@@ -440,7 +440,6 @@ void MainWindow::pasteSelectedData()
 
             info(QString("Coping view '%1' to '%2'...").arg(src).arg(tar));
 
-
             QFile::copy(src, tar);
 
             if(QFileInfo(tar).exists()) {
@@ -457,9 +456,14 @@ void MainWindow::pasteSelectedData()
                 m_ui->listGroups->addItem(itemGroup);
                 m_ui->listGroups->setCurrentItem(itemGroup);
 
-                QListWidgetItem *itemView = new QListWidgetItem;
-                itemView->setText(viewName);
-                m_ui->listViews->addItem(itemView);
+                QTreeWidgetItem *itemView = new QTreeWidgetItem(m_ui->listViews);
+                itemView->setText(0, viewName);
+
+                if(viewName == "gds") {
+                    itemView->setData(0, RoleType, ItemViewGds);
+                    itemView->setData(0, RoleGdsPath, tar);
+                    itemView->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+                }
 
                 setStateChanged();
             }
@@ -502,9 +506,14 @@ void MainWindow::pasteSelectedData()
                     continue;
                 }
 
-                QListWidgetItem *item = new QListWidgetItem;
-                item->setText(viewName);
-                m_ui->listViews->addItem(item);
+                QTreeWidgetItem *item = new QTreeWidgetItem(m_ui->listViews);
+                item->setText(0, viewName);
+
+                if(viewName == "gds") {
+                    item->setData(0, RoleType, ItemViewGds);
+                    item->setData(0, RoleGdsPath, newViewPath);
+                    item->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+                }
 
                 setStateChanged();
             }

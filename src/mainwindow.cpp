@@ -9,6 +9,7 @@
 #include <QMouseEvent>
 #include <QTextStream>
 #include <QFileDialog>
+#include <QTemporaryFile>
 #include <QGuiApplication>
 
 #include <QListWidgetItem>
@@ -33,7 +34,7 @@
  * \param parent        Parent widget, by default is NULL.
  *********************************************************************************************************************/
 MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *parent) :
-    QMainWindow(parent),    
+    QMainWindow(parent),
     m_ui(new Ui::MainWindow),
     m_properties(new Properties),
     m_isStateChanged(false),
@@ -66,10 +67,13 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     m_ui->listViews->setContextMenuPolicy(Qt::CustomContextMenu);
     m_ui->listGroups->setContextMenuPolicy(Qt::CustomContextMenu);
     m_ui->listCategories->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(m_ui->treeLibs, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showLibraryMenu(const QPoint &)));    
+    connect(m_ui->treeLibs, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showLibraryMenu(const QPoint &)));
     connect(m_ui->listViews, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showViewMenu(const QPoint &)));
     connect(m_ui->listGroups, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showGroupMenu(const QPoint &)));
     connect(m_ui->listCategories, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showCategoryMenu(const QPoint &)));
+    connect(m_ui->listViews, SIGNAL(itemExpanded(QTreeWidgetItem*)), this, SLOT(on_viewItemExpanded(QTreeWidgetItem*)));
+
+    m_ui->listViews->viewport()->installEventFilter(this);
 
     setWindowTitle(getLibManTitle());
 
@@ -82,6 +86,8 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
             loadProjectFile(localProjFile);
         }
     }
+
+    m_ui->listViews->setHeaderHidden(true);
 }
 
 /*!*******************************************************************************************************************
@@ -683,24 +689,17 @@ QString MainWindow::getCurrentGroupName() const
  **********************************************************************************************************************/
 QString MainWindow::getCurrentViewName() const
 {
-    QString viewName;
-
-    QList<QListWidgetItem*> viewItems = m_ui->listViews->selectedItems();
-    if(!viewItems.count()) {
-        return viewName;
+    QList<QTreeWidgetItem*> items = m_ui->listViews->selectedItems();
+    if (items.isEmpty()) {
+        return QString();
     }
 
-    QListWidgetItem *viewId = viewItems.first();
-    if(!viewId) {
-        return viewName;
-    }
-    if(viewId->text().isEmpty()) {
-        return viewName;
+    QTreeWidgetItem *item = items.first();
+    if (!item) {
+        return QString();
     }
 
-    viewName = viewId->text();
-
-    return viewName;
+    return item->text(0);
 }
 
 /*!*******************************************************************************************************************
@@ -944,25 +943,36 @@ void MainWindow::loadViews(const QString &libPath, const QString &groupName)
 {
     m_ui->listViews->clear();
 
-    QStringList groupViews;
+    m_ui->listViews->setHeaderHidden(true);
+    m_ui->listViews->setRootIsDecorated(true);
 
-    QStringList views = getValidViewList();
+    QStringList groupViews;
+    const QStringList views = getValidViewList();
+
     foreach(const QString viewName, views) {
-        QString viewPath = QDir::toNativeSeparators(libPath + "/" + viewName + "/" + groupName + "." + viewName);
+        const QString viewPath = QDir::toNativeSeparators(libPath + "/" + viewName + "/" + groupName + "." + viewName);
         if(QFileInfo(viewPath).exists()) {
-            groupViews<<viewName;
+            groupViews << viewName;
         }
     }
 
     groupViews.removeDuplicates();
 
-    foreach(const QString &viewName, groupViews) {
-        QListWidgetItem *viewItem = new QListWidgetItem;
-        viewItem->setText(viewName);
-        m_ui->listViews->addItem(viewItem);
+    foreach (const QString &viewName, groupViews) {
+        QTreeWidgetItem *viewItem = new QTreeWidgetItem(m_ui->listViews);
+        viewItem->setText(0, viewName);
+
+        if(viewName == "gds") {
+            const QString gdsPath = QDir::toNativeSeparators(libPath + "/gds/" + groupName + ".gds");
+
+            viewItem->setData(0, RoleType, ItemViewGds);
+            viewItem->setData(0, RoleGdsPath, gdsPath);
+
+            viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+        }
     }
 
-    m_ui->listViews->sortItems();
+    m_ui->listViews->sortItems(0, Qt::AscendingOrder);
 }
 
 /*!*******************************************************************************************************************
@@ -1062,7 +1072,7 @@ void MainWindow::on_treeLibs_itemClicked(QTreeWidgetItem *item, int)
     QString libPath = m_properties->get<QString>(key);
 
     if(QFileInfo(libPath).exists()) {
-        loadGroups(libPath);        
+        loadGroups(libPath);
         loadDocuments(libPath);
         loadCategories(libPath);
     }
@@ -1149,31 +1159,310 @@ void MainWindow::on_listCategories_itemDoubleClicked(QTreeWidgetItem *item, int 
 }
 
 /*!*******************************************************************************************************************
- * \brief Slot to execute a tool based on the selected item (schematic, layout, cdl, spice, etc.).
- * \param item       Pointer to list item view.
+ * \brief Creates a temporary KLayout python script and opens a given cell from a GDS file.
+ *        The script also performs delayed "zoom fit" (GUI ready check) using a timer.
+ * \param gdsPath     Absolute path to the GDS file.
+ * \param cellName    Cell name to open (top cell).
+ * \return Absolute path to created script file, or empty string on failure.
  **********************************************************************************************************************/
-void MainWindow::on_listViews_itemDoubleClicked(QListWidgetItem *item)
+QString MainWindow::createKLayoutOpenScript(const QString &gdsPath,
+                                            const QString &cellName) const
 {
+    auto pyRaw = [](const QString &s) -> QString {
+        QString t = QDir::toNativeSeparators(s);
+        t.replace("\\", "\\\\");
+        t.replace("'", "\\'");
+        return QString("r'%1'").arg(t);
+    };
+
+    QTemporaryFile tf(QDir::tempPath() + QDir::separator() + "libman_klayout_open_cell_XXXXXX.py");
+    tf.setAutoRemove(false);
+
+    if(!tf.open()) {
+        return QString();
+    }
+
+    QTextStream out(&tf);
+    out.setCodec("UTF-8");
+
+    out <<
+        R"(# -*- coding: utf-8 -*-
+import pya
+import os
+import os.path
+
+
+_app = pya.Application.instance()
+_mw  = _app.main_window() if _app is not None else None
+
+
+#==============================================================================
+def libman_cmp_paths(p1, p2):
+    p1 = os.path.normcase(os.path.normpath(p1))
+    p2 = os.path.normcase(os.path.normpath(p2))
+    return p1 == p2
+
+
+#==============================================================================
+# Delayed zoom_fit (wait until the view is fully ready)
+def libman_fit_view_to_window():
+    global _app, _mw
+    if _app is None:
+        _app = pya.Application.instance()
+    if _mw is None and _app is not None:
+        _mw = _app.main_window()
+    if _mw is None:
+        return
+
+    global _libman_fit_timer
+    try:
+        _libman_fit_timer
+    except NameError:
+        _libman_fit_timer = None
+
+    if _libman_fit_timer is None:
+        t = pya.QTimer(_mw)
+        t.setSingleShot(True)
+
+        def _on_timeout():
+            app2 = pya.Application.instance()
+            mw2  = app2.main_window() if app2 is not None else None
+            lv2  = mw2.current_view() if mw2 is not None else None
+
+            ready = (lv2 is not None) and (lv2.cellviews() > 0) and (lv2.active_cellview() is not None)
+
+            if ready:
+                try:
+                    lv2.zoom_fit()
+                except Exception:
+                    pass
+            else:
+                t.start(200)
+
+        t.timeout(_on_timeout)
+        _libman_fit_timer = t
+
+    if _libman_fit_timer.isActive():
+        _libman_fit_timer.stop()
+    _libman_fit_timer.start(200)
+
+
+#==============================================================================
+class LibManRequest:
+    def open_cell(self, file_name, cell_name):
+        if _mw is None:
+            return
+
+        if not os.path.exists(file_name):
+            (lv, cv, lv_idx, cv_idx, need_save) = self.libman_create_layout(file_name, cell_name)
+        else:
+            (lv, cv, lv_idx, cv_idx, need_save) = self.libman_open_layout(file_name, cell_name)
+
+        # Set top cell
+        _mw.select_view(lv_idx)
+        top_cell = cv.layout().cell_by_name(cell_name)
+        lv.select_cell(top_cell, cv_idx)
+
+        # Optionally save if needed (kept disabled)
+#        if need_save:
+#            lv.save_as(cv_idx, file_name, False, pya.SaveLayoutOptions())
+
+
+    def get_cellnames(self, file_name):
+        rl = []
+        if not os.path.exists(file_name):
+            return rl
+
+        ly = pya.Layout()
+        ly.read(file_name)
+        n = ly.cells()
+        for i in range(n):
+            rl.append(ly.cell_name(i))
+        return rl
+
+
+    def libman_create_layout(self, file_name, cell_name):
+        # Create a new layout in a new view.
+        cv = _mw.create_layout(1)
+
+        # Add cell.
+        cv.layout().add_cell(cell_name)
+
+        # Save file.
+        (lv, cv_idx) = self.libman_get_view_and_index(cv)
+        lv.save_as(cv_idx, file_name, False, pya.SaveLayoutOptions())
+
+        (lv, cv, lv_idx, cv_idx) = self.libman_find_view_for_file(file_name)
+        return (lv, cv, lv_idx, cv_idx, False)  # do not save
+
+
+    def libman_open_layout(self, file_name, cell_name):
+        (lv, cv, lv_idx, cv_idx) = self.libman_find_view_for_file(file_name)
+        if cv_idx == -1:
+            _mw.load_layout(file_name, 1)
+            (lv, cv, lv_idx, cv_idx) = self.libman_find_view_for_file(file_name)
+
+        # Ensure cell exists
+        cell_exists = cv.layout().has_cell(cell_name)
+        if not cell_exists:
+            cv.layout().add_cell(cell_name)
+            (lv, cv, lv_idx, cv_idx) = self.libman_find_view_for_file(file_name)
+
+        return (lv, cv, lv_idx, cv_idx, (not cell_exists))
+
+
+    def libman_get_view_and_index(self, cell_view):
+        num_views = _mw.views()
+        for lv_idx in range(num_views):
+            lv = _mw.view(lv_idx)
+            cv_idx = self.libman_cellview_index(lv, cell_view)
+            if cv_idx != -1:
+                return (lv, cv_idx)
+        return (None, -1)
+
+
+    def libman_cellview_index(self, layout_view, cell_view):
+        n = layout_view.cellviews()
+        for i in range(n):
+            cv = layout_view.cellview(i)
+            if cv == cell_view:
+                return i
+        return -1
+
+
+    def libman_find_view_for_file(self, file_name):
+        num_views = _mw.views()
+        for lv_idx in range(num_views):
+            lv = _mw.view(lv_idx)
+            (cv, cv_idx) = self.libman_find_cellview(lv, file_name)
+            if cv_idx != -1:
+                return (lv, cv, lv_idx, cv_idx)
+        return (None, None, -1, -1)
+
+
+    def libman_find_cellview(self, layout_view, file_name):
+        n = layout_view.cellviews()
+        for i in range(n):
+            cv = layout_view.cellview(i)
+            fn = cv.filename()
+            if libman_cmp_paths(fn, file_name):
+                return (cv, i)
+        return (None, -1)
+
+
+#==============================================================================
+# Call
+req = LibManRequest()
+)";
+
+    out << "req.open_cell(" << pyRaw(gdsPath) << ", " << pyRaw(cellName) << ")\n";
+    out << "libman_fit_view_to_window()\n";
+
+    out.flush();
+    tf.close();
+
+    return tf.fileName();
+}
+
+/*!*******************************************************************************************************************
+ * \brief Starts external tool with a temporary script file and removes the script after the tool finishes.
+ * \param tool        Tool executable (e.g. "klayout").
+ * \param args        Arguments for the tool.
+ * \param scriptPath  Temporary script file to remove after tool exit.
+ **********************************************************************************************************************/
+void MainWindow::startToolWithTempScript(const QString &tool, const QStringList &args, const QString &scriptPath)
+{
+    QProcess *p = new QProcess(this);
+
+    connect(p,
+            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            this,
+            [this, p, scriptPath](int, QProcess::ExitStatus)
+            {
+                if(!scriptPath.isEmpty() && QFileInfo(scriptPath).exists()) {
+                    QFile::remove(scriptPath);
+                }
+                p->deleteLater();
+            });
+
+    connect(p,
+            &QProcess::errorOccurred,
+            this,
+            [this, scriptPath](QProcess::ProcessError)
+            {
+                if(!scriptPath.isEmpty() && QFileInfo(scriptPath).exists()) {
+                    QFile::remove(scriptPath);
+                }
+            });
+
+    p->start(tool, args);
+}
+
+/*!*******************************************************************************************************************
+ * \brief Opens selected view using configured external tool.
+ *        For GDS it generates a temporary KLayout script and opens either the whole file or a specific cell.
+ * \param item       Pointer to a clicked tree item.
+ * \param            Column (unused).
+ **********************************************************************************************************************/
+void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int column)
+{
+    Q_UNUSED(column);
+
     if(!item) {
         return;
     }
 
-    m_itemText = item->text();
+    m_itemText = item->text(0);
+    m_ui->txtViewSearch->setText(item->text(0));
 
-    m_ui->txtViewSearch->setText(item->text());
+    const int type = item->data(0, RoleType).toInt();
 
-    QString viewName = item->text();
-    if(viewName.isEmpty()) {
-        return;
+    QString viewName;
+    QString viewPath;
+    QString cellName;
+
+    // ------------------------------------------------------------
+    // GDS root item
+    // ------------------------------------------------------------
+    if(type == ItemViewGds && item->text(0) == "gds") {
+        viewName = "gds";
+        viewPath = item->data(0, RoleGdsPath).toString();
+    }
+    // ------------------------------------------------------------
+    // GDS cell item
+    // ------------------------------------------------------------
+    else if(type == ItemCell) {
+        viewName = "gds";
+
+        // find top "gds" item
+        QTreeWidgetItem *p = item->parent();
+        while(p && p->parent()) {
+            p = p->parent();
+        }
+
+        if(!p || p->text(0) != "gds") {
+            return;
+        }
+
+        viewPath = p->data(0, RoleGdsPath).toString();
+        cellName = item->data(0, RoleCellName).toString();
+    }
+    // ------------------------------------------------------------
+    // Normal views: cdl/spice/...
+    // ------------------------------------------------------------
+    else {
+        viewName = item->text(0);
+        if(viewName.isEmpty()) {
+            return;
+        }
+
+        viewPath = getCurrentViewFilePath(viewName);
     }
 
-    QString viewPath = getCurrentViewFilePath(viewName);
-    if(!QFileInfo(viewPath).exists()) {
+    if(viewPath.isEmpty() || !QFileInfo(viewPath).exists()) {
         error(QString("Failed to find view '%1'").arg(viewPath));
         return;
     }
-
-    qDebug()<<viewName;
 
     QString tool = getToolByView(viewName);
     if(tool.isEmpty()) {
@@ -1181,27 +1470,91 @@ void MainWindow::on_listViews_itemDoubleClicked(QListWidgetItem *item)
         return;
     }
 
-    QProcess proc;
-    QStringList args;
-    args<<viewPath;
+    // ------------------------------------------------------------
+    // GDS handling
+    // ------------------------------------------------------------
+    if(viewName == "gds") {
 
-    proc.startDetached(tool, args);
+        if(cellName.isEmpty()) {
+            QProcess::startDetached(tool, QStringList() << viewPath);
+            return;
+        }
+
+        const QString scriptPath = createKLayoutOpenScript(viewPath, cellName);
+        if(scriptPath.isEmpty() || !QFileInfo(scriptPath).exists()) {
+            error("Failed to create temporary KLayout script.");
+            return;
+        }
+
+        QStringList args;
+        args << "-rr" << scriptPath;
+
+        startToolWithTempScript(tool, args, scriptPath);
+        return;
+    }
+
+    // ------------------------------------------------------------
+    // Non-GDS: original behavior
+    // ------------------------------------------------------------
+    QProcess::startDetached(tool, QStringList() << viewPath);
+}
+
+
+/*!*******************************************************************************************************************
+ * \brief Filters events for the Views tree widget to suppress default expand/collapse behavior on double click.
+ *
+ * This event filter prevents QTreeWidget from automatically expanding or collapsing
+ * GDS view nodes and hierarchy cell nodes on mouse double click. Double click is
+ * reserved exclusively for opening the corresponding view or cell in KLayout.
+ *
+ * \param obj      Object which received the event.
+ * \param event    Event instance.
+ *
+ * \return true if the event was handled and should not be propagated further,
+ *         false to allow default event processing.
+ **********************************************************************************************************************/
+bool MainWindow::eventFilter(QObject *obj, QEvent *event)
+{
+    if(obj == m_ui->listViews->viewport() &&
+        event->type() == QEvent::MouseButtonDblClick) {
+
+        QMouseEvent *me = static_cast<QMouseEvent*>(event);
+        const QModelIndex idx = m_ui->listViews->indexAt(me->pos());
+        if(idx.isValid()) {
+
+            auto *item = static_cast<QTreeWidgetItem*>(idx.internalPointer());
+            if(item) {
+                const int type = item->data(0, RoleType).toInt();
+
+                if(type == ItemViewGds || type == ItemCell) {
+                    on_listViews_itemDoubleClicked(item, 0);
+                    return true;
+                }
+            }
+        }
+    }
+
+    return QMainWindow::eventFilter(obj, event);
 }
 
 /*!*******************************************************************************************************************
- * \brief Sets the name of the selected item into the view filter line edit.
- * \param item       Pointer to list item view.
+ * \brief Handles click on an item in the Views tree widget.
+ *        Stores clicked item text and updates the View filter line edit.
+ * \param item       Pointer to clicked tree item.
+ * \param column     Column index where click happened.
  **********************************************************************************************************************/
-void MainWindow::on_listViews_itemClicked(QListWidgetItem *item)
+void MainWindow::on_listViews_itemClicked(QTreeWidgetItem *item, int column)
 {
     if(!item) {
         return;
     }
 
-    m_itemText = item->text();
+    Q_UNUSED(column);
 
-    m_ui->txtViewSearch->setText(item->text());
+    m_itemText = item->text(0);
+    m_ui->txtViewSearch->setText(m_itemText);
 }
+
 
 /*!*******************************************************************************************************************
  * \brief Slot is to load groups (cells) located into the specified category file.
@@ -1579,6 +1932,37 @@ void MainWindow::hideListItem(QListWidget *list, const QString &filter)
 }
 
 /*!*******************************************************************************************************************
+ * \brief Recursively hides or shows tree items based on filter string.
+ * \param item       Tree item to process.
+ * \param filter     Text string used to filter items.
+ * \return true if item or any of its children matches the filter.
+ **********************************************************************************************************************/
+bool MainWindow::filterTreeItem(QTreeWidgetItem *item, const QString &filter)
+{
+    if (!item) {
+        return false;
+    }
+
+    bool match = item->text(0).contains(filter, Qt::CaseInsensitive);
+
+    bool childMatch = false;
+    for (int i = 0; i < item->childCount(); ++i) {
+        if (filterTreeItem(item->child(i), filter)) {
+            childMatch = true;
+        }
+    }
+
+    bool visible = filter.isEmpty() || match || childMatch;
+    item->setHidden(!visible);
+
+    if (childMatch && !filter.isEmpty()) {
+        item->setExpanded(true);
+    }
+
+    return match || childMatch;
+}
+
+/*!*******************************************************************************************************************
  * \brief Filters projects (libraries) based on user input.
  * \param filter     Text string used to filter projects (libraries).
  **********************************************************************************************************************/
@@ -1611,7 +1995,7 @@ void MainWindow::on_txtCellSearch_textEdited(const QString &filter)
  **********************************************************************************************************************/
 void MainWindow::on_txtViewSearch_textEdited(const QString &filter)
 {
-    hideListItem(m_ui->listViews, filter);
+    hideTreeItem(m_ui->listViews, filter);
 }
 
 /*!*******************************************************************************************************************

@@ -39,24 +39,37 @@ class MainWindow : public QMainWindow
         GROUP,
         VIEW
     };
-    
+
+    enum VIEW_ITEM_ROLE {
+        RoleType                 = Qt::UserRole + 1,    /*!< Item type: view node / cell node / etc. */
+        RoleGdsPath              = Qt::UserRole + 2,    /*!< Absolute path to GDS file for "gds" view node. */
+        RoleCellName             = Qt::UserRole + 3     /*!< Cell name for hierarchy nodes. */
+    };
+
+    enum VIEW_ITEM_TYPE {
+        ItemViewGds              = 1,                   /*!< "gds" view root node. */
+        ItemCell                 = 2                    /*!< GDS cell node in hierarchy. */
+    };
+
 public:
     explicit MainWindow(const QString &projFile, const QString &runDir, QWidget *parent = 0);
     ~MainWindow();
-    
+
 private slots:
     void                                closeEvent(QCloseEvent *event);
+    bool                                eventFilter(QObject *obj, QEvent *event) override;
     void                                showViewMenu(const QPoint &pos);
     void                                showGroupMenu(const QPoint &pos);
     void                                showLibraryMenu(const QPoint &pos);
     void                                showCategoryMenu(const QPoint &pos);
+    void                                on_viewItemExpanded(QTreeWidgetItem *item);
 
     void                                addNewGroup();
     void                                addNewProject();
     void                                addNewCategory();
     void                                addNewSpiceView();
     void                                addNewLayoutView();
-    void                                addNewSchematicView();    
+    void                                addNewSchematicView();
     void                                removeSelectedView();
     void                                removeSelectedGroup();
     void                                removeSelectedProject();
@@ -75,7 +88,7 @@ private slots:
     void                                copySelectedGroup();
     void                                copySelectedProject();
     void                                clearCurrentCopyState();
-    void                                addViewToBeCopied(const QString &);    
+    void                                addViewToBeCopied(const QString &);
     void                                addProjectToBeCopied(const QString &);
     void                                addGroupToBeCopied(const QString &, const QString &);
 
@@ -100,18 +113,18 @@ private slots:
     void                                on_actionShow_Documents_toggled(bool);
 
     void                                on_actionTools_triggered();
-    void                                on_actionProjects_triggered();    
+    void                                on_actionProjects_triggered();
     void                                on_actionOpen_triggered();
     void                                on_actionClear_Recent_File_Stack_triggered();
 
     void                                on_treeLibs_itemClicked(QTreeWidgetItem *item, int column);
-    void                                on_listGroups_itemClicked(QListWidgetItem *item);
-    void                                on_listViews_itemDoubleClicked(QListWidgetItem *item);
+    void                                on_listViews_itemClicked(QTreeWidgetItem *item, int column);
+    void                                on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int);
     void                                on_listDocumentation_itemDoubleClicked(QTreeWidgetItem *item);
-    void                                on_listViews_itemClicked(QListWidgetItem *item);
-    void                                on_listCategories_itemClicked(QTreeWidgetItem *item);    
+    void                                on_listGroups_itemClicked(QListWidgetItem *item);
+    void                                on_listCategories_itemClicked(QTreeWidgetItem *item);
     void                                on_treeLibs_itemChanged(QTreeWidgetItem *item, int column);
-    void                                on_listCategories_itemDoubleClicked(QTreeWidgetItem *item, int column);    
+    void                                on_listCategories_itemDoubleClicked(QTreeWidgetItem *item, int column);
     void                                on_txtLibSearch_textEdited(const QString &arg1);
     void                                on_txtCatSearch_textEdited(const QString &arg1);
     void                                on_txtCellSearch_textEdited(const QString &arg1);
@@ -151,10 +164,11 @@ private:
 
     void                                hideTreeItem(QTreeWidget *, const QString &filter);
     void                                hideListItem(QListWidget *, const QString &filter);
+    bool                                filterTreeItem(QTreeWidgetItem *item, const QString &filter);
 
     bool                                isViewCopied() const;
     bool                                isGroupCopied() const;
-    bool                                isProjectCopied() const;    
+    bool                                isProjectCopied() const;
     bool                                askForFileReplacement() const;
     bool                                askForPermanentDelete() const;
     bool                                askUserForAction(const QString &title) const;
@@ -175,7 +189,7 @@ private:
     QString                             getCurrentViewName() const;
     QString                             getCurrentGroupName() const;
     QString                             getCurrentUnionName() const;
-    QString                             getCurrentWorkingDir() const;    
+    QString                             getCurrentWorkingDir() const;
     QString                             getCurrentLibraryName() const;
     QString                             getCurrentProjectFile() const;
     QString                             getCurrentLibraryPath() const;
@@ -194,11 +208,14 @@ private:
     QStringList                         getValidViewList() const;
     QStringList                         getCurrentGroups(const QString &) const;
     QStringList                         getCurrentViews(const QString &, const QString &) const;
-    QStringList                         readLibraryCategories(const QString &, const QString &);    
+    QStringList                         readLibraryCategories(const QString &, const QString &);
 
     QTreeWidgetItem*                    getTreeItemByName(const QString &name);
 
     QMap<QString, QString>              getCurrentLibraries() const;
+
+    QString                             createKLayoutOpenScript(const QString &gdsPath, const QString &cellName) const;
+    void                                startToolWithTempScript(const QString &tool, const QStringList &args, const QString &scriptPath);
 
 private:
     Ui::MainWindow                      *m_ui;                  /*!< A pointer to acess ProjectManager graphic items. */

@@ -1,36 +1,89 @@
-#include <bitset>
-#include <cmath>
+/************************************************************************
+ *  LibMan – library and view management tool for IC design projects.
+ *
+ *  Copyright (C) 2023–2025 IHP Authors
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ ************************************************************************/
+
+/*!********************************************************************************************************************
+ * \file gdsreader.cpp
+ * \brief GDSII reader and writer implementation.
+ *
+ * This file implements the GdsReader class used by LibMan to:
+ *  - create minimal valid GDSII files (writer part),
+ *  - read structural hierarchy information from existing GDSII files (reader part).
+ *
+ * The reader part is intentionally lightweight and parses only:
+ *  - structure (cell) names,
+ *  - SREF / AREF references,
+ *  - parent–child relationships between cells.
+ *
+ * Geometry, layers and shapes are ignored to allow fast hierarchy inspection
+ * even for large hierarchical GDS files.
+ *********************************************************************************************************************/
+
+#include <cstdio>
 #include <cstring>
-#include <fstream>
-#include <iostream>
-#include <map>
-#include <set>
-#include <stdio.h>
-#include <string>
+#include <ctime>
 #include <vector>
+
+#include <QByteArray>
+#include <QSet>
 
 #include "gdsreader.h"
 
-//*********************************************************************************************************************
-// GdsReader::GdsReader
-//*********************************************************************************************************************
+// =====================================================================================================================
+// Constructor
+// =====================================================================================================================
+
+/*!********************************************************************************************************************
+ * \brief Constructs GdsReader object for a given GDS file.
+ * \param fileName Absolute or relative path to the GDS file.
+ *********************************************************************************************************************/
 GdsReader::GdsReader(const QString &fileName)
-    : m_fileName(fileName)
+    : m_fileName(fileName),
+    m_gdsFile(nullptr)
 {
     m_errorList.clear();
 }
 
-//*********************************************************************************************************************
-// GdsReader::gdsCreate
-//*********************************************************************************************************************
+// =====================================================================================================================
+// Writer part
+// =====================================================================================================================
+
+/*!********************************************************************************************************************
+ * \brief Creates a minimal valid GDSII file containing a single top-level cell.
+ *
+ * The function creates a new GDS file and writes:
+ *  - HEADER
+ *  - BGNLIB
+ *  - LIBNAME
+ *  - UNITS
+ *  - ENDLIB
+ *
+ * \param cellName Name of the top-level cell.
+ *********************************************************************************************************************/
 void GdsReader::gdsCreate(const QString &cellName)
 {
-    if(m_fileName.isEmpty()) {
+    if (m_fileName.isEmpty()) {
         return;
     }
 
     m_gdsFile = fopen(m_fileName.toStdString().c_str(), "wb");
-    if(!m_gdsFile) {
+    if (!m_gdsFile) {
+        m_errorList << QString("Failed to open GDS for write: '%1'").arg(m_fileName);
         return;
     }
 
@@ -38,64 +91,71 @@ void GdsReader::gdsCreate(const QString &cellName)
     gdsEnd();
 
     fclose(m_gdsFile);
+    m_gdsFile = nullptr;
 }
 
-//*********************************************************************************************************************
-// GdsReader::gdsBegin
-//*********************************************************************************************************************
+/*!********************************************************************************************************************
+ * \brief Writes GDS library header records.
+ * \param libName Name of the GDS library.
+ *********************************************************************************************************************/
 void GdsReader::gdsBegin(const QString &libName) const
 {
-  int tempArr[1];
+    int header[1];
+    header[0] = 600;
 
-  tempArr[0] = 600;
-  writeInt(GDS_HEADER, tempArr, 1);
-  writeInt(GDS_BGNLIB, gdsTime(), 12);
-  writeStr(GDS_LIBNAME, libName.toStdString());
-  writeUnits();
+    writeInt(GDS_HEADER, header, 1);
+    writeInt(GDS_BGNLIB, gdsTime(), 12);
+    writeStr(GDS_LIBNAME, libName.toStdString());
+    writeUnits();
 }
 
-//*********************************************************************************************************************
-// GdsReader::gdsEnd
-//*********************************************************************************************************************
+/*!********************************************************************************************************************
+ * \brief Writes ENDLIB record to close the GDS file.
+ *********************************************************************************************************************/
 void GdsReader::gdsEnd() const
 {
     writeRec(GDS_ENDLIB);
 }
 
-//*********************************************************************************************************************
-// GdsReader::gsdTime
-//*********************************************************************************************************************
+/*!********************************************************************************************************************
+ * \brief Returns current timestamp formatted for GDS BGNLIB record.
+ * \return Pointer to static array with 12 integers representing time.
+ *********************************************************************************************************************/
 int* GdsReader::gdsTime() const
 {
     static int timeIO[12];
     static bool timeSet = false;
-    tm lctn;
 
-    if(!timeSet) {
-        time_t now = time(0);
-        lctn = *localtime(&now);
-        timeSet = true;
+    if (!timeSet) {
+        time_t now = time(nullptr);
+        tm lctn = *localtime(&now);
 
-        timeIO[0] = lctn.tm_year + 1900;
-        timeIO[1] = lctn.tm_mon + 1;
-        timeIO[2] = lctn.tm_mday;
-        timeIO[3] = lctn.tm_hour;
-        timeIO[4] = lctn.tm_min;
-        timeIO[5] = lctn.tm_sec;
-        timeIO[6] = timeIO[0];
-        timeIO[7] = timeIO[1];
-        timeIO[8] = timeIO[2];
-        timeIO[9] = timeIO[3];
+        timeIO[0]  = lctn.tm_year + 1900;
+        timeIO[1]  = lctn.tm_mon + 1;
+        timeIO[2]  = lctn.tm_mday;
+        timeIO[3]  = lctn.tm_hour;
+        timeIO[4]  = lctn.tm_min;
+        timeIO[5]  = lctn.tm_sec;
+        timeIO[6]  = timeIO[0];
+        timeIO[7]  = timeIO[1];
+        timeIO[8]  = timeIO[2];
+        timeIO[9]  = timeIO[3];
         timeIO[10] = timeIO[4];
         timeIO[11] = timeIO[5];
+
+        timeSet = true;
     }
 
     return timeIO;
 }
 
-//*********************************************************************************************************************
-// GdsReader::writeInt
-//*********************************************************************************************************************
+/*!********************************************************************************************************************
+ * \brief Writes integer-based GDS record.
+ * \param record GDS record type.
+ * \param arrInt Integer data array.
+ * \param cnt Number of integers.
+ * \return 0 on success, non-zero on error.
+ *********************************************************************************************************************/
 int GdsReader::writeInt(int record, int arrInt[], int cnt) const
 {
     unsigned int dataSize = record & 0xff;
@@ -107,112 +167,212 @@ int GdsReader::writeInt(int record, int arrInt[], int cnt) const
     } else if (dataSize == 0x00 && cnt == 0) {
         dataSize = 0;
     } else {
-        m_errorList<<QString("Incorrect parameters for record: 0x%1").arg(record);
+        m_errorList << QString("Incorrect parameters for record: 0x%1").arg(record, 0, 16);
         return 1;
     }
 
     unsigned int sizeByte = cnt * dataSize + 4;
-    unsigned char outBuffer[4];
+    unsigned char hdr[4];
 
-    outBuffer[0] = sizeByte >> 8 & 0xff;
-    outBuffer[1] = sizeByte & 0xff;
-    outBuffer[2] = record >> 8 & 0xff;
-    outBuffer[3] = record & 0xff;
-    fwrite(outBuffer, 1, 4, m_gdsFile);
+    hdr[0] = (sizeByte >> 8) & 0xff;
+    hdr[1] = sizeByte & 0xff;
+    hdr[2] = (record >> 8) & 0xff;
+    hdr[3] = record & 0xff;
 
-    unsigned char dataOut[dataSize];
+    fwrite(hdr, 1, 4, m_gdsFile);
 
-    for (int i = 0; i < cnt; i++) {
-        for (unsigned int j = 0; j < dataSize; j++) {
-            dataOut[j] = arrInt[i] >> (((dataSize - 1) * 8) - (j * 8)) & 0xff;
+    unsigned char dataOut[4];
+    for (int i = 0; i < cnt; ++i) {
+        for (unsigned int j = 0; j < dataSize; ++j) {
+            dataOut[j] = (arrInt[i] >> (((dataSize - 1) * 8) - (j * 8))) & 0xff;
         }
-
         fwrite(dataOut, 1, dataSize, m_gdsFile);
     }
 
     return 0;
 }
 
-//*********************************************************************************************************************
-// GdsReader::writeStr
-//*********************************************************************************************************************
+/*!********************************************************************************************************************
+ * \brief Writes string-based GDS record.
+ * \param record GDS record type.
+ * \param inStr String payload.
+ * \return 0 on success, non-zero on error.
+ *********************************************************************************************************************/
 int GdsReader::writeStr(int record, std::string inStr) const
 {
     if ((record & 0xff) != 0x06) {
-        m_errorList<<QString("Incorrect record: 0x%1").arg(record);
+        m_errorList << QString("Incorrect record: 0x%1").arg(record, 0, 16);
         return 1;
     }
-
-    unsigned char outBuffer[4];
 
     if (inStr.length() % 2 == 1) {
         inStr.push_back('\0');
     }
 
-    int lenStr = inStr.length();
+    const int len = static_cast<int>(inStr.length());
+    unsigned char hdr[4];
 
-    outBuffer[0] = ((lenStr + 4) >> 8) & 0xff;
-    outBuffer[1] = (lenStr + 4) & 0xff;
-    outBuffer[2] = record >> 8 & 0xff;
-    outBuffer[3] = record & 0xff;
-    fwrite(outBuffer, 1, 4, m_gdsFile);
+    hdr[0] = ((len + 4) >> 8) & 0xff;
+    hdr[1] = (len + 4) & 0xff;
+    hdr[2] = (record >> 8) & 0xff;
+    hdr[3] = record & 0xff;
 
-    char dataOut[lenStr];
-    strcpy(dataOut, inStr.c_str());
-    fwrite(dataOut, 1, lenStr, m_gdsFile);
+    fwrite(hdr, 1, 4, m_gdsFile);
+    fwrite(inStr.c_str(), 1, static_cast<size_t>(len), m_gdsFile);
 
     return 0;
 }
 
-//*********************************************************************************************************************
-// GdsReader::writeUnits
-//*********************************************************************************************************************
+/*!********************************************************************************************************************
+ * \brief Writes UNITS record to GDS file.
+ *********************************************************************************************************************/
 void GdsReader::writeUnits() const
 {
-    unsigned char data[20];
-
-    data[0] = 0x00;
-    data[1] = 0x14;
-    data[2] = 0x03;
-    data[3] = 0x05;
-    data[4] = 0x3e;
-    data[5] = 0x41;
-    data[6] = 0x89;
-    data[7] = 0x37;
-    data[8] = 0x4b;
-    data[9] = 0xc6;
-    data[10] = 0xa7;
-    data[11] = 0xf0;
-    data[12] = 0x39;
-    data[13] = 0x44;
-    data[14] = 0xb8;
-    data[15] = 0x2f;
-    data[16] = 0xa0;
-    data[17] = 0x9b;
-    data[18] = 0x5a;
-    data[19] = 0x50;
+    static const unsigned char data[20] = {
+        0x00, 0x14, 0x03, 0x05,
+        0x3e, 0x41, 0x89, 0x37,
+        0x4b, 0xc6, 0xa7, 0xf0,
+        0x39, 0x44, 0xb8, 0x2f,
+        0xa0, 0x9b, 0x5a, 0x50
+    };
 
     fwrite(data, 1, 20, m_gdsFile);
 }
 
-//*********************************************************************************************************************
-// GdsReader::writeRec
-//*********************************************************************************************************************
+/*!********************************************************************************************************************
+ * \brief Writes a zero-payload GDS record.
+ * \param record GDS record type.
+ * \return 0 on success, non-zero on error.
+ *********************************************************************************************************************/
 int GdsReader::writeRec(int record) const
 {
-    unsigned char outBuffer[4];
+    unsigned char hdr[4] = {
+        0x00, 0x04,
+        static_cast<unsigned char>((record >> 8) & 0xff),
+        static_cast<unsigned char>(record & 0xff)
+    };
 
-    outBuffer[0] = 0;
-    outBuffer[1] = 4;
-    outBuffer[2] = record >> 8 & 0xff;
-    outBuffer[3] = record & 0xff;
-
-    if (outBuffer[3] != 0) {
-        m_errorList<<QString("Record contains no data");
+    if (hdr[3] != 0) {
+        m_errorList << "Record contains no data";
         return 1;
     }
 
-    fwrite(outBuffer, 1, 4, m_gdsFile);
-
+    fwrite(hdr, 1, 4, m_gdsFile);
     return 0;
+}
+
+// =====================================================================================================================
+// Reader part
+// =====================================================================================================================
+
+/*!********************************************************************************************************************
+ * \brief Reads one GDS record from file.
+ * \param f Opened GDS file pointer.
+ * \param recType Output record type.
+ * \param payload Output record payload.
+ * \return true if record was read successfully.
+ *********************************************************************************************************************/
+bool GdsReader::readRecord(FILE *f, quint16 &recType, QByteArray &payload)
+{
+    unsigned char hdr[4];
+    if (fread(hdr, 1, 4, f) != 4) {
+        return false;
+    }
+
+    quint16 len = (hdr[0] << 8) | hdr[1];
+    recType = (hdr[2] << 8) | hdr[3];
+
+    if (len < 4) {
+        return false;
+    }
+
+    payload.resize(len - 4);
+    if (!payload.isEmpty()) {
+        if (fread(payload.data(), 1, payload.size(), f) != static_cast<size_t>(payload.size())) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/*!********************************************************************************************************************
+ * \brief Decodes GDS string payload to QString.
+ * \param payload Raw GDS string payload.
+ * \return Decoded string without padding zeros.
+ *********************************************************************************************************************/
+QString GdsReader::decodeGdsString(const QByteArray &payload) const
+{
+    int n = payload.size();
+    while (n > 0 && payload[n - 1] == '\0') {
+        --n;
+    }
+    return QString::fromLatin1(payload.constData(), n);
+}
+
+/*!********************************************************************************************************************
+ * \brief Reads hierarchy information from a GDS file.
+ * \param out Output hierarchy structure.
+ * \return true if hierarchy was successfully read.
+ *********************************************************************************************************************/
+bool GdsReader::readHierarchy(GdsHierarchy &out)
+{
+    out.topCells.clear();
+    out.children.clear();
+    out.allCells.clear();
+    m_errorList.clear();
+
+    FILE *f = fopen(m_fileName.toStdString().c_str(), "rb");
+    if (!f) {
+        m_errorList << QString("Failed to open GDS for read: '%1'").arg(m_fileName);
+        return false;
+    }
+
+    QString currentCell;
+    bool inRef = false;
+    QSet<QString> referenced;
+
+    quint16 recType;
+    QByteArray payload;
+
+    while (readRecord(f, recType, payload)) {
+        if (recType == GDS_STRNAME) {
+            currentCell = decodeGdsString(payload);
+            out.allCells.insert(currentCell);
+            out.children[currentCell];
+            inRef = false;
+        }
+        else if (recType == GDS_SREF || recType == GDS_AREF) {
+            inRef = true;
+        }
+        else if (recType == GDS_SNAME && inRef && !currentCell.isEmpty()) {
+            const QString ref = decodeGdsString(payload);
+            out.children[currentCell] << ref;
+            out.allCells.insert(ref);
+            referenced.insert(ref);
+        }
+        else if (recType == GDS_ENDEL) {
+            inRef = false;
+        }
+        else if (recType == GDS_ENDLIB) {
+            break;
+        }
+    }
+
+    fclose(f);
+
+    QSet<QString> top = out.allCells;
+    for (const QString &r : referenced) {
+        top.remove(r);
+    }
+
+    out.topCells = QStringList(top.begin(), top.end());
+    out.topCells.sort();
+
+    for (auto it = out.children.begin(); it != out.children.end(); ++it) {
+        it.value().removeDuplicates();
+        it.value().sort();
+    }
+
+    return true;
 }

@@ -189,7 +189,13 @@
             </layout>
            </item>
            <item>
-            <widget class="QListWidget" name="listViews"/>
+            <widget class="QTreeWidget" name="listViews">
+             <column>
+              <property name="text">
+               <string notr="true">1</string>
+              </property>
+             </column>
+            </widget>
            </item>
           </layout>
          </item>
