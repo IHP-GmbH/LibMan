@@ -34,6 +34,9 @@ private:
     void        writeUnits() const;
     int         writeRec(int record) const;
 
+    bool        readPayload(FILE *f, int payloadLen, QByteArray &payload);
+    bool        readRecordHeader(FILE *f, quint16 &recType, quint16 &len);
+
     bool        readRecord(FILE *f, quint16 &recType, QByteArray &payload);
     QString     decodeGdsString(const QByteArray &payload) const;
 

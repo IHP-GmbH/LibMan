@@ -311,6 +311,51 @@ QString GdsReader::decodeGdsString(const QByteArray &payload) const
 }
 
 /*!********************************************************************************************************************
+ * \brief Reads only the 4-byte GDS record header (length + record type).
+ *
+ * This function is used for fast scanning of large GDS files. It allows the caller to decide whether the payload
+ * must be read (for interesting records like STRNAME/SNAME) or skipped via fseek() for non-interesting records.
+ *
+ * \param f Opened GDS file pointer.
+ * \param recType Output record type.
+ * \param len Output record total length in bytes (including 4-byte header).
+ * \return true if header was read successfully and len is valid (>= 4).
+ *********************************************************************************************************************/
+bool GdsReader::readRecordHeader(FILE *f, quint16 &recType, quint16 &len)
+{
+    unsigned char hdr[4];
+    if (fread(hdr, 1, 4, f) != 4) {
+        return false;
+    }
+
+    len = (hdr[0] << 8) | hdr[1];
+    recType = (hdr[2] << 8) | hdr[3];
+
+    return (len >= 4);
+}
+
+/*!********************************************************************************************************************
+ * \brief Reads payload bytes of a given length into QByteArray.
+ *
+ * The function resizes the output buffer to payloadLen and reads exactly payloadLen bytes from the file.
+ * For payloadLen <= 0, it returns true without reading.
+ *
+ * \param f Opened GDS file pointer.
+ * \param payloadLen Number of payload bytes to read (record length minus 4-byte header).
+ * \param payload Output buffer that will contain the payload.
+ * \return true if payload was read successfully or payloadLen <= 0, otherwise false.
+ *********************************************************************************************************************/
+bool GdsReader::readPayload(FILE *f, int payloadLen, QByteArray &payload)
+{
+    payload.resize(payloadLen);
+    if (payloadLen <= 0) {
+        return true;
+    }
+    return fread(payload.data(), 1, static_cast<size_t>(payloadLen), f) == static_cast<size_t>(payloadLen);
+}
+
+
+/*!********************************************************************************************************************
  * \brief Reads hierarchy information from a GDS file.
  * \param out Output hierarchy structure.
  * \return true if hierarchy was successfully read.
@@ -332,30 +377,59 @@ bool GdsReader::readHierarchy(GdsHierarchy &out)
     bool inRef = false;
     QSet<QString> referenced;
 
-    quint16 recType;
+    quint16 recType = 0;
+    quint16 len = 0;
     QByteArray payload;
 
-    while (readRecord(f, recType, payload)) {
-        if (recType == GDS_STRNAME) {
-            currentCell = decodeGdsString(payload);
-            out.allCells.insert(currentCell);
-            out.children[currentCell];
-            inRef = false;
-        }
-        else if (recType == GDS_SREF || recType == GDS_AREF) {
-            inRef = true;
-        }
-        else if (recType == GDS_SNAME && inRef && !currentCell.isEmpty()) {
-            const QString ref = decodeGdsString(payload);
-            out.children[currentCell] << ref;
-            out.allCells.insert(ref);
-            referenced.insert(ref);
-        }
-        else if (recType == GDS_ENDEL) {
-            inRef = false;
-        }
-        else if (recType == GDS_ENDLIB) {
+    while (readRecordHeader(f, recType, len)) {
+
+        const int payloadLen = static_cast<int>(len) - 4;
+        if (payloadLen < 0) {
             break;
+        }
+
+        const bool needPayload =
+            (recType == GDS_STRNAME) ||
+            (recType == GDS_SREF)   ||
+            (recType == GDS_AREF)   ||
+            (recType == GDS_SNAME)  ||
+            (recType == GDS_ENDEL)  ||
+            (recType == GDS_ENDLIB);
+
+        if (needPayload) {
+            if (!readPayload(f, payloadLen, payload)) {
+                break;
+            }
+
+            if (recType == GDS_STRNAME) {
+                currentCell = decodeGdsString(payload);
+                out.allCells.insert(currentCell);
+                out.children[currentCell]; // create empty entry
+                inRef = false;
+            }
+            else if (recType == GDS_SREF || recType == GDS_AREF) {
+                inRef = true;
+            }
+            else if (recType == GDS_SNAME && inRef && !currentCell.isEmpty()) {
+                const QString ref = decodeGdsString(payload);
+                out.children[currentCell] << ref;
+                out.allCells.insert(ref);
+                referenced.insert(ref);
+            }
+            else if (recType == GDS_ENDEL) {
+                inRef = false;
+            }
+            else if (recType == GDS_ENDLIB) {
+                break;
+            }
+        }
+        else {
+            // Skip geometry/xy/etc without allocating or reading into RAM
+            if (payloadLen > 0) {
+                if (fseek(f, payloadLen, SEEK_CUR) != 0) {
+                    break;
+                }
+            }
         }
     }
 
