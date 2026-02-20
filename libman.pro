@@ -24,6 +24,8 @@ QMAKE_CXXFLAGS += -g1
 
 
 SOURCES += src/main.cpp\
+    gds/gdsReadAsync.cpp \
+    src/klayoutServer.cpp \
         src/mainwindow.cpp \
     extension/variantmanager.cpp \
     extension/variantfactory.cpp \

@@ -1,6 +1,9 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "gds/gdsreader.h"
+
+#include <QProcess>
 #include <QMainWindow>
 
 class Properties;
@@ -55,8 +58,17 @@ public:
     explicit MainWindow(const QString &projFile, const QString &runDir, QWidget *parent = 0);
     ~MainWindow();
 
+    struct GdsCacheEntry
+    {
+        bool                                loaded  = false;
+        bool                                loading = false;
+        QString                             path;
+        GdsReader::GdsHierarchy             hierarchy;
+        QStringList                         errors;
+    };
+
 private slots:
-    void                                closeEvent(QCloseEvent *event);
+    void                                closeEvent(QCloseEvent *event) override;
     bool                                eventFilter(QObject *obj, QEvent *event) override;
     void                                showViewMenu(const QPoint &pos);
     void                                showGroupMenu(const QPoint &pos);
@@ -118,7 +130,6 @@ private slots:
     void                                on_actionClear_Recent_File_Stack_triggered();
 
     void                                on_treeLibs_itemClicked(QTreeWidgetItem *item, int column);
-    void                                on_listViews_itemClicked(QTreeWidgetItem *item, int column);
     void                                on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int);
     void                                on_listDocumentation_itemDoubleClicked(QTreeWidgetItem *item);
     void                                on_listGroups_itemClicked(QListWidgetItem *item);
@@ -150,6 +161,20 @@ private:
 
     void                                setStateSaved();
     void                                setStateChanged();
+
+    bool                                filterViewsTreeItemNoPopulate(QTreeWidgetItem *item, const QString &filter);
+
+    void                                loadGdsHierarchyAsync(const QString &gdsPath,
+                                                              const std::shared_ptr<GdsCacheEntry> &entry,
+                                                              QTreeWidgetItem *targetItem,
+                                                              const QString &requestedCellName = QString());
+
+    std::shared_ptr<GdsCacheEntry>      ensureGdsLoaded(const QString &gdsPath);
+    void                                populateGdsTopLevel(QTreeWidgetItem *gdsItem,
+                                                            const std::shared_ptr<GdsCacheEntry> &entry);
+    void                                populateCellChildren(QTreeWidgetItem *cellItem,
+                                                             const std::shared_ptr<GdsCacheEntry> &entry,
+                                                             const QString &cellName);
 
     void                                checkAndSaveProjectData(QCloseEvent *);
 
@@ -214,6 +239,12 @@ private:
 
     QMap<QString, QString>              getCurrentLibraries() const;
 
+    bool                                ensureKLayoutServerRunning(const QString &tool);
+    bool                                sendKLayoutOpenRequest(const QString &gdsPath, const QString &cellName);
+    QString                             createKLayoutServerScript(const QString &cmdFile) const;
+    bool                                sendKLayoutSelectRequest(const QString &gdsPath, const QString &cellName);
+
+
     QString                             createKLayoutOpenScript(const QString &gdsPath, const QString &cellName) const;
     void                                startToolWithTempScript(const QString &tool, const QStringList &args, const QString &scriptPath);
 
@@ -231,6 +262,13 @@ private:
 
     QStringList                         m_copyData;             /*!< A list used as a buffer for coping data (library/cell/view). */
     COPY_STATE                          m_currentCopyState;     /*!< State to specify what user would like to copy (library/cell/view). */
+
+    QProcess                           *m_klayoutProc = nullptr;
+    QString                             m_klayoutCmdFile;
+    QString                             m_klayoutServerScript;
+
+    QHash<QString,
+          std::shared_ptr<GdsCacheEntry>> m_gdsCache;
 };
 
 /*!*******************************************************************************************************************

@@ -39,8 +39,11 @@
 #include <ctime>
 #include <vector>
 
-#include <QByteArray>
 #include <QSet>
+#include <QFile>
+#include <QFile>
+#include <QByteArray>
+#include <QElapsedTimer>
 
 #include "gdsreader.h"
 
@@ -355,11 +358,20 @@ bool GdsReader::readPayload(FILE *f, int payloadLen, QByteArray &payload)
 }
 
 
-/*!********************************************************************************************************************
- * \brief Reads hierarchy information from a GDS file.
- * \param out Output hierarchy structure.
- * \return true if hierarchy was successfully read.
- *********************************************************************************************************************/
+static inline quint16 be16(const uchar *p)
+{
+    return (quint16(p[0]) << 8) | quint16(p[1]);
+}
+
+static inline QString decodeNameLatin1(const uchar *payload, int n)
+{
+    while (n > 0 && payload[n - 1] == 0) {
+        --n;
+    }
+    // GDSII names are traditionally ASCII/Latin1
+    return QString::fromLatin1(reinterpret_cast<const char *>(payload), n);
+}
+
 bool GdsReader::readHierarchy(GdsHierarchy &out)
 {
     out.topCells.clear();
@@ -367,86 +379,127 @@ bool GdsReader::readHierarchy(GdsHierarchy &out)
     out.allCells.clear();
     m_errorList.clear();
 
-    FILE *f = fopen(m_fileName.toStdString().c_str(), "rb");
-    if (!f) {
+    if (m_fileName.isEmpty()) {
+        m_errorList << "Empty GDS filename.";
+        return false;
+    }
+
+    QFile file(m_fileName);
+    if (!file.open(QIODevice::ReadOnly)) {
         m_errorList << QString("Failed to open GDS for read: '%1'").arg(m_fileName);
         return false;
     }
+
+    const qint64 fileSize = file.size();
+    if (fileSize < 4) {
+        m_errorList << QString("GDS file too small: '%1'").arg(m_fileName);
+        return false;
+    }
+
+    uchar *base = file.map(0, fileSize);
+    if (!base) {
+        m_errorList << QString("Failed to memory-map GDS: '%1'").arg(m_fileName);
+        return false;
+    }
+
+    // Optional: lightweight progress (stderr)
+    QElapsedTimer timer;
+    timer.start();
+    qint64 lastLogMs = 0;
+
+    const uchar *p   = base;
+    const uchar *end = base + fileSize;
 
     QString currentCell;
     bool inRef = false;
     QSet<QString> referenced;
 
-    quint16 recType = 0;
-    quint16 len = 0;
-    QByteArray payload;
+    bool sawEndlib = false;
 
-    while (readRecordHeader(f, recType, len)) {
+    while (p + 4 <= end) {
+        const quint16 len     = be16(p);
+        const quint16 recType = be16(p + 2);
 
-        const int payloadLen = static_cast<int>(len) - 4;
-        if (payloadLen < 0) {
+        if (len < 4) {
+            break;
+        }
+        if (p + len > end) {
+            // Truncated / incomplete file
             break;
         }
 
-        const bool needPayload =
-            (recType == GDS_STRNAME) ||
-            (recType == GDS_SREF)   ||
-            (recType == GDS_AREF)   ||
-            (recType == GDS_SNAME)  ||
-            (recType == GDS_ENDEL)  ||
-            (recType == GDS_ENDLIB);
+        const uchar *payload = p + 4;
+        const int payloadLen = int(len) - 4;
 
-        if (needPayload) {
-            if (!readPayload(f, payloadLen, payload)) {
-                break;
-            }
+        // Progress every ~500ms
+        if (timer.elapsed() - lastLogMs > 500) {
+            lastLogMs = timer.elapsed();
+            const qint64 posMB = (p - base) / (1024 * 1024);
+            /*fprintf(stderr,
+                    "[GDS] scan %lld/%lld MB, cells=%d, elapsed=%lld ms\n",
+                    (long long)posMB,
+                    (long long)(fileSize / (1024 * 1024)),
+                    out.allCells.size(),
+                    (long long)timer.elapsed());*/
+        }
 
-            if (recType == GDS_STRNAME) {
-                currentCell = decodeGdsString(payload);
+        if (recType == GDS_STRNAME) {
+            currentCell = decodeNameLatin1(payload, payloadLen);
+            if (!currentCell.isEmpty()) {
                 out.allCells.insert(currentCell);
-                out.children[currentCell]; // create empty entry
-                inRef = false;
+                out.children[currentCell]; // ensure entry
             }
-            else if (recType == GDS_SREF || recType == GDS_AREF) {
-                inRef = true;
-            }
-            else if (recType == GDS_SNAME && inRef && !currentCell.isEmpty()) {
-                const QString ref = decodeGdsString(payload);
-                out.children[currentCell] << ref;
-                out.allCells.insert(ref);
-                referenced.insert(ref);
-            }
-            else if (recType == GDS_ENDEL) {
-                inRef = false;
-            }
-            else if (recType == GDS_ENDLIB) {
-                break;
-            }
+            inRef = false;
         }
-        else {
-            // Skip geometry/xy/etc without allocating or reading into RAM
-            if (payloadLen > 0) {
-                if (fseek(f, payloadLen, SEEK_CUR) != 0) {
-                    break;
+        else if (recType == GDS_SREF || recType == GDS_AREF) {
+            inRef = true;
+        }
+        else if (recType == GDS_SNAME) {
+            if (inRef && !currentCell.isEmpty()) {
+                const QString ref = decodeNameLatin1(payload, payloadLen);
+                if (!ref.isEmpty()) {
+                    out.children[currentCell] << ref;
+                    out.allCells.insert(ref);
+                    referenced.insert(ref);
                 }
+                // Usually exactly one SNAME per SREF/AREF
+                inRef = false;
             }
         }
+        else if (recType == GDS_ENDEL) {
+            inRef = false;
+            currentCell.clear();
+        }
+        else if (recType == GDS_ENDLIB) {
+            sawEndlib = true;
+            break;
+        }
+
+        p += len;
     }
 
-    fclose(f);
+    file.unmap(base);
+    file.close();
 
-    QSet<QString> top = out.allCells;
-    for (const QString &r : referenced) {
-        top.remove(r);
+    if (!sawEndlib) {
+        m_errorList << QString("GDS appears incomplete (ENDLIB not found): '%1'").arg(m_fileName);
+        return false;
     }
 
-    out.topCells = QStringList(top.begin(), top.end());
+    // Compute topCells without copying QSet
+    out.topCells.clear();
+    out.topCells.reserve(out.allCells.size());
+    for (const QString &c : out.allCells) {
+        if (!referenced.contains(c)) {
+            out.topCells << c;
+        }
+    }
     out.topCells.sort();
 
-    for (auto it = out.children.begin(); it != out.children.end(); ++it) {
-        it.value().removeDuplicates();
-        it.value().sort();
-    }
+    // IMPORTANT: Do NOT globally sort/dedup children here.
+    // Do it lazily in UI on expand of a specific cell:
+    //   auto kids = out.children.value(cell);
+    //   kids.removeDuplicates(); kids.sort();
 
     return true;
 }

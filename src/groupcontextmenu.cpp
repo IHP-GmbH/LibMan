@@ -245,35 +245,136 @@ void MainWindow::on_viewItemExpanded(QTreeWidgetItem *item)
         return;
     }
 
-    // Only react on GDS view node
-    if (item->text(0) != "gds") {
-        return;
-    }
+    const int type = item->data(0, RoleType).toInt();
 
-    // Lazy loading: hierarchy already created
-    if (item->childCount() > 0) {
-        return;
-    }
+    // ------------------------------------------------------------
+    // GDS root ("gds")
+    // ------------------------------------------------------------
+    if (item->text(0) == "gds") {
 
-    const QString gdsPath = item->data(0, RoleGdsPath).toString();
-    GdsReader reader(gdsPath);
-
-    GdsReader::GdsHierarchy hierarchy;
-    if (!reader.readHierarchy(hierarchy)) {
-        for (const QString &err : reader.getErrors()) {
-            error(err, false);
+        if (item->childCount() > 0) {
+            return;
         }
+
+        const QString gdsPath = item->data(0, RoleGdsPath).toString();
+        if (gdsPath.isEmpty()) {
+            return;
+        }
+
+        auto entry = ensureGdsLoaded(gdsPath);
+
+        if (entry->loaded) {
+            populateGdsTopLevel(item, entry);
+            return;
+        }
+
+        if (entry->loading) {
+            return;
+        }
+
+        loadGdsHierarchyAsync(entry->path, entry, item);
         return;
     }
 
-    for (const QString &topCell : hierarchy.topCells) {
-        QTreeWidgetItem *cellItem = new QTreeWidgetItem(item);
+    // ------------------------------------------------------------
+    // Cell node
+    // ------------------------------------------------------------
+    if (type == ItemCell) {
+
+        if (item->childCount() > 0) {
+            return;
+        }
+
+        const QString gdsPath  = item->data(0, RoleGdsPath).toString();
+        const QString cellName = item->data(0, RoleCellName).toString();
+        if (gdsPath.isEmpty() || cellName.isEmpty()) {
+            return;
+        }
+
+        auto entry = ensureGdsLoaded(gdsPath);
+
+        if (entry->loaded) {
+            populateCellChildren(item, entry, cellName);
+            return;
+        }
+
+        if (entry->loading) {
+            return;
+        }
+
+        loadGdsHierarchyAsync(entry->path, entry, item, cellName);
+        return;
+    }
+}
+
+void MainWindow::populateCellChildren(QTreeWidgetItem *cellItem,
+                                      const std::shared_ptr<GdsCacheEntry> &entry,
+                                      const QString &cellName)
+{
+    if (!cellItem || !entry) {
+        return;
+    }
+
+    if (cellItem->childCount() > 0) {
+        return;
+    }
+
+    const auto it = entry->hierarchy.children.find(cellName);
+    if (it == entry->hierarchy.children.end()) {
+        return;
+    }
+
+    const QStringList childs = it.value();
+    for (const QString &ch : childs) {
+        auto *chItem = new QTreeWidgetItem(cellItem);
+        chItem->setText(0, ch);
+        chItem->setData(0, RoleType, ItemCell);
+        chItem->setData(0, RoleCellName, ch);
+        chItem->setData(0, RoleGdsPath, entry->path);
+
+        const auto it2 = entry->hierarchy.children.find(ch);
+        if (it2 != entry->hierarchy.children.end() && !it2.value().isEmpty()) {
+            chItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+        }
+    }
+}
+
+std::shared_ptr<MainWindow::GdsCacheEntry> MainWindow::ensureGdsLoaded(const QString &gdsPath)
+{
+    const QString key = QFileInfo(gdsPath).absoluteFilePath();
+
+    auto it = m_gdsCache.find(key);
+    if (it != m_gdsCache.end()) {
+        return it.value();
+    }
+
+    auto entry = std::make_shared<GdsCacheEntry>();
+    entry->path = key;
+
+    m_gdsCache.insert(key, entry);
+    return entry;
+}
+
+void MainWindow::populateGdsTopLevel(QTreeWidgetItem *gdsItem,
+                                     const std::shared_ptr<GdsCacheEntry> &entry)
+{
+    if (!gdsItem || !entry) {
+        return;
+    }
+
+    if (gdsItem->childCount() > 0) {
+        return;
+    }
+
+    for (const QString &topCell : entry->hierarchy.topCells) {
+        auto *cellItem = new QTreeWidgetItem(gdsItem);
         cellItem->setText(0, topCell);
         cellItem->setData(0, RoleType, ItemCell);
         cellItem->setData(0, RoleCellName, topCell);
+        cellItem->setData(0, RoleGdsPath, entry->path);
 
-        if (hierarchy.children.contains(topCell) &&
-            !hierarchy.children[topCell].isEmpty()) {
+        const auto it = entry->hierarchy.children.find(topCell);
+        if (it != entry->hierarchy.children.end() && !it.value().isEmpty()) {
             cellItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         }
     }

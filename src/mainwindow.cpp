@@ -1183,14 +1183,17 @@ QString MainWindow::createKLayoutOpenScript(const QString &gdsPath,
     }
 
     QTextStream out(&tf);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     out.setCodec("UTF-8");
+#else
+    out.setEncoding(QStringConverter::Utf8);
+#endif
 
     out <<
         R"(# -*- coding: utf-8 -*-
 import pya
 import os
 import os.path
-
 
 _app = pya.Application.instance()
 _mw  = _app.main_window() if _app is not None else None
@@ -1253,32 +1256,31 @@ class LibManRequest:
         if _mw is None:
             return
 
+        # Ensure layout is loaded
         if not os.path.exists(file_name):
+            # Only meaningful to create a layout when a cell name is given
+            if not cell_name:
+                return
             (lv, cv, lv_idx, cv_idx, need_save) = self.libman_create_layout(file_name, cell_name)
         else:
-            (lv, cv, lv_idx, cv_idx, need_save) = self.libman_open_layout(file_name, cell_name)
+            (lv, cv, lv_idx, cv_idx, need_save) = self.libman_open_layout(file_name)
 
-        # Set top cell
+        if lv is None or cv is None or cv_idx < 0:
+            return
+
         _mw.select_view(lv_idx)
-        top_cell = cv.layout().cell_by_name(cell_name)
-        lv.select_cell(top_cell, cv_idx)
 
-        # Optionally save if needed (kept disabled)
-#        if need_save:
-#            lv.save_as(cv_idx, file_name, False, pya.SaveLayoutOptions())
+        # If no cell requested: just open file (zoom_fit will be applied later)
+        if not cell_name:
+            return
 
-
-    def get_cellnames(self, file_name):
-        rl = []
-        if not os.path.exists(file_name):
-            return rl
-
-        ly = pya.Layout()
-        ly.read(file_name)
-        n = ly.cells()
-        for i in range(n):
-            rl.append(ly.cell_name(i))
-        return rl
+        # Select requested cell if it exists
+        try:
+            top_cell = cv.layout().cell_by_name(cell_name)
+            if top_cell is not None:
+                lv.select_cell(top_cell, cv_idx)
+        except Exception:
+            pass
 
 
     def libman_create_layout(self, file_name, cell_name):
@@ -1296,19 +1298,13 @@ class LibManRequest:
         return (lv, cv, lv_idx, cv_idx, False)  # do not save
 
 
-    def libman_open_layout(self, file_name, cell_name):
+    def libman_open_layout(self, file_name):
         (lv, cv, lv_idx, cv_idx) = self.libman_find_view_for_file(file_name)
         if cv_idx == -1:
+            # Load into existing view (same-view mode)
             _mw.load_layout(file_name, 1)
             (lv, cv, lv_idx, cv_idx) = self.libman_find_view_for_file(file_name)
-
-        # Ensure cell exists
-        cell_exists = cv.layout().has_cell(cell_name)
-        if not cell_exists:
-            cv.layout().add_cell(cell_name)
-            (lv, cv, lv_idx, cv_idx) = self.libman_find_view_for_file(file_name)
-
-        return (lv, cv, lv_idx, cv_idx, (not cell_exists))
+        return (lv, cv, lv_idx, cv_idx, False)
 
 
     def libman_get_view_and_index(self, cell_view):
@@ -1475,21 +1471,34 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
     // ------------------------------------------------------------
     if(viewName == "gds") {
 
-        if(cellName.isEmpty()) {
-            QProcess::startDetached(tool, QStringList() << viewPath);
+        // root "gds" item
+        if(type == ItemViewGds) {
+
+            const bool serverWasRunning = (m_klayoutProc && m_klayoutProc->state() != QProcess::NotRunning);
+
+            if(serverWasRunning) {
+                const QString groupName = getCurrentGroupName();
+                if(!groupName.isEmpty()) {
+                    sendKLayoutSelectRequest(viewPath, groupName);
+                }
+                return;
+            }
+
+            if(!ensureKLayoutServerRunning(tool)) {
+                error("Failed to start KLayout server.");
+                return;
+            }
+
+            sendKLayoutOpenRequest(viewPath, QString());
             return;
         }
 
-        const QString scriptPath = createKLayoutOpenScript(viewPath, cellName);
-        if(scriptPath.isEmpty() || !QFileInfo(scriptPath).exists()) {
-            error("Failed to create temporary KLayout script.");
+        if(!ensureKLayoutServerRunning(tool)) {
+            error("Failed to start KLayout server.");
             return;
         }
 
-        QStringList args;
-        args << "-rr" << scriptPath;
-
-        startToolWithTempScript(tool, args, scriptPath);
+        sendKLayoutOpenRequest(viewPath, cellName);
         return;
     }
 
@@ -1538,23 +1547,54 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 }
 
 /*!*******************************************************************************************************************
+ * \brief Recursively hides/shows items based on filter, without populating any lazy data.
+ *
+ * Works only on items that already exist in the tree (already expanded/filled).
+ * If any child matches, its parents become visible too.
+ *
+ * \param item     Item to process.
+ * \param filter   Search text.
+ * \return true if item or any of its existing children matches.
+ **********************************************************************************************************************/
+bool MainWindow::filterViewsTreeItemNoPopulate(QTreeWidgetItem *item, const QString &filter)
+{
+    if (!item) {
+        return false;
+    }
+
+    const bool match = filter.isEmpty() || item->text(0).contains(filter, Qt::CaseInsensitive);
+
+    bool childMatch = false;
+    for (int i = 0; i < item->childCount(); ++i) {
+        if (filterViewsTreeItemNoPopulate(item->child(i), filter)) {
+            childMatch = true;
+        }
+    }
+
+    const bool visible = filter.isEmpty() || match || childMatch;
+    item->setHidden(!visible);
+
+    // optional UX: auto-expand only already-existing branches that have matches
+    if (!filter.isEmpty() && childMatch) {
+        item->setExpanded(true);
+    }
+
+    return (match || childMatch);
+}
+
+/*!*******************************************************************************************************************
  * \brief Handles click on an item in the Views tree widget.
  *        Stores clicked item text and updates the View filter line edit.
  * \param item       Pointer to clicked tree item.
  * \param column     Column index where click happened.
  **********************************************************************************************************************/
-void MainWindow::on_listViews_itemClicked(QTreeWidgetItem *item, int column)
+void MainWindow::on_txtViewSearch_textEdited(const QString &filter)
 {
-    if(!item) {
-        return;
+    for (int i = 0; i < m_ui->listViews->topLevelItemCount(); ++i) {
+        QTreeWidgetItem *top = m_ui->listViews->topLevelItem(i);
+        filterViewsTreeItemNoPopulate(top, filter);
     }
-
-    Q_UNUSED(column);
-
-    m_itemText = item->text(0);
-    m_ui->txtViewSearch->setText(m_itemText);
 }
-
 
 /*!*******************************************************************************************************************
  * \brief Slot is to load groups (cells) located into the specified category file.
@@ -1987,15 +2027,6 @@ void MainWindow::on_txtCatSearch_textEdited(const QString &filter)
 void MainWindow::on_txtCellSearch_textEdited(const QString &filter)
 {
     hideListItem(m_ui->listGroups, filter);
-}
-
-/*!*******************************************************************************************************************
- * \brief Filters views based on user input.
- * \param filter     Text string used to filter views.
- **********************************************************************************************************************/
-void MainWindow::on_txtViewSearch_textEdited(const QString &filter)
-{
-    hideTreeItem(m_ui->listViews, filter);
 }
 
 /*!*******************************************************************************************************************
