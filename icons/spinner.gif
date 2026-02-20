@@ -1,0 +1,3 @@
+<qresource prefix="/icons">
+    <file>icons/spinner.gif</file>
+</qresource>

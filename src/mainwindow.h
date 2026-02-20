@@ -67,6 +67,11 @@ public:
         QStringList                         errors;
     };
 
+    struct SpinnerState {
+        QTimer *timer = nullptr;
+        int angleDeg = 0; // 0..359
+    };
+
 private slots:
     void                                closeEvent(QCloseEvent *event) override;
     bool                                eventFilter(QObject *obj, QEvent *event) override;
@@ -168,6 +173,7 @@ private:
                                                               const std::shared_ptr<GdsCacheEntry> &entry,
                                                               QTreeWidgetItem *targetItem,
                                                               const QString &requestedCellName = QString());
+    void                                setLoadingSpinner(QTreeWidgetItem *item, bool on);
 
     std::shared_ptr<GdsCacheEntry>      ensureGdsLoaded(const QString &gdsPath);
     void                                populateGdsTopLevel(QTreeWidgetItem *gdsItem,
@@ -266,6 +272,8 @@ private:
     QProcess                           *m_klayoutProc = nullptr;
     QString                             m_klayoutCmdFile;
     QString                             m_klayoutServerScript;
+
+    QHash<QTreeWidgetItem*, SpinnerState> m_spinnerStates;
 
     QHash<QString,
           std::shared_ptr<GdsCacheEntry>> m_gdsCache;

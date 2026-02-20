@@ -8,5 +8,6 @@
         <file alias="logo">icons/logo.png</file>
         <file alias="documents">icons/documents.png</file>
         <file alias="categories">icons/categories.png</file>
+        <file alias="spinner">icons/spinner.gif</file>
     </qresource>
 </RCC>
