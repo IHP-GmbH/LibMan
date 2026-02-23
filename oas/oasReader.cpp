@@ -52,58 +52,6 @@ static inline QString hexDumpN(const uchar *p, const uchar *end, int maxBytes = 
     return b.toHex(' ');
 }
 
-#if OAS_TRACE
-static inline void traceRecBegin(QStringList &errors,
-                                 const OasParseState &st,
-                                 const uchar *recStart,
-                                 quint64 recId,
-                                 const uchar *pAfterId,
-                                 const uchar *end)
-{
-    errors << QString("OAS REC BEGIN off=%1 id=%2 next=%3")
-    .arg(qulonglong(recStart - st.fileBase))
-        .arg(qulonglong(recId))
-        .arg(hexDumpN(pAfterId, end, 32));
-}
-
-static inline void traceRecEnd(QStringList &errors,
-                               const OasParseState &st,
-                               const uchar *recStart,
-                               quint64 recId,
-                               const uchar *recEnd,
-                               const uchar *end,
-                               const char *status)
-{
-    errors << QString("OAS REC %1 off=%2 id=%3 consumed=%4 tail=%5")
-    .arg(status)
-        .arg(qulonglong(recStart - st.fileBase))
-        .arg(qulonglong(recId))
-        .arg(qulonglong(recEnd - recStart))
-        .arg(hexDumpN(recEnd, end, 32));
-}
-
-static inline void traceField(QStringList &errors,
-                              const OasParseState &st,
-                              const char *what,
-                              const uchar *at,
-                              const uchar *end,
-                              const QString &extra = QString())
-{
-    if (extra.isEmpty()) {
-        errors << QString("  FIELD %1 off=%2 head=%3")
-        .arg(what)
-            .arg(qulonglong(at - st.fileBase))
-            .arg(hexDumpN(at, end, 24));
-    } else {
-        errors << QString("  FIELD %1 off=%2 %3 head=%4")
-        .arg(what)
-            .arg(qulonglong(at - st.fileBase))
-            .arg(extra)
-            .arg(hexDumpN(at, end, 24));
-    }
-}
-#endif
-
 /*!********************************************************************************************************************
  * \brief Reads a single byte and advances the cursor.
  *
@@ -622,59 +570,6 @@ static bool parseBuffer(OasCursor c,
                         QStringList &errors,
                         OasParseState &st);
 
-#if OAS_TRACE
-static inline bool readUIntT(OasCursor &c, quint64 &out,
-                             QStringList &errors, const OasParseState &st, const char *tag)
-{
-    const uchar *at = c.p;
-    traceField(errors, st, tag, at, c.end);
-    if (!readUInt(c, out)) return false;
-    errors << QString("  FIELD %1 = %2").arg(tag).arg(qulonglong(out));
-    return true;
-}
-
-static inline bool readSIntT(OasCursor &c, qint64 &out,
-                             QStringList &errors, const OasParseState &st, const char *tag)
-{
-    const uchar *at = c.p;
-    traceField(errors, st, tag, at, c.end);
-    if (!readSInt(c, out)) return false;
-    errors << QString("  FIELD %1 = %2").arg(tag).arg(qlonglong(out));
-    return true;
-}
-
-static inline bool readByteT(OasCursor &c, uchar &out,
-                             QStringList &errors, const OasParseState &st, const char *tag)
-{
-    const uchar *at = c.p;
-    traceField(errors, st, tag, at, c.end);
-    if (!readByte(c, out)) return false;
-    errors << QString("  FIELD %1 = 0x%2").arg(tag).arg(int(out), 2, 16, QLatin1Char('0'));
-    return true;
-}
-
-static inline bool readStringT(OasCursor &c, QByteArray &out,
-                               QStringList &errors, const OasParseState &st, const char *tag, int hexLimit = 128)
-{
-    const uchar *at = c.p;
-    traceField(errors, st, tag, at, c.end);
-
-    quint64 n = 0;
-    if (!readUIntT(c, n, errors, st, "len(varint)")) return false;
-    if (n > quint64(c.end - c.p)) return false;
-
-    out = QByteArray(reinterpret_cast<const char*>(c.p), int(n));
-    c.p += int(n);
-
-    const QByteArray shown = (out.size() > hexLimit) ? out.left(hexLimit) : out;
-    errors << QString("  FIELD %1 bytes=%2%3")
-                  .arg(tag)
-                  .arg(QString(shown.toHex(' ')))
-                  .arg(out.size() > hexLimit ? " ..." : "");
-    return true;
-}
-#endif
-
 /*!********************************************************************************************************************
  * \brief Parses a single OASIS record and advances the cursor.
  *
@@ -692,17 +587,7 @@ static bool parseOneRecord(OasCursor &c,
     const uchar *recStart = c.p;
 
     quint64 recId = 0;
-#if OAS_TRACE
-    if (!readUIntT(c, recId, errors, st, "recId(varint)")) return false;
-#else
     if (!readUInt(c, recId)) return false;
-#endif
-
-#if OAS_TRACE
-    if (st.traceCount < st.traceLimit) {
-        traceRecBegin(errors, st, recStart, recId, c.p, c.end);
-    }
-#endif
 
 #if OAS_TRACE
     if (st.traceCount < st.traceLimit) {
