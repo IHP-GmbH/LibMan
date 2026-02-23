@@ -13,6 +13,15 @@
 #include "src/mainwindow.h"
 #include "ui_mainwindow.h"
 
+/*!*******************************************************************************************************************
+ * \brief Returns a hexadecimal UTF-16 dump of the given string.
+ *
+ * Converts each QChar of the input string into its Unicode code point
+ * representation (U+XXXX format) and joins them into a single string.
+ *
+ * \param s Input string to inspect.
+ * \return Space-separated UTF-16 code points.
+ *********************************************************************************************************************/
 static QString dumpU16(const QString& s)
 {
     QStringList parts;
@@ -22,6 +31,15 @@ static QString dumpU16(const QString& s)
     return parts.join(' ');
 }
 
+/*!*******************************************************************************************************************
+ * \brief Prints detailed debug information about a QString.
+ *
+ * Outputs the plain text, UTF-16 code points and UTF-8 hexadecimal
+ * representation of the given string using qDebug().
+ *
+ * \param tag Debug label to prefix the output.
+ * \param s   String to inspect.
+ *********************************************************************************************************************/
 static void dbgStr(const char* tag, const QString& s)
 {
     qDebug().noquote()
@@ -31,6 +49,15 @@ static void dbgStr(const char* tag, const QString& s)
     << "utf8hex=" << QString(s.toUtf8().toHex(' '));
 }
 
+/*!*******************************************************************************************************************
+ * \brief Ensures that an OAS cache entry exists for the given file path.
+ *
+ * If the OASIS file is already cached, the existing entry is returned.
+ * Otherwise, a new cache entry is created, stored and returned.
+ *
+ * \param oasPath Path to the OASIS file.
+ * \return Shared pointer to the corresponding cache entry.
+ *********************************************************************************************************************/
 std::shared_ptr<MainWindow::OasCacheEntry> MainWindow::ensureOasLoaded(const QString &oasPath)
 {
     const QString key = QFileInfo(oasPath).absoluteFilePath();
@@ -47,6 +74,15 @@ std::shared_ptr<MainWindow::OasCacheEntry> MainWindow::ensureOasLoaded(const QSt
     return entry;
 }
 
+/*!*******************************************************************************************************************
+ * \brief Populates the top-level OASIS cells in the tree widget.
+ *
+ * Creates one tree item per top-level cell found in the parsed hierarchy.
+ * Child indicators are added if the cell has sub-cells.
+ *
+ * \param oasItem Tree widget item representing the OASIS file.
+ * \param entry   Shared cache entry containing the parsed hierarchy.
+ *********************************************************************************************************************/
 void MainWindow::populateOasTopLevel(QTreeWidgetItem *oasItem,
                                      const std::shared_ptr<OasCacheEntry> &entry)
 {
@@ -75,6 +111,16 @@ void MainWindow::populateOasTopLevel(QTreeWidgetItem *oasItem,
     }
 }
 
+/*!*******************************************************************************************************************
+ * \brief Populates the child cells of a specific OASIS cell.
+ *
+ * Creates tree items for all direct child cells of the given parent cell.
+ * Child indicators are added if further hierarchy levels exist.
+ *
+ * \param cellItem Tree widget item representing the parent cell.
+ * \param entry    Shared cache entry containing the parsed hierarchy.
+ * \param cellName Name of the parent cell.
+ *********************************************************************************************************************/
 void MainWindow::populateOasCellChildren(QTreeWidgetItem *cellItem,
                                          const std::shared_ptr<OasCacheEntry> &entry,
                                          const QString &cellName)
@@ -110,6 +156,18 @@ void MainWindow::populateOasCellChildren(QTreeWidgetItem *cellItem,
     }
 }
 
+/*!*******************************************************************************************************************
+ * \brief Asynchronously loads and parses an OASIS hierarchy.
+ *
+ * Runs the OASIS parser in a background thread and updates the UI
+ * once loading is complete. Displays status messages and optionally
+ * expands a requested cell in the hierarchy.
+ *
+ * \param oasPath            Path to the OASIS file.
+ * \param entry              Shared cache entry to populate.
+ * \param targetItem         Tree widget item representing the OASIS node.
+ * \param requestedCellName  Optional cell name to expand after loading.
+ *********************************************************************************************************************/
 void MainWindow::loadOasHierarchyAsync(const QString &oasPath,
                                        const std::shared_ptr<OasCacheEntry> &entry,
                                        QTreeWidgetItem *targetItem,
