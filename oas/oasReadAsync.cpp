@@ -61,7 +61,7 @@ void MainWindow::populateOasTopLevel(QTreeWidgetItem *oasItem,
     for (const QString &topCell : entry->hierarchy.topCells) {
         auto *cellItem = new QTreeWidgetItem(oasItem);
 
-        dbgStr("OAS TOPCELL", topCell);
+        //dbgStr("OAS TOPCELL", topCell);
 
         cellItem->setText(0, topCell);
         cellItem->setData(0, RoleType, ItemCell);
@@ -95,7 +95,7 @@ void MainWindow::populateOasCellChildren(QTreeWidgetItem *cellItem,
     const QStringList childs = it.value();
     for (const QString &ch : childs) {
 
-        dbgStr("OAS CHILD", ch);
+        //dbgStr("OAS CHILD", ch);
 
         auto *chItem = new QTreeWidgetItem(cellItem);
         chItem->setText(0, ch);

@@ -1,4 +1,5 @@
-#include "oasreader.h"
+// oasReader.cpp
+#include "oasReader.h"
 
 #include <QFile>
 #include <QDebug>
@@ -15,6 +16,32 @@
 
 #ifndef OAS_TRACE
 #define OAS_TRACE 1
+#endif
+
+// Extra debug guards (hang/off-by-offset hunting)
+#ifndef OAS_GUARD
+#define OAS_GUARD 1
+#endif
+
+#ifndef OAS_GUARD_MAX_RECORDS
+#define OAS_GUARD_MAX_RECORDS 50000000ULL
+#endif
+
+#ifndef OAS_GUARD_STALL_LIMIT
+// How many consecutive iterations with "tiny progress" are allowed before abort
+#define OAS_GUARD_STALL_LIMIT 200000ULL
+#endif
+
+#ifndef OAS_GUARD_TINY_PROGRESS_BYTES
+#define OAS_GUARD_TINY_PROGRESS_BYTES 1
+#endif
+
+#ifndef OAS_GUARD_LOG_EVERY_N_RECORDS
+#define OAS_GUARD_LOG_EVERY_N_RECORDS 200000ULL
+#endif
+
+#ifndef OAS_GUARD_HEX_AROUND
+#define OAS_GUARD_HEX_AROUND 64
 #endif
 
 /*!********************************************************************************************************************
@@ -50,6 +77,38 @@ static inline QString hexDumpN(const uchar *p, const uchar *end, int maxBytes = 
     const int n = int(std::min<qint64>(maxBytes, end - p));
     QByteArray b(reinterpret_cast<const char*>(p), n);
     return b.toHex(' ');
+}
+
+/*!********************************************************************************************************************
+ * \brief Produces a hex dump around a pointer (bytes before/after).
+ *
+ * Useful to verify offsets when string decoding looks wrong.
+ *
+ * \param base File base pointer.
+ * \param end File end pointer.
+ * \param p Current pointer.
+ * \param radius Bytes before/after.
+ * \return Hex-encoded string with marker position info.
+ *********************************************************************************************************************/
+static inline QString hexAround(const uchar *base, const uchar *end, const uchar *p, int radius = OAS_GUARD_HEX_AROUND)
+{
+    if (!base || !end || !p) return QString();
+
+    const uchar *a = p - radius;
+    const uchar *b = p + radius;
+
+    if (a < base) a = base;
+    if (b > end)  b = end;
+
+    const qint64 offA = a - base;
+    const qint64 offP = p - base;
+    const qint64 offB = b - base;
+
+    return QString("around[%1..%2] p=%3: %4")
+        .arg(qulonglong(offA))
+        .arg(qulonglong(offB))
+        .arg(qulonglong(offP))
+        .arg(hexDumpN(a, b, int(b - a)));
 }
 
 /*!********************************************************************************************************************
@@ -321,24 +380,94 @@ static inline bool skipRepetition(OasCursor &c)
     case 0:
         return true;
 
-    case 1: {
-        quint64 nx = 0, ny = 0;
-        qint64 dx = 0, dy = 0;
-        return readUInt(c, nx) && readUInt(c, ny) && readSInt(c, dx) && readSInt(c, dy);
+    case 1: { // x-dimension y-dimension x-space y-space
+        quint64 nx = 0, ny = 0, xs = 0, ys = 0;
+        return readUInt(c, nx) && readUInt(c, ny) && readUInt(c, xs) && readUInt(c, ys);
     }
 
-    case 2: {
-        quint64 n = 0;
-        qint64 dx = 0, dy = 0;
-        return readUInt(c, n) && readSInt(c, dx) && readSInt(c, dy);
+    case 2: { // x-dimension x-space
+        quint64 nx = 0, xs = 0;
+        return readUInt(c, nx) && readUInt(c, xs);
     }
 
-    case 3: {
-        quint64 n = 0;
-        return readUInt(c, n) && skipPointList(c);
+    case 3: { // y-dimension y-space
+        quint64 ny = 0, ys = 0;
+        return readUInt(c, ny) && readUInt(c, ys);
+    }
+
+    case 4: { // x-dimension x-space1 ... x-space(N-1), where N = xdim + 2 => count = xdim + 1
+        quint64 xdim = 0;
+        if (!readUInt(c, xdim)) return false;
+        for (quint64 i = 0; i < xdim + 1; ++i) {
+            quint64 xs = 0;
+            if (!readUInt(c, xs)) return false;
+        }
+        return true;
+    }
+
+    case 5: { // x-dimension grid x-space1 ... x-space(N-1)
+        quint64 xdim = 0, grid = 0;
+        if (!readUInt(c, xdim)) return false;
+        if (!readUInt(c, grid)) return false;
+        for (quint64 i = 0; i < xdim + 1; ++i) {
+            quint64 xs = 0;
+            if (!readUInt(c, xs)) return false;
+        }
+        return true;
+    }
+
+    case 6: { // y-dimension y-space1 ... y-space(M-1), count = ydim + 1
+        quint64 ydim = 0;
+        if (!readUInt(c, ydim)) return false;
+        for (quint64 i = 0; i < ydim + 1; ++i) {
+            quint64 ys = 0;
+            if (!readUInt(c, ys)) return false;
+        }
+        return true;
+    }
+
+    case 7: { // y-dimension grid y-space1 ... y-space(M-1)
+        quint64 ydim = 0, grid = 0;
+        if (!readUInt(c, ydim)) return false;
+        if (!readUInt(c, grid)) return false;
+        for (quint64 i = 0; i < ydim + 1; ++i) {
+            quint64 ys = 0;
+            if (!readUInt(c, ys)) return false;
+        }
+        return true;
+    }
+
+    case 8: { // n-dimension m-dimension n-displacement m-displacement (g-delta, g-delta)
+        quint64 nd = 0, md = 0;
+        return readUInt(c, nd) && readUInt(c, md) && skipGDelta(c) && skipGDelta(c);
+    }
+
+    case 9: { // dimension displacement (g-delta)
+        quint64 dim = 0;
+        return readUInt(c, dim) && skipGDelta(c);
+    }
+
+    case 10: { // dimension displacement1 ... displacement(P-1), count = dim + 1
+        quint64 dim = 0;
+        if (!readUInt(c, dim)) return false;
+        for (quint64 i = 0; i < dim + 1; ++i) {
+            if (!skipGDelta(c)) return false;
+        }
+        return true;
+    }
+
+    case 11: { // dimension grid displacement1 ... displacement(P-1), count = dim + 1
+        quint64 dim = 0, grid = 0;
+        if (!readUInt(c, dim)) return false;
+        if (!readUInt(c, grid)) return false;
+        for (quint64 i = 0; i < dim + 1; ++i) {
+            if (!skipGDelta(c)) return false;
+        }
+        return true;
     }
 
     default:
+        // spec: repetition type outside 0..11 = fatal
         return false;
     }
 }
@@ -527,6 +656,7 @@ struct OasParseState
     QHash<quint64, QString> cellNameByRef;
 
     const uchar *fileBase = nullptr;
+    const uchar *fileEnd  = nullptr;
 
     quint64 nextCellNameRef = 0;
     bool    explicitCellNameRefsSeen = false;
@@ -540,6 +670,14 @@ struct OasParseState
 #if OAS_TRACE
     int     traceLimit = 2000;
     int     traceCount = 0;
+#endif
+
+#if OAS_GUARD
+    quint64 recordCount = 0;
+    quint64 stallCount  = 0;
+    quint64 lastOff     = 0;
+    quint64 lastGoodOff = 0;
+    QElapsedTimer guardTimer;
 #endif
 };
 
@@ -558,6 +696,25 @@ static inline QString dumpU16(const QString& s)
 }
 
 /*!********************************************************************************************************************
+ * \brief Guarded debug log helper (throttled).
+ *
+ * Adds a line to errors and optionally qDebug().
+ *
+ * \param errors Error list.
+ * \param st Parser state.
+ * \param s Message.
+ *********************************************************************************************************************/
+static inline void dbgLog(QStringList &errors, OasParseState &st, const QString &s)
+{
+    errors << s;
+#if OAS_TRACE
+    Q_UNUSED(st);
+#else
+    Q_UNUSED(st);
+#endif
+}
+
+/*!********************************************************************************************************************
  * \brief Parses a buffer of OASIS records into a hierarchy model.
  * \param c Cursor over the buffer.
  * \param out Output hierarchy.
@@ -565,10 +722,85 @@ static inline QString dumpU16(const QString& s)
  * \param st Parser state.
  * \return True on success, false on parse failure.
  *********************************************************************************************************************/
-static bool parseBuffer(OasCursor c,
+static bool parseBuffer(OasCursor &c,
                         LayoutHierarchy &out,
                         QStringList &errors,
                         OasParseState &st);
+
+static inline bool peekUInt(const OasCursor &c, quint64 &out)
+{
+    OasCursor t = c;
+    return readUInt(t, out);
+}
+
+// NOTE: This is a pragmatic skipper. It aims to keep cursor in sync.
+// It supports common repetition patterns incl. rep10/rep11-like (displacement lists).
+static inline bool skipRepetitionEx(OasCursor &c)
+{
+    quint64 repType = 0;
+    if (!readUInt(c, repType)) return false;
+
+    // Common-sense sanity: repetition types are small.
+    // If this triggers, caller likely reached repetition at wrong offset.
+    if (repType > 64) return false;
+
+    switch (repType) {
+    case 0:
+        return true;
+
+        // Keep your original ones as "best guess" (some tools emit these)
+    case 1: {
+        quint64 nx = 0, ny = 0;
+        qint64 dx = 0, dy = 0;
+        return readUInt(c, nx) && readUInt(c, ny) && readSInt(c, dx) && readSInt(c, dy);
+    }
+    case 2: {
+        quint64 n = 0;
+        qint64 dx = 0, dy = 0;
+        return readUInt(c, n) && readSInt(c, dx) && readSInt(c, dy);
+    }
+    case 3: {
+        quint64 n = 0;
+        return readUInt(c, n) && skipPointList(c);
+    }
+
+        // Heuristic support for rep10/rep11-like displacement repetitions
+        // Based on examples where rep10 has dim + list of g(x,y) displacements,
+        // rep11 has dim + grid + list of g(x,y) displacements. :contentReference[oaicite:1]{index=1}
+    case 10: {
+        quint64 dim = 0;
+        if (!readUInt(c, dim)) return false;
+        if (dim > 1000000ULL) return false;
+
+        // Assume 'dim' displacement pairs follow (very common)
+        for (quint64 i = 0; i < dim; ++i) {
+            if (!skipGDelta(c)) return false; // x
+            if (!skipGDelta(c)) return false; // y
+        }
+        return true;
+    }
+    case 11: {
+        quint64 dim = 0;
+        quint64 grid = 0;
+        if (!readUInt(c, dim)) return false;
+        if (!readUInt(c, grid)) return false;
+        if (dim > 1000000ULL || grid > 100000000ULL) return false;
+
+        // Often dim-1 displacement pairs
+        const quint64 k = (dim > 0) ? (dim - 1) : 0;
+        for (quint64 i = 0; i < k; ++i) {
+            if (!skipGDelta(c)) return false; // x
+            if (!skipGDelta(c)) return false; // y
+        }
+        return true;
+    }
+
+    default:
+        // Unknown but "small" repType: we cannot safely skip without spec,
+        // better fail than desync silently.
+        return false;
+    }
+}
 
 /*!********************************************************************************************************************
  * \brief Parses a single OASIS record and advances the cursor.
@@ -591,11 +823,11 @@ static bool parseOneRecord(OasCursor &c,
 
 #if OAS_TRACE
     if (st.traceCount < st.traceLimit) {
-        errors << QString("TRACE #%1 off=%2 recId=%3 head=%4")
-        .arg(st.traceCount)
-            .arg(qulonglong(recStart - st.fileBase))
-            .arg(qulonglong(recId))
-            .arg(hexDumpN(c.p, c.end, 32));
+        /*qDebug() << QString("TRACE #%1 off=%2 recId=%3 head=%4")
+                      .arg(st.traceCount)
+                      .arg(qulonglong(recStart - st.fileBase))
+                      .arg(qulonglong(recId))
+                      .arg(hexDumpN(c.p, c.end, 32));*/
     }
 #endif
 
@@ -632,10 +864,16 @@ static bool parseOneRecord(OasCursor &c,
     }
 
     case 3: {
+        // implicit CELLNAME
         st.implicitCellNameRefsSeen = true;
+
         if (st.explicitCellNameRefsSeen) {
-            errors << "CELLNAME mixed implicit/explicit reference-number mode (3/4).";
-            goto done_fail;
+            // не фатально — просто предупреждение один раз
+            static bool warned = false;
+            if (!warned) {
+                warned = true;
+                //qDebug() << "CELLNAME: mixed implicit/explicit reference-number mode (3/4). Allowing.";
+            }
         }
 
         QByteArray raw;
@@ -643,28 +881,28 @@ static bool parseOneRecord(OasCursor &c,
 
         QString nameUtf8 = QString::fromUtf8(raw.constData(), raw.size());
         QString nameLat1 = QString::fromLatin1(raw.constData(), raw.size());
-        errors << QString("CELLNAME(implicit) bytes=%1 utf8='%2' latin1='%3'")
-                      .arg(QString(raw.toHex(' ')))
-                      .arg(nameUtf8)
-                      .arg(nameLat1);
-
         QString name = nameUtf8.contains(QChar(0xFFFD)) ? nameLat1 : nameUtf8;
 
-        if (!isLikelyValidCellName(name)) {
-            goto done_ok;
-        }
+        if (!isLikelyValidCellName(name)) goto done_ok;
 
-        st.cellNameByRef.insert(st.nextCellNameRef++, name);
+        const quint64 rn = st.nextCellNameRef++;
+
+        st.cellNameByRef.insert(rn, name);
         out.allCells.insert(name);
         out.children[name];
         goto done_ok;
     }
 
     case 4: {
+        // explicit CELLNAME
         st.explicitCellNameRefsSeen = true;
+
         if (st.implicitCellNameRefsSeen) {
-            errors << "CELLNAME mixed implicit/explicit reference-number mode (3/4).";
-            goto done_fail;
+            static bool warned = false;
+            if (!warned) {
+                warned = true;
+                //qDebug() << "CELLNAME: mixed implicit/explicit reference-number mode (3/4). Allowing.";
+            }
         }
 
         QByteArray raw;
@@ -675,13 +913,14 @@ static bool parseOneRecord(OasCursor &c,
 
         QString nameUtf8 = QString::fromUtf8(raw.constData(), raw.size());
         QString nameLat1 = QString::fromLatin1(raw.constData(), raw.size());
-        errors << QString("CELLNAME(explicit) rn=%1 bytes=%2 utf8='%3' latin1='%4'")
-                      .arg(rn)
-                      .arg(QString(raw.toHex(' ')))
-                      .arg(nameUtf8)
-                      .arg(nameLat1);
-
         QString name = nameUtf8.contains(QChar(0xFFFD)) ? nameLat1 : nameUtf8;
+
+        if (st.nextCellNameRef <= rn) st.nextCellNameRef = rn + 1;
+
+        if (!isLikelyValidCellName(name)) {
+            st.cellNameByRef.insert(rn, name);
+            goto done_ok;
+        }
 
         st.cellNameByRef.insert(rn, name);
         out.allCells.insert(name);
@@ -720,7 +959,10 @@ static bool parseOneRecord(OasCursor &c,
 
         const QString name = st.cellNameByRef.value(rn);
         if (name.isEmpty()) {
-            errors << QString("CELL references unknown CELLNAME ref=%1").arg(rn);
+            /*qDebug() << QString("CELL references unknown CELLNAME ref=%1 off=%2")
+                          .arg(rn)
+                          .arg(qulonglong(recStart - st.fileBase));
+            qDebug() << QString("CELL unknown-ref context: %1").arg(hexAround(st.fileBase, st.fileEnd, recStart));*/
             goto done_fail;
         }
 
@@ -733,16 +975,20 @@ static bool parseOneRecord(OasCursor &c,
 
     case 14: {
         QByteArray raw;
+        const uchar *strAt = c.p;
         if (!readString(c, raw)) goto done_fail;
 
         QString utf8 = QString::fromUtf8(raw.constData(), raw.size());
         QString lat1 = QString::fromLatin1(raw.constData(), raw.size());
         QString name = utf8.contains(QChar(0xFFFD)) ? lat1 : utf8;
 
-        errors << QString("CELL(name) bytes=%1 utf8='%2' lat1='%3' chosen='%4' u16=[%5]")
+        /*qDebug() << QString("CELL(name) off=%1 len=%2 bytes=%3 utf8='%4' lat1='%5' chosen='%6' u16=[%7] around=%8")
+                      .arg(qulonglong(strAt - st.fileBase))
+                      .arg(raw.size())
                       .arg(QString(raw.toHex(' ')))
                       .arg(utf8).arg(lat1).arg(name)
-                      .arg(dumpU16(name));
+                      .arg(dumpU16(name))
+                      .arg(hexAround(st.fileBase, st.fileEnd, strAt));*/
 
         st.currentCell = name;
         out.allCells.insert(name);
@@ -757,7 +1003,7 @@ static bool parseOneRecord(OasCursor &c,
 
     case 17: {
         if (st.currentCell.isEmpty()) {
-            errors << "PLACEMENT outside of CELL.";
+            //qDebug() << "PLACEMENT outside of CELL.";
             goto done_fail;
         }
 
@@ -774,16 +1020,35 @@ static bool parseOneRecord(OasCursor &c,
 
         if (Cbit) {
             if (N) {
-                quint64 rn = 0;
-                if (!readUInt(c, rn)) goto done_fail;
-                placedCell = st.cellNameByRef.value(rn);
-                if (placedCell.isEmpty()) {
-                    errors << QString("PLACEMENT references unknown CELLNAME ref=%1").arg(rn);
-                    goto done_fail;
+                // N=1 -> inline name string (как минимум для многих реальных файлов)
+                const uchar *nmAt = c.p;
+                if (!readNString(c, placedCell)) goto done_fail;
+
+                if (!isLikelyValidCellName(placedCell)) {
+                    /*qDebug() << QString("PLACEMENT inline-name suspicious parent='%1' chosen='%2' off=%3 nameAt=%4 around=%5")
+                                    .arg(st.currentCell)
+                                    .arg(placedCell)
+                                    .arg(qulonglong(recStart - st.fileBase))
+                                    .arg(qulonglong(nmAt - st.fileBase))
+                                    .arg(hexAround(st.fileBase, st.fileEnd, nmAt));*/
                 }
             } else {
-                if (!readNString(c, placedCell)) goto done_fail;
+                // N=0 -> reference-number
+                quint64 rn = 0;
+                if (!readUInt(c, rn)) goto done_fail;
+
+                placedCell = st.cellNameByRef.value(rn);
+                if (placedCell.isEmpty()) {
+                    /*qDebug() << QString("PLACEMENT references unknown CELLNAME ref=%1 parent='%2' off=%3")
+                                    .arg(rn)
+                                    .arg(st.currentCell)
+                                    .arg(qulonglong(recStart - st.fileBase));
+                    qDebug() << QString("PLACEMENT unknown-ref context: %1")
+                                    .arg(hexAround(st.fileBase, st.fileEnd, recStart));*/
+                    goto done_fail;
+                }
             }
+
             st.modalPlacementCell = placedCell;
         } else {
             placedCell = st.modalPlacementCell;
@@ -829,9 +1094,42 @@ static bool parseOneRecord(OasCursor &c,
         goto done_ok;
     }
 
-    case 19:
-        errors << "Unexpected record id 19 (unsupported mapping).";
-        goto done_fail;
+    case 19: { // TEXT
+        uchar info = 0;
+        if (!readByte(c, info)) goto done_fail;
+
+        // bit pattern: 0 C N X Y R T L  (from spec)
+        const bool L    = (info & 0x01) != 0;
+        const bool T    = (info & 0x02) != 0;
+        const bool R    = (info & 0x04) != 0;
+        const bool Y    = (info & 0x08) != 0;
+        const bool X    = (info & 0x10) != 0;
+        const bool N    = (info & 0x20) != 0;
+        const bool Cbit = (info & 0x40) != 0;
+
+        // text-string / reference-number / modal textstring
+        if (Cbit) {
+            if (N) {
+                quint64 rn = 0;
+                if (!readUInt(c, rn)) goto done_fail;   // TEXTSTRING ref
+            } else {
+                QString s;
+                if (!readAString(c, s)) goto done_fail; // inline text-string (a-string)
+            }
+        } else {
+            // C=0 => modal textstring, bytes in record отсутствуют -> ничего не читаем
+        }
+
+        if (L) { quint64 tlayer = 0; if (!readUInt(c, tlayer)) goto done_fail; }
+        if (T) { quint64 ttype  = 0; if (!readUInt(c, ttype))  goto done_fail; }
+
+        if (X) { qint64 vx = 0; if (!readSInt(c, vx)) goto done_fail; }
+        if (Y) { qint64 vy = 0; if (!readSInt(c, vy)) goto done_fail; }
+
+        if (R) { if (!skipRepetition(c)) goto done_fail; }
+
+        goto done_ok;
+    }
 
     case 20: {
         uchar info = 0;
@@ -878,6 +1176,8 @@ static bool parseOneRecord(OasCursor &c,
     }
 
     case 22: {
+        const quint64 recOff = quint64(recStart - st.fileBase);
+
         uchar info = 0;
         if (!readByte(c, info)) goto done_fail;
 
@@ -890,22 +1190,123 @@ static bool parseOneRecord(OasCursor &c,
         const bool W = (info & 0x40) != 0;
         const bool E = (info & 0x80) != 0;
 
+        /*qDebug() << QString("REC22 off=%1 info=0x%2 flags[L=%3 D=%4 R=%5 Y=%6 X=%7 P=%8 W=%9 E=%10] head=%11")
+                        .arg(qulonglong(recOff))
+                        .arg(int(info), 2, 16, QLatin1Char('0'))
+                        .arg(L).arg(D).arg(R).arg(Y).arg(X).arg(P).arg(W).arg(E)
+                        .arg(hexDumpN(c.p, c.end, 64));*/
+
         if (L) { quint64 v; if (!readUInt(c, v)) goto done_fail; }
         if (D) { quint64 v; if (!readUInt(c, v)) goto done_fail; }
         if (W) { quint64 v; if (!readUInt(c, v)) goto done_fail; }
-        if (P) { if (!skipPointList(c)) goto done_fail; }
-        if (X) { qint64 v;  if (!readSInt(c, v)) goto done_fail; }
-        if (Y) { qint64 v;  if (!readSInt(c, v)) goto done_fail; }
 
-        if (E) {
+        // Try two plausible orders for (P, X, Y) to avoid desync:
+        // A) P -> X -> Y  (your current)
+        // B) X -> Y -> P  (seen in some writer variants / record interpretations)
+        auto parse_PXY = [&](OasCursor &cc, bool orderPXY) -> bool {
+            if (orderPXY) {
+                if (P) {
+                    // debug point-list header
+                    OasCursor t = cc;
+                    quint64 ptType = 0, count = 0;
+                    if (readUInt(t, ptType) && readUInt(t, count)) {
+                        /*qDebug() << QString("REC22 P(list) off=%1 ptType=%2 count=%3")
+                                        .arg(qulonglong(cc.p - st.fileBase))
+                                        .arg(qulonglong(ptType))
+                                        .arg(qulonglong(count));*/
+                    }
+                    if (!skipPointList(cc)) return false;
+                }
+                if (X) { qint64 v; if (!readSInt(cc, v)) return false; }
+                if (Y) { qint64 v; if (!readSInt(cc, v)) return false; }
+            } else {
+                if (X) { qint64 v; if (!readSInt(cc, v)) return false; }
+                if (Y) { qint64 v; if (!readSInt(cc, v)) return false; }
+                if (P) {
+                    OasCursor t = cc;
+                    quint64 ptType = 0, count = 0;
+                    if (readUInt(t, ptType) && readUInt(t, count)) {
+                        /*qDebug() << QString("REC22 P(list) off=%1 ptType=%2 count=%3")
+                                        .arg(qulonglong(cc.p - st.fileBase))
+                                        .arg(qulonglong(ptType))
+                                        .arg(qulonglong(count));*/
+                    }
+                    if (!skipPointList(cc)) return false;
+                }
+            }
+            return true;
+        };
+
+        // E block (if present) is after geometry fields in your current implementation.
+        auto parse_E = [&](OasCursor &cc) -> bool {
+            if (!E) return true;
             quint64 a = 0, b = 0;
-            if (!readUInt(c, a)) goto done_fail;
-            if (!readUInt(c, b)) goto done_fail;
+            return readUInt(cc, a) && readUInt(cc, b);
+        };
+
+        // R repetition at end
+        auto parse_R = [&](OasCursor &cc) -> bool {
+            if (!R) return true;
+
+            quint64 repPeek = 0;
+            if (peekUInt(cc, repPeek)) {
+                /*qDebug() << QString("REC22 repetition peek repType=%1 at off=%2")
+                                .arg(qulonglong(repPeek))
+                                .arg(qulonglong(cc.p - st.fileBase));*/
+            } else {
+                /*qDebug() << QString("REC22 repetition peek FAILED at off=%1")
+                                .arg(qulonglong(cc.p - st.fileBase));*/
+            }
+
+            const quint64 repOff = quint64(cc.p - st.fileBase);
+            /*qDebug() << QString("REC22 repetition startOff=%1 ctx=%2")
+                            .arg(qulonglong(repOff))
+                            .arg(hexAround(st.fileBase, st.fileEnd, cc.p));*/
+
+            if (!skipRepetitionEx(cc)) {
+                /*qDebug() << QString("REC22 FAIL off=%1 what=skipRepetition repOff=%2 ctx=%3")
+                                .arg(qulonglong(recOff))
+                                .arg(qulonglong(repOff))
+                                .arg(hexAround(st.fileBase, st.fileEnd, cc.p));*/
+                return false;
+            }
+            return true;
+        };
+
+        // Attempt A) P->X->Y
+        {
+            OasCursor t = c;
+            bool ok = true;
+            ok = ok && parse_PXY(t, /*orderPXY=*/true);
+            ok = ok && parse_E(t);
+            ok = ok && parse_R(t);
+
+            // If repetition peek looked insane, ok will likely be false. If ok true, commit.
+            if (ok) {
+                c = t;
+                goto done_ok;
+            }
         }
 
-        if (R) { if (!skipRepetition(c)) goto done_fail; }
+        // Attempt B) X->Y->P
+        {
+            OasCursor t = c;
+            bool ok = true;
+            ok = ok && parse_PXY(t, /*orderPXY=*/false);
+            ok = ok && parse_E(t);
+            ok = ok && parse_R(t);
 
-        goto done_ok;
+            if (ok) {
+                c = t;
+                goto done_ok;
+            }
+        }
+
+        // Both failed -> give context and fail record
+        /*qDebug() << QString("REC22 parse failed in both orders at off=%1 ctx=%2")
+                        .arg(qulonglong(recOff))
+                        .arg(hexAround(st.fileBase, st.fileEnd, c.p));*/
+        goto done_fail;
     }
 
     case 23: {
@@ -1086,13 +1487,13 @@ static bool parseOneRecord(OasCursor &c,
         c.p += int(comp);
 
         if (compType != 0) {
-            errors << QString("CBLOCK comp-type=%1 not supported (only 0=DEFLATE).").arg(compType);
+            //qDebug() << QString("CBLOCK comp-type=%1 not supported (only 0=DEFLATE).").arg(compType);
             goto done_fail;
         }
 
         QByteArray dec;
         if (!inflateRawDeflate(compData, int(comp), int(uncomp), dec)) {
-            errors << "CBLOCK inflate failed or size mismatch.";
+            //qDebug() << "CBLOCK inflate failed or size mismatch.";
             goto done_fail;
         }
 
@@ -1109,21 +1510,22 @@ static bool parseOneRecord(OasCursor &c,
             goto done_ok;
         }
 
-        errors << QString("Unsupported/unknown OASIS record id=%1 at offset=%2 tail=%3")
+        /*qDebug() << QString("Unsupported/unknown OASIS record id=%1 at offset=%2 tail=%3")
                       .arg(qulonglong(recId))
                       .arg(qulonglong(recStart - st.fileBase))
                       .arg(hexDumpN(c.p, c.end, 96));
+        qDebug() << QString("Unknown rec context: %1").arg(hexAround(st.fileBase, st.fileEnd, recStart));*/
         goto done_fail;
     }
 
 done_ok:
 #if OAS_TRACE
     if (st.traceCount < st.traceLimit) {
-        errors << QString("TRACE OK  off=%1 recId=%2 consumed=%3 tail=%4")
-        .arg(qulonglong(recStart - st.fileBase))
-            .arg(qulonglong(recId))
-            .arg(qulonglong(c.p - recStart))
-            .arg(hexDumpN(c.p, c.end, 32));
+        /*qDebug() << QString("TRACE OK  off=%1 recId=%2 consumed=%3 tail=%4")
+                      .arg(qulonglong(recStart - st.fileBase))
+                      .arg(qulonglong(recId))
+                      .arg(qulonglong(c.p - recStart))
+                      .arg(hexDumpN(c.p, c.end, 32));*/
     }
     st.traceCount++;
 #endif
@@ -1131,11 +1533,11 @@ done_ok:
 
 done_fail:
 #if OAS_TRACE
-    errors << QString("TRACE FAIL off=%1 recId=%2 consumed=%3 tail=%4")
+    /*qDebug() << QString("TRACE FAIL off=%1 recId=%2 consumed=%3 tail=%4")
                   .arg(qulonglong(recStart - st.fileBase))
                   .arg(qulonglong(recId))
                   .arg(qulonglong(c.p - recStart))
-                  .arg(hexDumpN(c.p, c.end, 64));
+                  .arg(hexDumpN(c.p, c.end, 64));*/
 #endif
     return false;
 }
@@ -1172,35 +1574,100 @@ static inline bool isPaddingTail(const uchar *p, const uchar *end)
  * \param st Parser state.
  * \return True on success, false on parse failure.
  *********************************************************************************************************************/
-static bool parseBuffer(OasCursor c,
+static bool parseBuffer(OasCursor &c,
                         LayoutHierarchy &out,
                         QStringList &errors,
                         OasParseState &st)
 {
+#if OAS_GUARD
+    if (!st.guardTimer.isValid()) st.guardTimer.start();
+#endif
+
     while (c.p < c.end) {
 
         if (isPaddingTail(c.p, c.end)) {
 #if OAS_TRACE
-            errors << QString("TRACE STOP: padding tail at off=%1")
-                          .arg(qulonglong(c.p - st.fileBase));
+            /*qDebug() << QString("TRACE STOP: padding tail at off=%1")
+                          .arg(qulonglong(c.p - st.fileBase));*/
 #endif
             break;
         }
 
         const uchar *before = c.p;
 
+#if OAS_GUARD
+        st.recordCount++;
+        const quint64 offBefore = quint64(before - st.fileBase);
+
+        if ((st.recordCount % OAS_GUARD_LOG_EVERY_N_RECORDS) == 0) {
+            /*qDebug() << QString("GUARD progress: records=%1 off=%2 elapsed_ms=%3")
+                          .arg(qulonglong(st.recordCount))
+                          .arg(qulonglong(offBefore))
+                          .arg(qulonglong(st.guardTimer.elapsed()));*/
+        }
+
+        if (st.recordCount > OAS_GUARD_MAX_RECORDS) {
+            /*qDebug() << QString("GUARD abort: too many records=%1 off=%2 elapsed_ms=%3 ctx=%4")
+                          .arg(qulonglong(st.recordCount))
+                          .arg(qulonglong(offBefore))
+                          .arg(qulonglong(st.guardTimer.elapsed()))
+                          .arg(hexAround(st.fileBase, st.fileEnd, before));*/
+            return false;
+        }
+#endif
+
         if (!parseOneRecord(c, out, errors, st)) {
 
             if (isPaddingTail(before, c.end)) {
 #if OAS_TRACE
-                errors << QString("TRACE STOP: failed-in-padding at off=%1")
-                              .arg(qulonglong(before - st.fileBase));
+                /*qDebug() << QString("TRACE STOP: failed-in-padding at off=%1")
+                              .arg(qulonglong(before - st.fileBase));*/
 #endif
                 break;
             }
 
+#if OAS_GUARD
+            /*qDebug() << QString("GUARD fail: lastGoodOff=%1 failOff=%2 ctx=%3")
+                          .arg(qulonglong(st.lastGoodOff))
+                          .arg(qulonglong(offBefore))
+                          .arg(hexAround(st.fileBase, st.fileEnd, before));*/
+#endif
             return false;
         }
+
+#if OAS_GUARD
+        const quint64 offAfter = quint64(c.p - st.fileBase);
+        const quint64 delta = (offAfter >= offBefore) ? (offAfter - offBefore) : 0;
+
+        if (delta <= OAS_GUARD_TINY_PROGRESS_BYTES) {
+            st.stallCount++;
+        } else {
+            st.stallCount = 0;
+            st.lastGoodOff = offAfter;
+        }
+
+        if (offAfter == offBefore) {
+            // This should never happen; means we "parsed" a record but did not advance.
+            /*qDebug() << QString("GUARD abort: zero advance at off=%1 records=%2 ctx=%3")
+                          .arg(qulonglong(offBefore))
+                          .arg(qulonglong(st.recordCount))
+                          .arg(hexAround(st.fileBase, st.fileEnd, before));*/
+            return false;
+        }
+
+        if (st.stallCount > OAS_GUARD_STALL_LIMIT) {
+            /*qDebug() << QString("GUARD abort: stallCount=%1 lastOff=%2 nowOff=%3 records=%4 elapsed_ms=%5 ctx=%6")
+                          .arg(qulonglong(st.stallCount))
+                          .arg(qulonglong(st.lastOff))
+                          .arg(qulonglong(offAfter))
+                          .arg(qulonglong(st.recordCount))
+                          .arg(qulonglong(st.guardTimer.elapsed()))
+                          .arg(hexAround(st.fileBase, st.fileEnd, before));*/
+            return false;
+        }
+
+        st.lastOff = offAfter;
+#endif
 
         if (st.seenEnd) {
             break;
@@ -1267,14 +1734,43 @@ bool oasReader::readHierarchy(LayoutHierarchy &out)
 
     OasParseState st;
     st.fileBase = base;
+    st.fileEnd  = base + sz;
+
+#if OAS_GUARD
+    st.recordCount = 0;
+    st.stallCount  = 0;
+    st.lastOff     = quint64(c.p - st.fileBase);
+    st.lastGoodOff = st.lastOff;
+    st.guardTimer.invalidate();
+#endif
 
     QElapsedTimer timer;
     timer.start();
 
+    /*qDebug() << QString("OAS start: file='%1' size=%2 startOff=%3")
+                       .arg(m_fileName)
+                       .arg(qulonglong(sz))
+                       .arg(qulonglong(c.p - st.fileBase));*/
+
     if (!parseBuffer(c, out, m_errorList, st)) {
+        /*qDebug() << QString("OAS parse FAILED: elapsed_ms=%1 stopOff=%2")
+                           .arg(qulonglong(timer.elapsed()))
+                           .arg(qulonglong(c.p - st.fileBase));*/
         f.unmap(base);
         return false;
     }
+
+    /*qDebug() << QString("OAS parse OK: elapsed_ms=%1 stopOff=%2 records=%3 cells=%4")
+                       .arg(qulonglong(timer.elapsed()))
+                       .arg(qulonglong(c.p - st.fileBase))
+                       .arg(qulonglong(
+#if OAS_GUARD
+                           st.recordCount
+#else
+                           0
+#endif
+                           ))
+                       .arg(out.allCells.size());*/
 
     f.unmap(base);
 
