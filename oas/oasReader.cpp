@@ -7,9 +7,9 @@
 #include <QByteArray>
 #include <QElapsedTimer>
 
-#include <cstdint>
+//#include <cstdint>
 #include <cstring>
-#include <limits>
+//#include <limits>
 #include <cstdlib>
 
 #include <zlib.h>
@@ -18,7 +18,6 @@
 #define OAS_TRACE 1
 #endif
 
-// Extra debug guards (hang/off-by-offset hunting)
 #ifndef OAS_GUARD
 #define OAS_GUARD 1
 #endif
@@ -28,7 +27,6 @@
 #endif
 
 #ifndef OAS_GUARD_STALL_LIMIT
-// How many consecutive iterations with "tiny progress" are allowed before abort
 #define OAS_GUARD_STALL_LIMIT 200000ULL
 #endif
 
@@ -72,12 +70,12 @@ struct OasCursor
  * \param maxBytes Maximum number of bytes to dump.
  * \return Hex-encoded string with spaces between bytes.
  *********************************************************************************************************************/
-static inline QString hexDumpN(const uchar *p, const uchar *end, int maxBytes = 64)
+/*static inline QString hexDumpN(const uchar *p, const uchar *end, int maxBytes = 64)
 {
     const int n = int(std::min<qint64>(maxBytes, end - p));
     QByteArray b(reinterpret_cast<const char*>(p), n);
     return b.toHex(' ');
-}
+}*/
 
 /*!********************************************************************************************************************
  * \brief Produces a hex dump around a pointer (bytes before/after).
@@ -90,7 +88,7 @@ static inline QString hexDumpN(const uchar *p, const uchar *end, int maxBytes = 
  * \param radius Bytes before/after.
  * \return Hex-encoded string with marker position info.
  *********************************************************************************************************************/
-static inline QString hexAround(const uchar *base, const uchar *end, const uchar *p, int radius = OAS_GUARD_HEX_AROUND)
+/*static inline QString hexAround(const uchar *base, const uchar *end, const uchar *p, int radius = OAS_GUARD_HEX_AROUND)
 {
     if (!base || !end || !p) return QString();
 
@@ -109,7 +107,7 @@ static inline QString hexAround(const uchar *base, const uchar *end, const uchar
         .arg(qulonglong(offB))
         .arg(qulonglong(offP))
         .arg(hexDumpN(a, b, int(b - a)));
-}
+}*/
 
 /*!********************************************************************************************************************
  * \brief Reads a single byte and advances the cursor.
@@ -467,7 +465,6 @@ static inline bool skipRepetition(OasCursor &c)
     }
 
     default:
-        // spec: repetition type outside 0..11 = fatal
         return false;
     }
 }
@@ -681,19 +678,6 @@ struct OasParseState
 #endif
 };
 
-/*!********************************************************************************************************************
- * \brief Dumps a string as a sequence of U+XXXX code points.
- * \param s Input string.
- * \return Space-separated list of code points.
- *********************************************************************************************************************/
-static inline QString dumpU16(const QString& s)
-{
-    QStringList parts;
-    parts.reserve(s.size());
-    for (QChar ch : s)
-        parts << QString("U+%1").arg(ch.unicode(), 4, 16, QLatin1Char('0'));
-    return parts.join(' ');
-}
 
 /*!********************************************************************************************************************
  * \brief Guarded debug log helper (throttled).
@@ -704,7 +688,7 @@ static inline QString dumpU16(const QString& s)
  * \param st Parser state.
  * \param s Message.
  *********************************************************************************************************************/
-static inline void dbgLog(QStringList &errors, OasParseState &st, const QString &s)
+/*static inline void dbgLog(QStringList &errors, OasParseState &st, const QString &s)
 {
     errors << s;
 #if OAS_TRACE
@@ -712,7 +696,7 @@ static inline void dbgLog(QStringList &errors, OasParseState &st, const QString 
 #else
     Q_UNUSED(st);
 #endif
-}
+}*/
 
 /*!********************************************************************************************************************
  * \brief Parses a buffer of OASIS records into a hierarchy model.
@@ -733,22 +717,17 @@ static inline bool peekUInt(const OasCursor &c, quint64 &out)
     return readUInt(t, out);
 }
 
-// NOTE: This is a pragmatic skipper. It aims to keep cursor in sync.
-// It supports common repetition patterns incl. rep10/rep11-like (displacement lists).
 static inline bool skipRepetitionEx(OasCursor &c)
 {
     quint64 repType = 0;
     if (!readUInt(c, repType)) return false;
 
-    // Common-sense sanity: repetition types are small.
-    // If this triggers, caller likely reached repetition at wrong offset.
     if (repType > 64) return false;
 
     switch (repType) {
     case 0:
         return true;
 
-        // Keep your original ones as "best guess" (some tools emit these)
     case 1: {
         quint64 nx = 0, ny = 0;
         qint64 dx = 0, dy = 0;
@@ -764,15 +743,11 @@ static inline bool skipRepetitionEx(OasCursor &c)
         return readUInt(c, n) && skipPointList(c);
     }
 
-        // Heuristic support for rep10/rep11-like displacement repetitions
-        // Based on examples where rep10 has dim + list of g(x,y) displacements,
-        // rep11 has dim + grid + list of g(x,y) displacements. :contentReference[oaicite:1]{index=1}
     case 10: {
         quint64 dim = 0;
         if (!readUInt(c, dim)) return false;
         if (dim > 1000000ULL) return false;
 
-        // Assume 'dim' displacement pairs follow (very common)
         for (quint64 i = 0; i < dim; ++i) {
             if (!skipGDelta(c)) return false; // x
             if (!skipGDelta(c)) return false; // y
@@ -796,8 +771,6 @@ static inline bool skipRepetitionEx(OasCursor &c)
     }
 
     default:
-        // Unknown but "small" repType: we cannot safely skip without spec,
-        // better fail than desync silently.
         return false;
     }
 }
@@ -816,7 +789,7 @@ static bool parseOneRecord(OasCursor &c,
                            QStringList &errors,
                            OasParseState &st)
 {
-    const uchar *recStart = c.p;
+    //const uchar *recStart = c.p;
 
     quint64 recId = 0;
     if (!readUInt(c, recId)) return false;
@@ -868,11 +841,9 @@ static bool parseOneRecord(OasCursor &c,
         st.implicitCellNameRefsSeen = true;
 
         if (st.explicitCellNameRefsSeen) {
-            // не фатально — просто предупреждение один раз
             static bool warned = false;
             if (!warned) {
                 warned = true;
-                //qDebug() << "CELLNAME: mixed implicit/explicit reference-number mode (3/4). Allowing.";
             }
         }
 
@@ -975,7 +946,7 @@ static bool parseOneRecord(OasCursor &c,
 
     case 14: {
         QByteArray raw;
-        const uchar *strAt = c.p;
+        //const uchar *strAt = c.p;
         if (!readString(c, raw)) goto done_fail;
 
         QString utf8 = QString::fromUtf8(raw.constData(), raw.size());
@@ -1020,8 +991,7 @@ static bool parseOneRecord(OasCursor &c,
 
         if (Cbit) {
             if (N) {
-                // N=1 -> inline name string (как минимум для многих реальных файлов)
-                const uchar *nmAt = c.p;
+                //const uchar *nmAt = c.p;
                 if (!readNString(c, placedCell)) goto done_fail;
 
                 if (!isLikelyValidCellName(placedCell)) {
@@ -1111,13 +1081,13 @@ static bool parseOneRecord(OasCursor &c,
         if (Cbit) {
             if (N) {
                 quint64 rn = 0;
-                if (!readUInt(c, rn)) goto done_fail;   // TEXTSTRING ref
+                if (!readUInt(c, rn)) goto done_fail;
             } else {
                 QString s;
-                if (!readAString(c, s)) goto done_fail; // inline text-string (a-string)
+                if (!readAString(c, s)) goto done_fail;
             }
         } else {
-            // C=0 => modal textstring, bytes in record отсутствуют -> ничего не читаем
+            // C=0 => no modal textstring, bytes in record
         }
 
         if (L) { quint64 tlayer = 0; if (!readUInt(c, tlayer)) goto done_fail; }
@@ -1176,7 +1146,7 @@ static bool parseOneRecord(OasCursor &c,
     }
 
     case 22: {
-        const quint64 recOff = quint64(recStart - st.fileBase);
+        //const quint64 recOff = quint64(recStart - st.fileBase);
 
         uchar info = 0;
         if (!readByte(c, info)) goto done_fail;
@@ -1200,13 +1170,9 @@ static bool parseOneRecord(OasCursor &c,
         if (D) { quint64 v; if (!readUInt(c, v)) goto done_fail; }
         if (W) { quint64 v; if (!readUInt(c, v)) goto done_fail; }
 
-        // Try two plausible orders for (P, X, Y) to avoid desync:
-        // A) P -> X -> Y  (your current)
-        // B) X -> Y -> P  (seen in some writer variants / record interpretations)
         auto parse_PXY = [&](OasCursor &cc, bool orderPXY) -> bool {
             if (orderPXY) {
                 if (P) {
-                    // debug point-list header
                     OasCursor t = cc;
                     quint64 ptType = 0, count = 0;
                     if (readUInt(t, ptType) && readUInt(t, count)) {
@@ -1237,14 +1203,12 @@ static bool parseOneRecord(OasCursor &c,
             return true;
         };
 
-        // E block (if present) is after geometry fields in your current implementation.
         auto parse_E = [&](OasCursor &cc) -> bool {
             if (!E) return true;
             quint64 a = 0, b = 0;
             return readUInt(cc, a) && readUInt(cc, b);
         };
 
-        // R repetition at end
         auto parse_R = [&](OasCursor &cc) -> bool {
             if (!R) return true;
 
@@ -1258,7 +1222,7 @@ static bool parseOneRecord(OasCursor &c,
                                 .arg(qulonglong(cc.p - st.fileBase));*/
             }
 
-            const quint64 repOff = quint64(cc.p - st.fileBase);
+            //const quint64 repOff = quint64(cc.p - st.fileBase);
             /*qDebug() << QString("REC22 repetition startOff=%1 ctx=%2")
                             .arg(qulonglong(repOff))
                             .arg(hexAround(st.fileBase, st.fileEnd, cc.p));*/
@@ -1273,7 +1237,6 @@ static bool parseOneRecord(OasCursor &c,
             return true;
         };
 
-        // Attempt A) P->X->Y
         {
             OasCursor t = c;
             bool ok = true;
@@ -1281,14 +1244,12 @@ static bool parseOneRecord(OasCursor &c,
             ok = ok && parse_E(t);
             ok = ok && parse_R(t);
 
-            // If repetition peek looked insane, ok will likely be false. If ok true, commit.
             if (ok) {
                 c = t;
                 goto done_ok;
             }
         }
 
-        // Attempt B) X->Y->P
         {
             OasCursor t = c;
             bool ok = true;
@@ -1302,7 +1263,6 @@ static bool parseOneRecord(OasCursor &c,
             }
         }
 
-        // Both failed -> give context and fail record
         /*qDebug() << QString("REC22 parse failed in both orders at off=%1 ctx=%2")
                         .arg(qulonglong(recOff))
                         .arg(hexAround(st.fileBase, st.fileEnd, c.p));*/
@@ -1647,7 +1607,6 @@ static bool parseBuffer(OasCursor &c,
         }
 
         if (offAfter == offBefore) {
-            // This should never happen; means we "parsed" a record but did not advance.
             /*qDebug() << QString("GUARD abort: zero advance at off=%1 records=%2 ctx=%3")
                           .arg(qulonglong(offBefore))
                           .arg(qulonglong(st.recordCount))
