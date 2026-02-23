@@ -15,6 +15,7 @@
 
 #include "property.h"
 #include "gds/gdsreader.h"
+#include "oas/oasReader.h"
 
 /*!*********************************************************************************************************************
  * \brief Displays menu for group (cell) widget.
@@ -277,24 +278,23 @@ void MainWindow::on_viewItemExpanded(QTreeWidgetItem *item)
     }
 
     // ------------------------------------------------------------
-    // Cell node
+    // OAS root ("oas"/"oasis")
     // ------------------------------------------------------------
-    if (type == ItemCell) {
+    if (item->text(0) == "oas" || item->text(0) == "oasis") {
 
         if (item->childCount() > 0) {
             return;
         }
 
-        const QString gdsPath  = item->data(0, RoleGdsPath).toString();
-        const QString cellName = item->data(0, RoleCellName).toString();
-        if (gdsPath.isEmpty() || cellName.isEmpty()) {
+        const QString oasPath = item->data(0, RoleOasPath).toString();
+        if (oasPath.isEmpty()) {
             return;
         }
 
-        auto entry = ensureGdsLoaded(gdsPath);
+        auto entry = ensureOasLoaded(oasPath);
 
         if (entry->loaded) {
-            populateCellChildren(item, entry, cellName);
+            populateOasTopLevel(item, entry);
             return;
         }
 
@@ -302,7 +302,62 @@ void MainWindow::on_viewItemExpanded(QTreeWidgetItem *item)
             return;
         }
 
-        loadGdsHierarchyAsync(entry->path, entry, item, cellName);
+        loadOasHierarchyAsync(entry->path, entry, item);
+        return;
+    }
+
+    // ------------------------------------------------------------
+    // Cell node (GDS or OAS)
+    // ------------------------------------------------------------
+    if (type == ItemCell) {
+
+        if (item->childCount() > 0) {
+            return;
+        }
+
+        const QString cellName = item->data(0, RoleCellName).toString();
+        if (cellName.isEmpty()) {
+            return;
+        }
+
+        // Prefer GDS if path is present
+        const QString gdsPath = item->data(0, RoleGdsPath).toString();
+        if (!gdsPath.isEmpty()) {
+
+            auto entry = ensureGdsLoaded(gdsPath);
+
+            if (entry->loaded) {
+                populateCellChildren(item, entry, cellName);
+                return;
+            }
+
+            if (entry->loading) {
+                return;
+            }
+
+            loadGdsHierarchyAsync(entry->path, entry, item, cellName);
+            return;
+        }
+
+        // Otherwise OAS if path is present
+        const QString oasPath = item->data(0, RoleOasPath).toString();
+        if (!oasPath.isEmpty()) {
+
+            auto entry = ensureOasLoaded(oasPath);
+
+            if (entry->loaded) {
+                populateOasCellChildren(item, entry, cellName);
+                return;
+            }
+
+            if (entry->loading) {
+                return;
+            }
+
+            loadOasHierarchyAsync(entry->path, entry, item, cellName);
+            return;
+        }
+
         return;
     }
 }

@@ -6,6 +6,8 @@
 
 QT       += core gui
 
+LIBS += -lz
+
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = libman
@@ -25,6 +27,8 @@ QMAKE_CXXFLAGS += -g1
 
 SOURCES += src/main.cpp\
     gds/gdsReadAsync.cpp \
+    oas/oasReadAsync.cpp \
+    oas/oasReader.cpp \
     src/klayoutServer.cpp \
         src/mainwindow.cpp \
     extension/variantmanager.cpp \
@@ -71,6 +75,7 @@ HEADERS  += src/mainwindow.h \
     QtPropertyBrowser/qteditorfactory.h \
     QtPropertyBrowser/qtbuttonpropertybrowser.h \
     gds/gdsreader.h \
+    oas/oasReader.h \
     src/projectmanager.h \
     src/property.h \
     src/toolmanager.h \

@@ -475,7 +475,7 @@ void MainWindow::error(const QString &msg, bool clear)
 QStringList MainWindow::getValidViewList() const
 {
     QStringList views;
-    views<<"gds"<<"cdl"<<"spice"<<"verilog";
+    views<<"oas"<<"gds"<<"cdl"<<"spice"<<"verilog";
     return views;
 }
 
@@ -970,6 +970,20 @@ void MainWindow::loadViews(const QString &libPath, const QString &groupName)
 
             viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         }
+        else if (viewName == "oas") {
+            QString oasPath = QDir::toNativeSeparators(libPath + "/oas/" + groupName + ".oas");
+            if (!QFileInfo(oasPath).exists()) {
+                const QString alt = QDir::toNativeSeparators(libPath + "/oas/" + groupName + ".oasis");
+                if (QFileInfo(alt).exists()) {
+                    oasPath = alt;
+                }
+            }
+
+            viewItem->setData(0, RoleType, ItemViewOas);
+            viewItem->setData(0, RoleOasPath, oasPath);
+
+            viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+        }
     }
 
     m_ui->listViews->sortItems(0, Qt::AscendingOrder);
@@ -1413,38 +1427,57 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
 
     const int type = item->data(0, RoleType).toInt();
 
-    QString viewName;
-    QString viewPath;
-    QString cellName;
+    QString viewName;   // "gds" / "oas" / "cdl" / ...
+    QString viewPath;   // file path for gds/oas or normal view file
+    QString cellName;   // for hierarchy nodes
 
     // ------------------------------------------------------------
-    // GDS root item
+    // Root items: "gds" / "oas"
     // ------------------------------------------------------------
     if(type == ItemViewGds && item->text(0) == "gds") {
         viewName = "gds";
         viewPath = item->data(0, RoleGdsPath).toString();
     }
+    else if(type == ItemViewOas && (item->text(0) == "oas" || item->text(0) == "oasis")) {
+        viewName = "oas";
+        viewPath = item->data(0, RoleOasPath).toString();
+    }
     // ------------------------------------------------------------
-    // GDS cell item
+    // Cell item (GDS or OAS) - detect by top root ("gds"/"oas")
     // ------------------------------------------------------------
     else if(type == ItemCell) {
-        viewName = "gds";
 
-        // find top "gds" item
+        // find top view root ("gds" or "oas")
         QTreeWidgetItem *p = item->parent();
         while(p && p->parent()) {
             p = p->parent();
         }
-
-        if(!p || p->text(0) != "gds") {
+        if(!p) {
             return;
         }
 
-        viewPath = p->data(0, RoleGdsPath).toString();
+        const QString rootName = p->text(0);
+
+        if(rootName == "gds") {
+            viewName = "gds";
+            viewPath = p->data(0, RoleGdsPath).toString();
+        }
+        else if(rootName == "oas" || rootName == "oasis") {
+            viewName = "oas";
+            viewPath = p->data(0, RoleOasPath).toString();
+        }
+        else {
+            return;
+        }
+
         cellName = item->data(0, RoleCellName).toString();
+
+        if(viewPath.isEmpty() || cellName.isEmpty()) {
+            return;
+        }
     }
     // ------------------------------------------------------------
-    // Normal views: cdl/spice/...
+    // Normal views: cdl/spice/verilog/...
     // ------------------------------------------------------------
     else {
         viewName = item->text(0);
@@ -1467,18 +1500,19 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
     }
 
     // ------------------------------------------------------------
-    // GDS handling
+    // Layout handling via KLayout server: GDS + OAS (same behavior)
     // ------------------------------------------------------------
-    if(viewName == "gds") {
+    if(viewName == "gds" || viewName == "oas") {
 
-        // root "gds" item
-        if(type == ItemViewGds) {
+        // Root item: "gds" or "oas"
+        if(type == ItemViewGds || type == ItemViewOas) {
 
             const bool serverWasRunning = (m_klayoutProc && m_klayoutProc->state() != QProcess::NotRunning);
 
             if(serverWasRunning) {
                 const QString groupName = getCurrentGroupName();
                 if(!groupName.isEmpty()) {
+                    // select the "groupName" cell in the already-opened layout
                     sendKLayoutSelectRequest(viewPath, groupName);
                 }
                 return;
@@ -1489,10 +1523,12 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
                 return;
             }
 
+            // open file only (no specific cell)
             sendKLayoutOpenRequest(viewPath, QString());
             return;
         }
 
+        // Cell node: open file + select cell
         if(!ensureKLayoutServerRunning(tool)) {
             error("Failed to start KLayout server.");
             return;
@@ -1503,11 +1539,10 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
     }
 
     // ------------------------------------------------------------
-    // Non-GDS: original behavior
+    // Non-layout views: original behavior
     // ------------------------------------------------------------
     QProcess::startDetached(tool, QStringList() << viewPath);
 }
-
 
 /*!*******************************************************************************************************************
  * \brief Filters events for the Views tree widget to suppress default expand/collapse behavior on double click.
@@ -1535,7 +1570,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
             if(item) {
                 const int type = item->data(0, RoleType).toInt();
 
-                if(type == ItemViewGds || type == ItemCell) {
+                if (type == ItemViewGds || type == ItemViewOas || type == ItemCell) {
                     on_listViews_itemDoubleClicked(item, 0);
                     return true;
                 }

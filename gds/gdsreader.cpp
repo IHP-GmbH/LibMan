@@ -357,21 +357,54 @@ bool GdsReader::readPayload(FILE *f, int payloadLen, QByteArray &payload)
     return fread(payload.data(), 1, static_cast<size_t>(payloadLen), f) == static_cast<size_t>(payloadLen);
 }
 
-
+/*!********************************************************************************************************************
+ * \brief Reads a big-endian 16-bit unsigned integer from a byte pointer.
+ *
+ * Interprets the two bytes at \p p as a big-endian unsigned 16-bit value:
+ *   value = (p[0] << 8) | p[1]
+ *
+ * \param p Pointer to at least two bytes.
+ * \return Decoded 16-bit value in host endianness.
+ *********************************************************************************************************************/
 static inline quint16 be16(const uchar *p)
 {
     return (quint16(p[0]) << 8) | quint16(p[1]);
 }
 
+/*!********************************************************************************************************************
+ * \brief Decodes a GDS cell name payload as Latin-1 string.
+ *
+ * Removes trailing zero padding (GDS strings are often zero-padded to even length)
+ * and converts the remaining bytes to QString using Latin-1 encoding.
+ *
+ * \param payload Pointer to raw payload bytes containing the name.
+ * \param n Number of bytes in \p payload.
+ * \return Decoded name without trailing zero padding.
+ *********************************************************************************************************************/
 static inline QString decodeNameLatin1(const uchar *payload, int n)
 {
     while (n > 0 && payload[n - 1] == 0) {
         --n;
     }
-    // GDSII names are traditionally ASCII/Latin1
+
     return QString::fromLatin1(reinterpret_cast<const char *>(payload), n);
 }
 
+/*!********************************************************************************************************************
+ * \brief Reads cell hierarchy (structure names and references) from a GDSII file.
+ *
+ * Performs a fast scan of the mapped GDS file and extracts only:
+ *  - structure (cell) names (STRNAME),
+ *  - SREF/AREF references (SREF/AREF + SNAME),
+ *  - parent–child relationships,
+ *  - top-level cells (cells that are never referenced by others).
+ *
+ * The function ignores all geometry and layer information to remain lightweight and fast.
+ * It also validates that the file appears complete by requiring ENDLIB.
+ *
+ * \param out Output hierarchy container to fill (cleared on entry).
+ * \return true on success, false on error (details are stored in \c m_errorList).
+ *********************************************************************************************************************/
 bool GdsReader::readHierarchy(GdsHierarchy &out)
 {
     out.topCells.clear();
@@ -402,7 +435,6 @@ bool GdsReader::readHierarchy(GdsHierarchy &out)
         return false;
     }
 
-    // Optional: lightweight progress (stderr)
     QElapsedTimer timer;
     timer.start();
     qint64 lastLogMs = 0;
@@ -431,11 +463,10 @@ bool GdsReader::readHierarchy(GdsHierarchy &out)
         const uchar *payload = p + 4;
         const int payloadLen = int(len) - 4;
 
-        // Progress every ~500ms
         if (timer.elapsed() - lastLogMs > 500) {
             lastLogMs = timer.elapsed();
-            const qint64 posMB = (p - base) / (1024 * 1024);
-            /*fprintf(stderr,
+            /*const qint64 posMB = (p - base) / (1024 * 1024);
+            fprintf(stderr,
                     "[GDS] scan %lld/%lld MB, cells=%d, elapsed=%lld ms\n",
                     (long long)posMB,
                     (long long)(fileSize / (1024 * 1024)),
@@ -462,7 +493,7 @@ bool GdsReader::readHierarchy(GdsHierarchy &out)
                     out.allCells.insert(ref);
                     referenced.insert(ref);
                 }
-                // Usually exactly one SNAME per SREF/AREF
+
                 inRef = false;
             }
         }
@@ -486,7 +517,6 @@ bool GdsReader::readHierarchy(GdsHierarchy &out)
         return false;
     }
 
-    // Compute topCells without copying QSet
     out.topCells.clear();
     out.topCells.reserve(out.allCells.size());
     for (const QString &c : out.allCells) {
@@ -495,11 +525,6 @@ bool GdsReader::readHierarchy(GdsHierarchy &out)
         }
     }
     out.topCells.sort();
-
-    // IMPORTANT: Do NOT globally sort/dedup children here.
-    // Do it lazily in UI on expand of a specific cell:
-    //   auto kids = out.children.value(cell);
-    //   kids.removeDuplicates(); kids.sort();
 
     return true;
 }
