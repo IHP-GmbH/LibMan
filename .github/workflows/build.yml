@@ -7,6 +7,11 @@ on:
     branches: [ main ]
 
 jobs:
+
+  # ============================================================
+  # Linux build
+  # ============================================================
+
   build-linux:
     runs-on: ubuntu-latest
 
@@ -25,7 +30,7 @@ jobs:
           target: 'desktop'
           arch: 'gcc_64'
 
-      - name: Install build deps
+      - name: Install build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential libgl1-mesa-dev
@@ -41,29 +46,29 @@ jobs:
           cd build
           make -j"$(nproc)"
 
-      # Minimal "installer-like" artifact:
-      # create a tar.gz bundle with the binary + your runtime folders (adjust folders as needed).
       - name: Package Linux bundle (tar.gz)
         run: |
           set -e
           rm -rf dist
           mkdir -p dist
 
-          # Try common output locations; adjust if your binary name differs
-          if [ -f build/LibMan ]; then
-            cp build/LibMan dist/
-          elif [ -f build/release/LibMan ]; then
-            cp build/release/LibMan dist/
-          else
+          BIN=""
+          for p in build/libman build/LibMan build/release/libman build/release/LibMan; do
+            if [ -f "$p" ]; then BIN="$p"; break; fi
+          done
+
+          if [ -z "$BIN" ]; then
             echo "LibMan binary not found. Contents of build/:"
             ls -la build
             exit 1
           fi
 
-          # Copy runtime resources if you have them (safe if missing)
-          [ -d scripts ]   && cp -R scripts   dist/ || true
-          [ -d keywords ]  && cp -R keywords  dist/ || true
-          [ -d icons ]     && cp -R icons     dist/ || true
+          cp "$BIN" dist/libman
+
+          # Optional runtime resources
+          [ -d scripts ]  && cp -R scripts  dist/ || true
+          [ -d keywords ] && cp -R keywords dist/ || true
+          [ -d icons ]    && cp -R icons    dist/ || true
 
           tar -czf libman-linux.tar.gz dist
 
@@ -71,9 +76,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: libman-linux
-          path: |
-            libman-linux.tar.gz
+          path: libman-linux.tar.gz
           if-no-files-found: error
+
+
+  # ============================================================
+  # Windows build
+  # ============================================================
 
   build-windows:
     runs-on: windows-latest
@@ -116,24 +125,26 @@ jobs:
         run: |
           cd build
 
-          rem --- locate built exe (adjust name if needed) ---
-          if exist release\LibMan.exe (
-            set EXE=release\LibMan.exe
+          rmdir /s /q dist 2>nul
+          mkdir dist
+
+          rem --- locate built exe ---
+          if exist release\libman.exe (
+            copy release\libman.exe dist\libman.exe
+          ) else if exist release\LibMan.exe (
+            copy release\LibMan.exe dist\libman.exe
+          ) else if exist libman.exe (
+            copy libman.exe dist\libman.exe
           ) else if exist LibMan.exe (
-            set EXE=LibMan.exe
+            copy LibMan.exe dist\libman.exe
           ) else (
-            echo LibMan.exe not found
+            echo libman.exe not found
             dir
             exit /b 1
           )
 
-          rmdir /s /q dist 2>nul
-          mkdir dist
-
-          copy %EXE% dist\
-
-          rem Deploy Qt DLLs/plugins
-          windeployqt --dir dist dist\LibMan.exe
+          rem Deploy Qt DLLs and plugins
+          windeployqt --dir dist dist\libman.exe
 
           rem Runtime folders (optional)
           if exist ..\scripts   xcopy /E /I /Y ..\scripts   dist\scripts
@@ -144,9 +155,11 @@ jobs:
         shell: pwsh
         run: |
           if (!(Test-Path "installer\LibMan.iss")) {
-            Write-Error "Missing installer\LibMan.iss. Add it or adjust the path in the workflow."
+            Write-Error "Missing installer\LibMan.iss"
           }
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\LibMan.iss" /O"build\installer"
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" `
+            "installer\LibMan.iss" `
+            /O"build\installer"
 
       - name: Upload Windows installer
         uses: actions/upload-artifact@v4
