@@ -1,4 +1,4 @@
-name: Build Qt LibMan (qmake)
+name: Build LibMan
 
 on:
   push:
@@ -7,28 +7,150 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-linux:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v3
-      with:
-        version: '5.15.2'
-        host: 'linux'
-        target: 'desktop'
-        arch: 'gcc_64'
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          host: 'linux'
+          target: 'desktop'
+          arch: 'gcc_64'
 
-    - name: Prepare build
-      run: |
-        mkdir build
-        cd build
-        qmake ../libman.pro
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libgl1-mesa-dev
 
-    - name: Build project
-      run: |
-        cd build
-        make -j$(nproc)
+      - name: Configure (qmake)
+        run: |
+          mkdir -p build
+          cd build
+          qmake ../libman.pro
+
+      - name: Build
+        run: |
+          cd build
+          make -j"$(nproc)"
+
+      # Minimal "installer-like" artifact:
+      # create a tar.gz bundle with the binary + your runtime folders (adjust folders as needed).
+      - name: Package Linux bundle (tar.gz)
+        run: |
+          set -e
+          rm -rf dist
+          mkdir -p dist
+
+          # Try common output locations; adjust if your binary name differs
+          if [ -f build/LibMan ]; then
+            cp build/LibMan dist/
+          elif [ -f build/release/LibMan ]; then
+            cp build/release/LibMan dist/
+          else
+            echo "LibMan binary not found. Contents of build/:"
+            ls -la build
+            exit 1
+          fi
+
+          # Copy runtime resources if you have them (safe if missing)
+          [ -d scripts ]   && cp -R scripts   dist/ || true
+          [ -d keywords ]  && cp -R keywords  dist/ || true
+          [ -d icons ]     && cp -R icons     dist/ || true
+
+          tar -czf libman-linux.tar.gz dist
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libman-linux
+          path: |
+            libman-linux.tar.gz
+          if-no-files-found: error
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Install Qt (Qt 5.15.2 MinGW 64-bit)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw81'
+          tools: 'tools_mingw81'
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes
+
+      - name: Configure (qmake)
+        shell: bash
+        run: |
+          mkdir -p build
+          cd build
+          qmake CONFIG+=release ../libman.pro
+
+      - name: Build (mingw32-make)
+        shell: bash
+        run: |
+          cd build
+          mingw32-make -j"$(nproc)"
+
+      - name: Deploy Qt runtime and runtime resources
+        shell: cmd
+        run: |
+          cd build
+
+          rem --- locate built exe (adjust name if needed) ---
+          if exist release\LibMan.exe (
+            set EXE=release\LibMan.exe
+          ) else if exist LibMan.exe (
+            set EXE=LibMan.exe
+          ) else (
+            echo LibMan.exe not found
+            dir
+            exit /b 1
+          )
+
+          rmdir /s /q dist 2>nul
+          mkdir dist
+
+          copy %EXE% dist\
+
+          rem Deploy Qt DLLs/plugins
+          windeployqt --dir dist dist\LibMan.exe
+
+          rem Runtime folders (optional)
+          if exist ..\scripts   xcopy /E /I /Y ..\scripts   dist\scripts
+          if exist ..\keywords  xcopy /E /I /Y ..\keywords  dist\keywords
+          if exist ..\icons     xcopy /E /I /Y ..\icons     dist\icons
+
+      - name: Build Windows installer (Inno Setup)
+        shell: pwsh
+        run: |
+          if (!(Test-Path "installer\LibMan.iss")) {
+            Write-Error "Missing installer\LibMan.iss. Add it or adjust the path in the workflow."
+          }
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "installer\LibMan.iss" /O"build\installer"
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: libman-windows-installer
+          path: build/installer/*.exe
+          if-no-files-found: error
