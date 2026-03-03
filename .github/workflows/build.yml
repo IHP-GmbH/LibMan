@@ -127,7 +127,7 @@ jobs:
       - name: Run tests (headless Qt)
         run: |
           cd build-tests
-          xvfb-run -a ./tst_libman_gds -platform offscreen
+          xvfb-run -a ./tst_libman_gui -platform offscreen
 
       - name: Generate coverage report
         run: |

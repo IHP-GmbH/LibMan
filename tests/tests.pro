@@ -6,7 +6,7 @@ QT += core gui widgets testlib
 LIBS += -lz
 
 TEMPLATE = app
-TARGET = tst_libman_gui_gds
+TARGET = tst_libman_gui
 CONFIG += console c++17
 DEFINES += QT_NO_DEPRECATED_WARNINGS
 
