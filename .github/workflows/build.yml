@@ -58,14 +58,13 @@ jobs:
           done
 
           if [ -z "$BIN" ]; then
-            echo "LibMan binary not found. Contents of build/:"
+            echo "LibMan binary not found."
             ls -la build
             exit 1
           fi
 
           cp "$BIN" dist/libman
 
-          # Optional runtime resources
           [ -d scripts ]  && cp -R scripts  dist/ || true
           [ -d keywords ] && cp -R keywords dist/ || true
           [ -d icons ]    && cp -R icons    dist/ || true
@@ -78,6 +77,83 @@ jobs:
           name: libman-linux
           path: libman-linux.tar.gz
           if-no-files-found: error
+
+
+  # ============================================================
+  # Linux tests + Code Coverage
+  # ============================================================
+
+  tests-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          host: 'linux'
+          target: 'desktop'
+          arch: 'gcc_64'
+
+      - name: Install test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb build-essential libgl1-mesa-dev
+          python3 -m pip install --upgrade pip
+          python3 -m pip install gcovr
+
+      - name: Configure tests (coverage enabled)
+        run: |
+          mkdir -p build-tests
+          cd build-tests
+          qmake CONFIG+=debug CONFIG+=coverage ../tests/tests.pro
+
+      - name: Build tests
+        run: |
+          cd build-tests
+          make -j"$(nproc)"
+
+      - name: Clean old coverage data
+        run: |
+          cd build-tests
+          find . -name "*.gcda" -delete || true
+
+      - name: Run tests (headless Qt)
+        run: |
+          cd build-tests
+          xvfb-run -a ./tst_libman_gds -platform offscreen
+
+      - name: Generate coverage report
+        run: |
+          cd build-tests
+          gcovr \
+            --root .. \
+            --exclude '../tests' \
+            --exclude '.*moc_.*' \
+            --exclude '.*qrc_.*' \
+            --print-summary \
+            --txt
+
+      - name: Upload coverage HTML
+        run: |
+          cd build-tests
+          gcovr \
+            --root .. \
+            --exclude '../tests' \
+            --html-details coverage.html
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libman-coverage-html
+          path: build-tests/coverage.html
+          if-no-files-found: warn
 
 
   # ============================================================
@@ -128,7 +204,6 @@ jobs:
           rmdir /s /q dist 2>nul
           mkdir dist
 
-          rem --- locate built exe ---
           if exist release\libman.exe (
             copy release\libman.exe dist\libman.exe
           ) else if exist release\LibMan.exe (
@@ -143,12 +218,8 @@ jobs:
             exit /b 1
           )
 
-          rem Deploy Qt DLLs and plugins
           windeployqt --dir dist dist\libman.exe
 
-          rem Runtime folders (optional)
-          if exist ..\scripts   xcopy /E /I /Y ..\scripts   dist\scripts
-          if exist ..\keywords  xcopy /E /I /Y ..\keywords  dist\keywords
           if exist ..\icons     xcopy /E /I /Y ..\icons     dist\icons
 
       - name: Build Windows installer (Inno Setup)
