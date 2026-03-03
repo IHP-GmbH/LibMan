@@ -5,14 +5,18 @@
 QT += core gui widgets testlib
 LIBS += -lz
 
+unix {
+    QMAKE_CXXFLAGS += --coverage -O0 -g
+    QMAKE_LFLAGS   += --coverage
+}
+
 TEMPLATE = app
 TARGET = tst_libman_gui
-CONFIG += console c++17
+CONFIG += console c++17 debug
 DEFINES += QT_NO_DEPRECATED_WARNINGS
 
 # Allow large object files (fixes "too many sections" error)
 win32:QMAKE_CXXFLAGS += -Wa,-mbig-obj
-QMAKE_CXXFLAGS += -g1
 
 # We build tests from repo root sources
 INCLUDEPATH += \
