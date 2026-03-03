@@ -150,6 +150,7 @@ private slots:
     void                                loadProjectFile(const QString &);
     void                                saveProjectFile(const QString &);
     void                                setRecentProject(const QString &);
+    QString                             resolveProjectPath(const QString& projectsFile, const QString& rawPath);
 
     void                                gitShowStatus();
     void                                gitCommitChanges();

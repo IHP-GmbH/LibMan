@@ -42,6 +42,29 @@ QString MainWindow::expandShellVariables(const QString& path) const
     return result;
 }
 
+/*!*******************************************************************************************************************
+ * \brief Resolves absolute or relative PROJECT path.
+ *
+ * Relative paths are interpreted relative to the .projects file location.
+ *
+ * \param projectsFile Path to the loaded .projects file.
+ * \param rawPath Path string from PROJECT entry.
+ *
+ * \return Absolute path.
+ **********************************************************************************************************************/
+QString MainWindow::resolveProjectPath(const QString& projectsFile, const QString& rawPath)
+{
+    const QString p = QDir::fromNativeSeparators(rawPath);
+
+    if (QDir::isAbsolutePath(p)) {
+        return QDir::toNativeSeparators(p);
+    }
+
+    const QDir baseDir = QFileInfo(projectsFile).absoluteDir();
+
+    return QDir::toNativeSeparators(baseDir.absoluteFilePath(p));
+}
+
 /*!******************************************************************************************************************
  * \brief Loads project file contence into LibMan.
  * \param fileName     Path to the file to be loaded.
@@ -92,7 +115,7 @@ void MainWindow::loadProjectFile(const QString &fileName)
             #endif
             if(words.count() == 3) {
                 QString libName = words[1];
-                QString libPath = expandShellVariables(words[2]);
+                QString libPath = expandShellVariables(resolveProjectPath(fileName, words[2]));
 
                 if(!libName.isEmpty() && QFileInfo(libPath).exists() && QFileInfo(libPath).isDir()) {
                     QString key = getLibraryKeyPrefix() + libName;

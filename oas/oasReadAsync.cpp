@@ -22,14 +22,14 @@
  * \param s Input string to inspect.
  * \return Space-separated UTF-16 code points.
  *********************************************************************************************************************/
-static QString dumpU16(const QString& s)
+/*static QString dumpU16(const QString& s)
 {
     QStringList parts;
     parts.reserve(s.size());
     for (QChar ch : s)
         parts << QString("U+%1").arg(ch.unicode(), 4, 16, QLatin1Char('0'));
     return parts.join(' ');
-}
+}*/
 
 /*!*******************************************************************************************************************
  * \brief Prints detailed debug information about a QString.
@@ -40,14 +40,14 @@ static QString dumpU16(const QString& s)
  * \param tag Debug label to prefix the output.
  * \param s   String to inspect.
  *********************************************************************************************************************/
-static void dbgStr(const char* tag, const QString& s)
+/*static void dbgStr(const char* tag, const QString& s)
 {
     qDebug().noquote()
     << tag
     << "text='" << s << "'"
     << "u16=[" << dumpU16(s) << "]"
     << "utf8hex=" << QString(s.toUtf8().toHex(' '));
-}
+}*/
 
 /*!*******************************************************************************************************************
  * \brief Ensures that an OAS cache entry exists for the given file path.
