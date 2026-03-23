@@ -27,10 +27,11 @@ QMAKE_CXXFLAGS += -g1
 
 SOURCES += src/main.cpp\
     gds/gdsReadAsync.cpp \
+    src/libfileparser.cpp \
     oas/oasReadAsync.cpp \
     oas/oasReader.cpp \
     src/klayoutServer.cpp \
-        src/mainwindow.cpp \
+    src/mainwindow.cpp \
     extension/variantmanager.cpp \
     extension/variantfactory.cpp \
     extension/qlineeditd2.cpp \
@@ -75,6 +76,7 @@ HEADERS  += src/mainwindow.h \
     QtPropertyBrowser/qteditorfactory.h \
     QtPropertyBrowser/qtbuttonpropertybrowser.h \
     gds/gdsreader.h \
+    src/libfileparser.h \
     oas/oasReader.h \
     src/projectmanager.h \
     src/property.h \

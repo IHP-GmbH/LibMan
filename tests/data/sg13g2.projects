@@ -1,5 +1,1 @@
-PROJECT sg13g2_stdcell ./sg13g2_stdcell
-
-
-
-
+define("sg13g2_stdcell", "./sg13g2_stdcell");

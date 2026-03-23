@@ -25,6 +25,7 @@
 #include "newview.h"
 #include "property.h"
 #include "toolmanager.h"
+#include "libfileparser.h"
 #include "projectmanager.h"
 
 /*!*******************************************************************************************************************

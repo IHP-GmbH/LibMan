@@ -13,6 +13,7 @@
 #include "ui_mainwindow.h"
 
 #include "property.h"
+#include "libfileparser.h"
 
 /*!******************************************************************************************************************
  * \brief Expands shell-style environment variables in a given path string.
@@ -66,66 +67,22 @@ QString MainWindow::resolveProjectPath(const QString& projectsFile, const QStrin
 }
 
 /*!******************************************************************************************************************
- * \brief Loads project file contence into LibMan.
+ * \brief Loads KLayout .lib file content into LibMan.
  * \param fileName     Path to the file to be loaded.
  *******************************************************************************************************************/
 void MainWindow::loadProjectFile(const QString &fileName)
 {
-    QFile file(fileName);
-    if(!file.open(QFile::ReadOnly | QFile::Text)) {
+    LibFileParser parser;
+    if(!parser.parseFile(fileName)) {
         QMessageBox::warning(this, tr("LibManager"),
-                             tr("Can not read file '%1':\n%2.")
-                             .arg(fileName)
-                             .arg(file.errorString()));
-        error("Can not read file '" + fileName + "'.");
+                             tr("Can not read lib file '%1':\n%2.")
+                                 .arg(fileName)
+                                 .arg(parser.errorString()));
+        error("Can not read lib file '" + fileName + "'.");
         return;
     }
 
-    QMap<QString, QStringList> combinedLibs;
-
-    QTextStream in(&file);
-    while (!in.atEnd()) {
-        QString line = in.readLine().remove("^\\s+").remove("\\s+$");
-
-        if(line.startsWith("#")) {
-            continue;
-        }
-
-        if(line.contains("GROUP")) {
-            #if QT_VERSION >= 0x050000
-                QStringList words = line.split(" ", Qt::SkipEmptyParts);
-            #else
-                QStringList words = line.split(" ", QString::SkipEmptyParts);
-            #endif
-            if(words.count() > 1) {
-                QString groupName = words[1];
-                QStringList groupItems;
-                for(int i = 2; i < words.count(); ++i) {
-                    groupItems<<words[i];
-                }
-
-                combinedLibs[groupName] = groupItems;
-            }
-        }
-        else if(line.contains("PROJECT")) {
-            #if QT_VERSION >= 0x050000
-                QStringList words = line.split(" ", Qt::SkipEmptyParts);
-            #else
-                QStringList words = line.split(" ", QString::SkipEmptyParts);
-            #endif
-            if(words.count() == 3) {
-                QString libName = words[1];
-                QString libPath = expandShellVariables(resolveProjectPath(fileName, words[2]));
-
-                if(!libName.isEmpty() && QFileInfo(libPath).exists() && QFileInfo(libPath).isDir()) {
-                    QString key = getLibraryKeyPrefix() + libName;
-                    m_properties->set(key, libPath);
-                }
-            }
-        }
-    }
-
-    file.close();
+    const LibFileData& data = parser.data();
 
     m_ui->treeLibs->clear();
     m_ui->listGroups->clear();
@@ -136,8 +93,32 @@ void MainWindow::loadProjectFile(const QString &fileName)
     m_ui->txtCellSearch->clear();
     m_ui->txtViewSearch->clear();
 
+    QMap<QString, QString> loadedLibs;
+
+    for(const LibDefinition& def : data.definitions) {
+        QString libName = def.name.trimmed();
+        QString libPath = expandShellVariables(def.path.trimmed());
+
+        if(libName.isEmpty()) {
+            continue;
+        }
+
+        if(libPath.isEmpty()) {
+            continue;
+        }
+
+        if(!QFileInfo(libPath).exists()) {
+            error(QString("Library path does not exist for '%1': %2")
+                      .arg(libName, libPath));
+            continue;
+        }
+
+        QString key = getLibraryKeyPrefix() + libName;
+        m_properties->set(key, libPath);
+        loadedLibs[libName] = libPath;
+    }
+
     loadLibraries();
-    loadCombinedLibs(combinedLibs);
 
     setRecentProject(fileName);
 
@@ -150,13 +131,16 @@ void MainWindow::loadProjectFile(const QString &fileName)
         fileTitle += "." + fileSuffix;
     }
 
-
     setWindowTitle(getLibManTitle() + " (" + fileTitle + ")");
     setStateSaved();
+
+    info(QString("Lib file '%1' has been loaded. %2 libraries found.")
+             .arg(fileName)
+             .arg(data.definitions.count()));
 }
 
 /*!******************************************************************************************************************
- * \brief Saves LibMan Library/Cell/View data into project file.
+ * \brief Saves LibMan libraries into KLayout .lib file.
  * \param fileName     Path to the file to be saved.
  *******************************************************************************************************************/
 void MainWindow::saveProjectFile(const QString &fileName)
@@ -166,66 +150,42 @@ void MainWindow::saveProjectFile(const QString &fileName)
     }
 
     QFile file(fileName);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    if(!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QMessageBox::warning(this, tr("LibManager"),
                              tr("Can not write to file '%1':\n%2.")
-                             .arg(fileName)
-                             .arg(file.errorString()));
+                                 .arg(fileName)
+                                 .arg(file.errorString()));
         error("Can not write to file '" + fileName + "'.");
         return;
     }
 
     QTextStream out(&file);
 
-    bool insertEmptyLine = false;
-    for(int i = 0 ; i < m_ui->treeLibs->topLevelItemCount(); ++i) {
-        QTreeWidgetItem *item = m_ui->treeLibs->topLevelItem(i);
-        if(!item) {
-            continue;
-        }
-
-        QString groupName = item->text(0);
-        if(groupName.isEmpty()) {
-            continue;
-        }
-
-        if(item->childCount()) {
-            QStringList childs;
-            for(int j = 0 ; j < item->childCount(); ++j) {
-                QTreeWidgetItem *child = item->child(j);
-                if(!child) {
-                    continue;
-                }
-
-                QString libName = child->text(0);
-                if(libName.isEmpty()) {
-                    continue;
-                }
-
-                childs<<libName;
-            }
-
-            if(childs.count()) {
-                insertEmptyLine = true;
-                out<<"GROUP "<<groupName<<" "<<childs.join(" ")<<"\n";
-            }
-        }
-    }
-
-    if(insertEmptyLine) {
-        out<<"\n";
-    }
+    out << "# KLayout library definition file\n";
+    out << "# Generated by LibMan\n\n";
 
     QMap<QString, QString> projs = getCurrentLibraries();
     QMap<QString, QString>::const_iterator it;
 
     for(it = projs.constBegin(); it != projs.constEnd(); ++it) {
-        QString projName = it.key();
-        QString projPath = it.value();
+        const QString libName = it.key().trimmed();
+        const QString libPath = it.value().trimmed();
 
-        if(QFileInfo(projPath).isDir()) {
-            out<<"PROJECT "<<projName<<" "<<projPath<<"\n";
+        if(libName.isEmpty() || libPath.isEmpty()) {
+            continue;
         }
+
+        if(!QFileInfo(libPath).exists()) {
+            error(QString("Skipping library '%1': path does not exist: %2")
+                      .arg(libName, libPath));
+            continue;
+        }
+
+        out << "define("
+            << toLibStringLiteral(libName)
+            << ", "
+            << toLibStringLiteral(QDir::toNativeSeparators(libPath))
+            << ");\n";
     }
 
     file.close();
@@ -233,6 +193,31 @@ void MainWindow::saveProjectFile(const QString &fileName)
     info(QString("Project '%1' has been saved.").arg(fileName));
 
     setStateSaved();
+}
+
+/*!******************************************************************************************************************
+ * \brief Converts a QString into a valid KLayout .lib string literal.
+ *
+ * Escapes special characters such as backslash, double quotes and control characters
+ * (\n, \r, \t) so that the resulting string can be safely used inside define(...)
+ * and include(...) statements in a .lib file.
+ *
+ * The resulting string is always enclosed in double quotes.
+ *
+ * \param value Input string.
+ *
+ * \return Escaped string literal ready for .lib file output.
+ *******************************************************************************************************************/
+QString MainWindow::toLibStringLiteral(const QString& value)
+{
+    QString s = value;
+    s.replace("\\", "\\\\");
+    s.replace("\"", "\\\"");
+    s.replace("\n", "\\n");
+    s.replace("\r", "\\r");
+    s.replace("\t", "\\t");
+
+    return "\"" + s + "\"";
 }
 
 /*!******************************************************************************************************************

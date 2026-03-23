@@ -201,6 +201,7 @@ private:
 
     bool                                createNewFile(const QString &);
     bool                                isStateChanged() const;
+    QString                             toLibStringLiteral(const QString& value);
 
     void                                setStateSaved();
     void                                setStateChanged();
