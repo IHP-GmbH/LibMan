@@ -1,1 +1,2 @@
-define("sg13g2_stdcell", "./sg13g2_stdcell");
+define("sg13g2_stdcell", "./sg13g2_stdcell/gds/sg13g2_stdcell.gds");
+define("sg13g2_stdcell", "./sg13g2_stdcell/lstr/sg13g2_stdcell.lstr");

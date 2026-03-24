@@ -124,6 +124,10 @@ bool MainWindow::ensureKLayoutServerRunning(const QString &tool)
                 }
             });
 
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    env.insert("KLAYOUT_LIB", QDir::toNativeSeparators(QFileInfo(m_currentProjFile).absoluteFilePath()));
+    m_klayoutProc->setProcessEnvironment(env);
+
     QStringList args;
     args << "-rr" << m_klayoutServerScript;
 

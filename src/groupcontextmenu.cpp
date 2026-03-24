@@ -307,6 +307,35 @@ void MainWindow::on_viewItemExpanded(QTreeWidgetItem *item)
     }
 
     // ------------------------------------------------------------
+    // LStream root ("lstr")
+    // ------------------------------------------------------------
+    if (item->text(0) == "lstr") {
+
+        if (item->childCount() > 0) {
+            return;
+        }
+
+        const QString path = item->data(0, RoleLStreamPath).toString();
+        if (path.isEmpty()) {
+            return;
+        }
+
+        auto entry = ensureLStreamLoaded(path);
+
+        if (entry->loaded) {
+            populateLStreamTopLevel(item, entry);
+            return;
+        }
+
+        if (entry->loading) {
+            return;
+        }
+
+        loadLStreamAsync(path, entry, item);
+        return;
+    }
+
+    // ------------------------------------------------------------
     // Cell node (GDS or OAS)
     // ------------------------------------------------------------
     if (type == ItemCell) {

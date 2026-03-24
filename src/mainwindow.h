@@ -54,7 +54,8 @@ class MainWindow : public QMainWindow
         RoleType                 = Qt::UserRole + 1,    /*!< Item type: view root / cell node / etc. */
         RoleGdsPath              = Qt::UserRole + 2,    /*!< Absolute path to GDS file for "gds" view node. */
         RoleCellName             = Qt::UserRole + 3,    /*!< Cell name for hierarchy nodes. */
-        RoleOasPath              = Qt::UserRole + 4     /*!< Absolute path to OASIS file for "oas" view node. */
+        RoleOasPath              = Qt::UserRole + 4,    /*!< Absolute path to OASIS file for "oas" view node. */
+        RoleLStreamPath          = Qt::UserRole + 5     /*!< Absolute path to LStream file for "lstream" view node. */
     };
 
     /*!
@@ -63,7 +64,8 @@ class MainWindow : public QMainWindow
     enum VIEW_ITEM_TYPE {
         ItemViewGds              = 1,                   /*!< "gds" view root node. */
         ItemCell                 = 2,                   /*!< Cell node in hierarchy (GDS/OASIS). */
-        ItemViewOas              = 3                    /*!< "oas" view root node. */
+        ItemViewOas              = 3,                   /*!< "oas" view root node. */
+        ItemViewLStream          = 4                    /*!< "lstr" view root node. */
     };
 
 public:
@@ -92,6 +94,20 @@ public:
         QString                             path;                /*!< Absolute path to the OASIS file. */
         LayoutHierarchy                     hierarchy;            /*!< Parsed hierarchy (cells + placements). */
         QStringList                         errors;              /*!< Errors collected during parsing. */
+    };
+
+    /*!
+     * \brief Cache entry storing parsed LStream (Capt'n Proto) hierarchy for a given file.
+     */
+    struct LStreamCacheEntry
+    {
+        QString path;
+        QStringList cellNames;
+
+        bool loaded = false;
+        bool loading = false;
+
+        QStringList errors;
     };
 
     /*!
@@ -234,6 +250,13 @@ private:
                                                                 const std::shared_ptr<OasCacheEntry> &entry,
                                                                 const QString &cellName);
 
+    std::shared_ptr<LStreamCacheEntry>  ensureLStreamLoaded(const QString &path);
+    void                                loadLStreamAsync(const QString &path,
+                                                         const std::shared_ptr<LStreamCacheEntry> &entry,
+                                                         QTreeWidgetItem *targetItem);
+    void                                populateLStreamTopLevel(QTreeWidgetItem *item,
+                                                                const std::shared_ptr<LStreamCacheEntry> &entry);
+
     void                                checkAndSaveProjectData(QCloseEvent *);
 
     void                                createProjectUnionMenu();
@@ -261,10 +284,12 @@ private:
     void                                copyDir(const QString &, const QString &) const;
 
     QString                             getLibraryPath(const QString &) const;
+    QString                             getLibraryPath(const QString &libName, const QString &viewName) const;
     QString                             getLibraryKeyPrefix() const;
 
     QString                             getProjectFileFromDir(const QString &) const;
     QString                             expandShellVariables(const QString &path) const;
+    QString                             detectViewFromPath(const QString& filePath) const;
 
     QString                             generateCopyName(const QString &, const QString &, const QString &suffix = "") const;
 
@@ -333,6 +358,7 @@ private:
 
     QHash<QString, std::shared_ptr<GdsCacheEntry>> m_gdsCache;             /*!< GDS hierarchy cache: abs path -> entry. */
     QHash<QString, std::shared_ptr<OasCacheEntry>> m_oasCache;             /*!< OASIS hierarchy cache: abs path -> entry. */
+    QHash<QString, std::shared_ptr<LStreamCacheEntry>> m_lstreamCache;     /*!< LStream hierarchy cache: abs path -> entry. */
 };
 
 /*!*******************************************************************************************************************

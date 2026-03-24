@@ -36,3 +36,6 @@ ui_*.h
 docs/html/
 docs/latex/
 
+# --- Cap'n Proto local build/install artifacts ---
+capnp-install/
+capnproto/build/

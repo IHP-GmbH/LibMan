@@ -268,15 +268,23 @@ QMap<QString, QString> MainWindow::getCurrentLibraries() const
 
     QMap<QString, PropertyItem*> propItems = m_properties->getMap();
     QMap<QString, PropertyItem*>::const_iterator it;
+
     for(it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
         QString key = it.key();
         if(key.toUpper().startsWith(getLibraryKeyPrefix())) {
-            QString libName = key;
-            libName.remove(getLibraryKeyPrefix());
+
+            QString tail = key;
+            tail.remove(getLibraryKeyPrefix());
+
+            int pos = tail.lastIndexOf('/');
+            QString libName = (pos >= 0) ? tail.left(pos) : tail;
+
             QString libPath = m_properties->get<QString>(key);
 
-            if(QFileInfo(libPath).exists()) {
-                libMap[libName] = libPath;
+            if(!libName.isEmpty() && QFileInfo(libPath).exists()) {
+                if(!libMap.contains(libName)) {
+                    libMap[libName] = libPath;
+                }
             }
         }
     }
@@ -413,17 +421,58 @@ QString MainWindow::getCurrentWorkingDir() const
  **********************************************************************************************************************/
 QString MainWindow::getLibraryPath(const QString &libName) const
 {
-    QString libPath;
-    QString key = getLibraryKeyPrefix() + libName;
-    if(m_properties->exists(key)) {
-        libPath = m_properties->get<QString>(key);
+    QMap<QString, PropertyItem*> propItems = m_properties->getMap();
+    QMap<QString, PropertyItem*>::const_iterator it;
+
+    const QString prefix = getLibraryKeyPrefix() + libName + "/";
+
+    for(it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
+        const QString key = it.key();
+        if(key.startsWith(prefix)) {
+            const QString libPath = m_properties->get<QString>(key);
+            QFileInfo fi(libPath);
+            if(fi.exists() && fi.isFile()) {
+                return fi.absoluteFilePath();
+            }
+        }
     }
 
-    return libPath;
+    return QString();
 }
 
 /*!*******************************************************************************************************************
- * \brief Launches a dialog window to select a project file to load.
+ * \brief Returns absolute file path for the specified library view.
+ *
+ * In .lib based workflow a library may contain multiple views (e.g. gds, oas, lstr),
+ * each stored as a separate file. These are internally mapped using keys in the form
+ * "<library>/<view>", therefore this function retrieves the corresponding file path
+ * for the given library and view combination.
+ *
+ * If the view does not exist or the file is invalid, an empty string is returned.
+ *
+ * \param libName      Name of the library.
+ * \param viewName     Name of the view (e.g. "gds", "oas", "lstr").
+ *
+ * \return Absolute path to the view file or empty string on failure.
+ **********************************************************************************************************************/
+QString MainWindow::getLibraryPath(const QString &libName, const QString &viewName) const
+{
+    const QString key = getLibraryKeyPrefix() + libName + "/" + viewName;
+    if(!m_properties->exists(key)) {
+        return QString();
+    }
+
+    QString libPath = m_properties->get<QString>(key);
+    QFileInfo fi(libPath);
+    if(!fi.exists() || !fi.isFile()) {
+        return QString();
+    }
+
+    return fi.absoluteFilePath();
+}
+
+/*!*******************************************************************************************************************
+ * \brief Launches a dialog window to select a lib file to load.
  **********************************************************************************************************************/
 void MainWindow::on_actionOpen_triggered()
 {
@@ -431,7 +480,7 @@ void MainWindow::on_actionOpen_triggered()
     QString fileName = QFileDialog::getOpenFileName(this,
                                                     tr("Open file(s)"),
                                                     workDir,
-                                                    tr("Project (*.projects);; All (*)"));
+                                                    tr("KLayout Lib (*.lib);; All (*)"));
 
     if(!fileName.isEmpty()) {
         loadProjectFile(fileName);
@@ -522,59 +571,47 @@ QString MainWindow::getDocumentTool(const QString &documentName) const
 }
 
 /*!*******************************************************************************************************************
- * \brief Returns absolute path of the view based on given project/group/view (library/cell/view) information.
- * \param libName       Name of the project (library).
+ * \brief Returns absolute path of the view based on given library/cell/view information.
+ *
+ * In KLayout .lib based workflow a library points directly to a layout file,
+ * therefore the returned path is the library file itself. The groupName and
+ * viewName arguments are currently unused and kept only for API compatibility.
+ *
+ * \param libName       Name of the library.
  * \param groupName     Name of the group (cell).
  * \param viewName      Name of the view.
  **********************************************************************************************************************/
 QString MainWindow::getViewPath(const QString &libName, const QString &groupName, const QString &viewName) const
 {
-    QString viewPath = QDir::toNativeSeparators(libName + "/" + viewName + "/" + groupName + "." + viewName);
-    return(viewPath);
+    Q_UNUSED(groupName);
+    Q_UNUSED(viewName);
+
+    return getLibraryPath(libName);
 }
 
 /*!*******************************************************************************************************************
- * \brief Returns absolute path of the view for currently selected project/group (library/cell).
+ * \brief Returns absolute path of the currently selected view file.
+ *
+ * In KLayout .lib based workflow the library itself points to the layout file,
+ * so for layout views such as gds/oas/lstr this function returns the current
+ * library file path. For non-layout views an empty string is returned.
+ *
  * \param viewName     Name of the view.
  **********************************************************************************************************************/
 QString MainWindow::getCurrentViewFilePath(const QString &viewName) const
 {
-    QString viewPath;
+    const QString v = viewName.trimmed().toLower();
 
-    QList<QTreeWidgetItem*> libItems = m_ui->treeLibs->selectedItems();
-    if(!libItems.count()) {
-        return viewPath;
+    if(v != "gds" && v != "oas" && v != "oasis" && v != "lstr") {
+        return QString();
     }
 
-    QTreeWidgetItem *libItem = libItems.first();
-    if(!libItem) {
-        return viewPath;
+    QString libPath = getCurrentLibraryPath();
+    if(!QFileInfo(libPath).exists() || !QFileInfo(libPath).isFile()) {
+        return QString();
     }
 
-    QList<QListWidgetItem*> groupItems = m_ui->listGroups->selectedItems();
-    if(!groupItems.count()) {
-        return viewPath;
-    }
-
-    QListWidgetItem *groupItem = groupItems.first();
-    if(!groupItem) {
-        return viewPath;
-    }
-
-    QString key = getLibraryKeyPrefix() + libItem->text(0);
-    QString libPath = m_properties->get<QString>(key);
-
-    if(!QFileInfo(libPath).exists()) {
-        return viewPath;
-    }
-
-    viewPath = QDir::toNativeSeparators(libPath + "/" + viewName + "/" + groupItem->text() + "." + viewName);
-
-    if(QFileInfo(viewPath).exists()) {
-        return viewPath;
-    }
-
-    return "";
+    return libPath;
 }
 
 /*!*******************************************************************************************************************
@@ -704,67 +741,45 @@ QString MainWindow::getCurrentViewName() const
 }
 
 /*!*******************************************************************************************************************
- * \brief MainWindow::getCurrentGroupPath
- * \param viewName
- * \param toBeCreated
- * \return
+ * \brief Returns path associated with the currently selected group.
+ *
+ * In KLayout .lib based workflow groups are cells inside a layout file rather than
+ * directories on disk. Therefore this function returns the current library file path.
+ *
+ * \param viewName        Name of the view.
+ * \param toBeCreated     Unused for file-based libraries.
+ *
+ * \return Absolute path to the current library file or empty string on failure.
  **********************************************************************************************************************/
 QString MainWindow::getCurrentGroupPath(const QString &viewName, bool toBeCreated)
 {
-    QString groupPath;
+    Q_UNUSED(viewName);
+    Q_UNUSED(toBeCreated);
+
     QString libPath = getCurrentLibraryPath();
-    if(!QFileInfo(libPath).exists()) {
-        return groupPath;
+    if(!QFileInfo(libPath).exists() || !QFileInfo(libPath).isFile()) {
+        return QString();
     }
 
-    QString groupName = getCurrentGroupName();
-    if(groupName.isEmpty()) {
-        return groupPath;
-    }
-
-    groupPath = QDir::toNativeSeparators(libPath + "/" + viewName);
-    if(!QFileInfo(groupPath).isDir()) {
-        if(toBeCreated) {
-            QDir dir;
-            dir.mkpath(groupPath);
-            if(!QFileInfo(groupPath).isDir()) {
-                error(QString("Failed to create a group '%1'").arg(groupPath));
-                return QString("");
-            }
-        }
-        else {
-            return QString("");
-        }
-    }
-
-    return groupPath;
+    return libPath;
 }
 
 /*!*******************************************************************************************************************
- * \brief Returns absolute path of the currently selected project (library)
+ * \brief Returns absolute path of the currently selected library file.
  **********************************************************************************************************************/
 QString MainWindow::getCurrentLibraryPath() const
 {
-    QString libPath;
-
     QList<QTreeWidgetItem*> libItems = m_ui->treeLibs->selectedItems();
     if(!libItems.count()) {
-        return libPath;
+        return QString();
     }
 
     QTreeWidgetItem *libItem = libItems.first();
     if(!libItem) {
-        return libPath;
+        return QString();
     }
 
-    QString key = getLibraryKeyPrefix() + libItem->text(0);
-    libPath = m_properties->get<QString>(key);
-
-    if(!QFileInfo(libPath).exists()) {
-        return libPath;
-    }
-
-    return libPath;
+    return getLibraryPath(libItem->text(0));
 }
 
 /*!*******************************************************************************************************************
@@ -784,47 +799,63 @@ QString MainWindow::getCurrentDocumentFilePath(const QString &docName) const
 }
 
 /*!*******************************************************************************************************************
- * \brief Returns project group (cell) list.
- * \param libPath      Path to the library, where group (cell) is located.
+ * \brief Returns group (cell) list for the given library file.
+ *
+ * In file-based KLayout .lib workflow the library points to a specific view file,
+ * therefore the group name is derived from the file base name.
+ *
+ * Example:
+ *   ./sg13g2_stdcell/gds/sg13g2_stdcell.gds -> group "sg13g2_stdcell"
+ *
+ * \param libPath      Path to the library view file.
+ *
+ * \return List containing a single group name or empty list on failure.
  **********************************************************************************************************************/
 QStringList MainWindow::getCurrentGroups(const QString &libPath) const
 {
     QStringList groups;
 
-    if(!QFileInfo(libPath).isDir()) {
+    QFileInfo fi(libPath);
+    if(!fi.exists() || !fi.isFile()) {
         return groups;
     }
 
-    QStringList views = getValidViewList();
-
-    QDir libDir = QDir(libPath);
-    groups = libDir.entryList(QDir::NoDotAndDotDot | QDir::Dirs);
-
-    groups.removeDuplicates();
-
-    return(groups);
+    groups << fi.completeBaseName();
+    return groups;
 }
 
 /*!*******************************************************************************************************************
- * \brief Returns valid view paths for the carent project/ group (library/cell).
- * \param libPath      Path to the library, where group (cell) is located.
- * \param groupName    Name of group (cell) to read for its view(s).
+ * \brief Returns valid views for the given library/cell.
+ *
+ * In KLayout .lib based workflow a library is backed by a single layout file,
+ * so the available view is derived from the file extension.
+ *
+ * \param libPath      Path to the layout file.
+ * \param groupName    Name of group (cell) to query views for.
  **********************************************************************************************************************/
-QStringList MainWindow::getCurrentViews(const QString &libPath, const QString &groupName) const
+QStringList MainWindow::getCurrentViews(const QString &libName, const QString &groupName) const
 {
-    QStringList groupViews;
+    Q_UNUSED(groupName);
 
-    QStringList views = getValidViewList();
-    foreach(const QString viewName, views) {
-        QString viewPath = QDir::toNativeSeparators(libPath + "/" + viewName + "/" + groupName + "." + viewName);
-        if(QFileInfo(viewPath).exists()) {
-            groupViews<<viewName;
+    QStringList views;
+
+    QMap<QString, PropertyItem*> propItems = m_properties->getMap();
+    QMap<QString, PropertyItem*>::const_iterator it;
+
+    const QString prefix = getLibraryKeyPrefix() + libName + "/";
+
+    for(it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
+        const QString key = it.key();
+        if(key.startsWith(prefix)) {
+            QString viewName = key.mid(prefix.length()).trimmed();
+            if(!viewName.isEmpty() && !views.contains(viewName)) {
+                views << viewName;
+            }
         }
     }
 
-    groupViews.removeDuplicates();
-
-    return(groupViews);
+    views.sort();
+    return views;
 }
 
 /*!*******************************************************************************************************************
@@ -899,31 +930,18 @@ void MainWindow::loadCategories(const QString &libPath)
 }
 
 /*!*******************************************************************************************************************
- * \brief Adds group (cell) for the given project (library) into the group list widget.
- * \param libPath      Path to the library, where group (cell) is located.
+ * \brief Adds group (cell) for the given library into the group list widget.
+ *
+ * In file-based KLayout .lib workflow the group name is derived from the file base name.
+ *
+ * \param libPath      Path to the library view file.
  **********************************************************************************************************************/
 void MainWindow::loadGroups(const QString &libPath)
 {
     m_ui->listGroups->clear();
     m_ui->listViews->clear();
 
-    QStringList groups;
-
-    QStringList views = getValidViewList();
-    foreach(const QString viewName, views) {
-        QString groupPath = QDir::toNativeSeparators(libPath + "/" + viewName);
-
-        QDir groupDir(groupPath);
-        groupDir.setNameFilters(QStringList()<<"*." + viewName);
-
-        QStringList fileList = groupDir.entryList();
-        foreach(QString groupName, fileList) {
-            groupName.remove(QString(".") + viewName);
-            groups<<groupName;
-        }
-    }
-
-    groups.removeDuplicates();
+    QStringList groups = getCurrentGroups(libPath);
 
     foreach(const QString &groupName, groups) {
         QListWidgetItem *groupItem = new QListWidgetItem;
@@ -936,53 +954,48 @@ void MainWindow::loadGroups(const QString &libPath)
 }
 
 /*!*******************************************************************************************************************
- * \brief Adds views for the given group (cell) into the view list widget.
- * \param libPath      Path to the library, where group (cell) is located.
+ * \brief Adds views for the given group (cell) into the view tree widget.
+ *
+ * In KLayout .lib based workflow the library is represented by a single layout file.
+ * Therefore the view type is derived from the file extension and the selected cell
+ * is opened from that same file.
+ *
+ * \param libPath      Path to the library layout file.
  * \param groupName    Name of group (cell) to load its view(s).
  **********************************************************************************************************************/
-void MainWindow::loadViews(const QString &libPath, const QString &groupName)
+void MainWindow::loadViews(const QString &libName, const QString &groupName)
 {
+    Q_UNUSED(groupName);
+
     m_ui->listViews->clear();
 
     m_ui->listViews->setHeaderHidden(true);
     m_ui->listViews->setRootIsDecorated(true);
 
-    QStringList groupViews;
-    const QStringList views = getValidViewList();
+    const QStringList views = getCurrentViews(libName, groupName);
 
-    foreach(const QString viewName, views) {
-        const QString viewPath = QDir::toNativeSeparators(libPath + "/" + viewName + "/" + groupName + "." + viewName);
-        if(QFileInfo(viewPath).exists()) {
-            groupViews << viewName;
+    foreach(const QString &viewName, views) {
+        const QString viewPath = getLibraryPath(libName, viewName);
+        if(viewPath.isEmpty()) {
+            continue;
         }
-    }
 
-    groupViews.removeDuplicates();
-
-    foreach (const QString &viewName, groupViews) {
         QTreeWidgetItem *viewItem = new QTreeWidgetItem(m_ui->listViews);
         viewItem->setText(0, viewName);
 
         if(viewName == "gds") {
-            const QString gdsPath = QDir::toNativeSeparators(libPath + "/gds/" + groupName + ".gds");
-
             viewItem->setData(0, RoleType, ItemViewGds);
-            viewItem->setData(0, RoleGdsPath, gdsPath);
-
+            viewItem->setData(0, RoleGdsPath, viewPath);
             viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         }
-        else if (viewName == "oas") {
-            QString oasPath = QDir::toNativeSeparators(libPath + "/oas/" + groupName + ".oas");
-            if (!QFileInfo(oasPath).exists()) {
-                const QString alt = QDir::toNativeSeparators(libPath + "/oas/" + groupName + ".oasis");
-                if (QFileInfo(alt).exists()) {
-                    oasPath = alt;
-                }
-            }
-
+        else if(viewName == "lstr") {
+            viewItem->setData(0, RoleType, ItemViewLStream);
+            viewItem->setData(0, RoleLStreamPath, viewPath);
+            viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+        }
+        else if(viewName == "oas" || viewName == "oasis") {
             viewItem->setData(0, RoleType, ItemViewOas);
-            viewItem->setData(0, RoleOasPath, oasPath);
-
+            viewItem->setData(0, RoleOasPath, viewPath);
             viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         }
     }
@@ -1059,8 +1072,8 @@ void MainWindow::loadCombinedLibs(const QMap<QString, QStringList> &combinedLibs
 }
 
 /*!*******************************************************************************************************************
- * \brief Slot to load all groups (cells) for selected project (library) into the group (cell) list widget.
- * \param item       Pointer to list item group (cell).
+ * \brief Slot to load all groups (cells) for selected library into the group list widget.
+ * \param item       Pointer to list item library.
  **********************************************************************************************************************/
 void MainWindow::on_treeLibs_itemClicked(QTreeWidgetItem *item, int)
 {
@@ -1083,18 +1096,18 @@ void MainWindow::on_treeLibs_itemClicked(QTreeWidgetItem *item, int)
 
     m_ui->txtLibSearch->setText(item->text(0));
 
-    QString key = getLibraryKeyPrefix() + item->text(0);
-    QString libPath = m_properties->get<QString>(key);
+    QString libPath = getLibraryPath(item->text(0));
 
-    if(QFileInfo(libPath).exists()) {
-        loadGroups(libPath);
-        loadDocuments(libPath);
-        loadCategories(libPath);
+    QFileInfo fi(libPath);
+    if(fi.exists() && fi.isFile()) {
+        loadGroups(fi.absoluteFilePath());
+        m_ui->listDocumentation->clear();
+        m_ui->listCategories->clear();
     }
 
-    m_ui->actionGroup->setEnabled(true);
+    m_ui->actionGroup->setEnabled(false);
     m_ui->actionUnion->setEnabled(false);
-    m_ui->actionCategory->setEnabled(true);
+    m_ui->actionCategory->setEnabled(false);
 }
 
 /*!*******************************************************************************************************************
@@ -1124,15 +1137,9 @@ void MainWindow::on_listGroups_itemClicked(QListWidgetItem *item)
 
     m_ui->txtCellSearch->setText(item->text());
 
+    loadViews(libItem->text(0), item->text());
 
-    QString key = getLibraryKeyPrefix() + libItem->text(0);
-    QString libPath = m_properties->get<QString>(key);
-
-    if(QFileInfo(libPath).exists()) {
-        loadViews(libPath, item->text());
-    }
-
-    m_ui->actionUnion->setEnabled(true);
+    m_ui->actionUnion->setEnabled(false);
 }
 
 /*!*******************************************************************************************************************
@@ -1433,7 +1440,7 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
     QString cellName;   // for hierarchy nodes
 
     // ------------------------------------------------------------
-    // Root items: "gds" / "oas"
+    // Root items: "gds" / "oas" / "lstr"
     // ------------------------------------------------------------
     if(type == ItemViewGds && item->text(0) == "gds") {
         viewName = "gds";
@@ -1443,12 +1450,13 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
         viewName = "oas";
         viewPath = item->data(0, RoleOasPath).toString();
     }
-    // ------------------------------------------------------------
-    // Cell item (GDS or OAS) - detect by top root ("gds"/"oas")
-    // ------------------------------------------------------------
+    else if(type == ItemViewLStream && (item->text(0) == "lstr" || item->text(0) == "lstream")) {
+        viewName = "lstr";
+        viewPath = item->data(0, RoleLStreamPath).toString();
+    }
     else if(type == ItemCell) {
 
-        // find top view root ("gds" or "oas")
+        // find top view root ("gds" or "oas" or "lstr")
         QTreeWidgetItem *p = item->parent();
         while(p && p->parent()) {
             p = p->parent();
@@ -1466,6 +1474,10 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
         else if(rootName == "oas" || rootName == "oasis") {
             viewName = "oas";
             viewPath = p->data(0, RoleOasPath).toString();
+        }
+        else if(rootName == "lstr" || rootName == "lstream") {
+            viewName = "lstr";
+            viewPath = p->data(0, RoleLStreamPath).toString();
         }
         else {
             return;
@@ -1503,17 +1515,16 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
     // ------------------------------------------------------------
     // Layout handling via KLayout server: GDS + OAS (same behavior)
     // ------------------------------------------------------------
-    if(viewName == "gds" || viewName == "oas") {
+    if(viewName == "gds" || viewName == "oas" || viewName == "lstr") {
 
         // Root item: "gds" or "oas"
-        if(type == ItemViewGds || type == ItemViewOas) {
+        if(type == ItemViewGds || type == ItemViewOas || type == ItemViewLStream) {
 
             const bool serverWasRunning = (m_klayoutProc && m_klayoutProc->state() != QProcess::NotRunning);
 
             if(serverWasRunning) {
                 const QString groupName = getCurrentGroupName();
                 if(!groupName.isEmpty()) {
-                    // select the "groupName" cell in the already-opened layout
                     sendKLayoutSelectRequest(viewPath, groupName);
                 }
                 return;
@@ -1739,15 +1750,15 @@ void MainWindow::on_actionSave_triggered()
 }
 
 /*!*******************************************************************************************************************
- * \brief Pops up dialog box where user can specify the file to save the project libraries.
+ * \brief Pops up dialog box where user can specify the file to save the library definition.
  **********************************************************************************************************************/
 void MainWindow::on_actionSave_As_triggered()
 {
     QString workDir = getCurrentWorkingDir();
     QString fileName = QFileDialog::getSaveFileName(this,
-                                                    tr("Save Project File As.."),
+                                                    tr("Save Lib File As.."),
                                                     workDir,
-                                                    tr("Project (*.projects);; All (*)"));
+                                                    tr("KLayout Lib (*.lib);; All (*)"));
     if(!fileName.isEmpty()) {
         saveProjectFile(fileName);
     }
@@ -1890,15 +1901,15 @@ QTreeWidgetItem* MainWindow::getTreeItemByName(const QString &name)
 }
 
 /*!*******************************************************************************************************************
- * \brief Searches for *.projects-files in the specified directory and returns the first found one.
- * \param dirName     Name of folder to search for project file.
+ * \brief Searches for *.lib files in the specified directory and returns the first valid one.
+ * \param dirName     Name of folder to search for lib file.
  **********************************************************************************************************************/
 QString MainWindow::getProjectFileFromDir(const QString &dirName) const
 {
     QString projFile;
 
     QStringList formats;
-    formats<<"*.projects";
+    formats << "*.lib";
 
     QDir projDir(dirName);
     projDir.setNameFilters(formats);
@@ -1906,49 +1917,13 @@ QString MainWindow::getProjectFileFromDir(const QString &dirName) const
     QStringList fileList = projDir.entryList();
     foreach(QString projName, fileList) {
         QString projPath = QDir::toNativeSeparators(dirName + "/" + projName);
-        if(QFileInfo(projPath).isFile()) {
-            QFile file(projPath);
-            if(!file.open(QFile::ReadOnly | QFile::Text)) {
-                return projFile;
-            }
+        if(!QFileInfo(projPath).isFile()) {
+            continue;
+        }
 
-            QTextStream in(&file);
-            while (!in.atEnd()) {
-                QString line = in.readLine().remove("^\\s+").remove("\\s+$");
-
-                if(line.startsWith("#")) {
-                    continue;
-                }
-
-                if(line.contains("PROJECT")) {
-                    #if QT_VERSION >= 0x050000
-                        QStringList words = line.split(" ", Qt::SkipEmptyParts);
-                    #else
-                        QStringList words = line.split(" ", QString::SkipEmptyParts);
-                    #endif
-                    if(words.count() == 3) {
-                        projFile = projPath;
-                        break;
-                    }
-                }
-                else if(line.contains("GROUP")) {
-                    #if QT_VERSION >= 0x050000
-                        QStringList words = line.split(" ", Qt::SkipEmptyParts);
-                    #else
-                        QStringList words = line.split(" ", QString::SkipEmptyParts);
-                    #endif
-                    if(words.count() > 1) {
-                        projFile = projPath;
-                        break;
-                    }
-                }
-            }
-
-            file.close();
-
-            if(!projFile.isEmpty()) {
-                return projFile;
-            }
+        LibFileParser parser;
+        if(parser.parseFile(projPath)) {
+            return projPath;
         }
     }
 

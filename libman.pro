@@ -24,13 +24,13 @@ win32:QMAKE_CXXFLAGS += -Wa,-mbig-obj
 # Reduce Debug symbols (optional, for Debug mode)
 QMAKE_CXXFLAGS += -g1
 
-
 SOURCES += src/main.cpp\
     gds/gdsReadAsync.cpp \
     src/libfileparser.cpp \
     oas/oasReadAsync.cpp \
     oas/oasReader.cpp \
     src/klayoutServer.cpp \
+    src/lstreamcellreader.cpp \
     src/mainwindow.cpp \
     extension/variantmanager.cpp \
     extension/variantfactory.cpp \
@@ -48,6 +48,7 @@ SOURCES += src/main.cpp\
     QtPropertyBrowser/qtbuttonpropertybrowser.cpp \
     gds/gdsreader.cpp \
     src/projectmanager.cpp \
+    lstream/lstrReadAsync.cpp \
     src/property.cpp \
     src/toolcustomtool.cpp \
     src/toolmanager.cpp \
@@ -78,6 +79,7 @@ HEADERS  += src/mainwindow.h \
     gds/gdsreader.h \
     src/libfileparser.h \
     oas/oasReader.h \
+    src/lstreamcellreader.h \
     src/projectmanager.h \
     src/property.h \
     src/toolmanager.h \
@@ -92,3 +94,18 @@ FORMS    += src/mainwindow.ui \
 
 RESOURCES += \
     icons.qrc
+
+# include Capnp
+CAPNP_GEN_DIR = $$PWD/capnp
+
+INCLUDEPATH += $$CAPNP_GEN_DIR
+
+SOURCES += $$files($$CAPNP_GEN_DIR/*.cc)
+HEADERS += $$files($$CAPNP_GEN_DIR/*.h)
+
+CAPNP_ROOT = $$PWD/capnp-install
+
+INCLUDEPATH += $$CAPNP_ROOT/include
+LIBS += -L$$CAPNP_ROOT/lib
+
+LIBS += -lcapnp -lkj

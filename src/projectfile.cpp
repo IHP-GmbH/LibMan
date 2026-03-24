@@ -8,6 +8,7 @@
 #include <QTextStream>
 #include <QFileDialog>
 #include <QListWidgetItem>
+#include <QRegularExpression>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -16,20 +17,21 @@
 #include "libfileparser.h"
 
 /*!******************************************************************************************************************
+ * \brief Detects view name from file suffix.
+ *******************************************************************************************************************/
+QString MainWindow::detectViewFromPath(const QString& filePath) const
+{
+    return(QFileInfo(filePath).suffix().toLower());
+}
+
+/*!******************************************************************************************************************
  * \brief Expands shell-style environment variables in a given path string.
- *
- * This function replaces variables like $VAR and ${VAR} with their actual values
- * from the current system environment (e.g. $HOME -> /home/user).
- *
- * \param path         Input path containing shell-style variables.
- * \return             A string with all environment variables expanded.
  *******************************************************************************************************************/
 QString MainWindow::expandShellVariables(const QString& path) const
 {
     QString result = path;
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
 
-    // Handle ${VAR} and $VAR
     QRegularExpression re(R"(\$(\{([^}]+)\}|([A-Za-z_][A-Za-z0-9_]*)))");
     QRegularExpressionMatchIterator it = re.globalMatch(result);
 
@@ -43,16 +45,9 @@ QString MainWindow::expandShellVariables(const QString& path) const
     return result;
 }
 
-/*!*******************************************************************************************************************
+/*!******************************************************************************************************************
  * \brief Resolves absolute or relative PROJECT path.
- *
- * Relative paths are interpreted relative to the .projects file location.
- *
- * \param projectsFile Path to the loaded .projects file.
- * \param rawPath Path string from PROJECT entry.
- *
- * \return Absolute path.
- **********************************************************************************************************************/
+ *******************************************************************************************************************/
 QString MainWindow::resolveProjectPath(const QString& projectsFile, const QString& rawPath)
 {
     const QString p = QDir::fromNativeSeparators(rawPath);
@@ -62,13 +57,11 @@ QString MainWindow::resolveProjectPath(const QString& projectsFile, const QStrin
     }
 
     const QDir baseDir = QFileInfo(projectsFile).absoluteDir();
-
     return QDir::toNativeSeparators(baseDir.absoluteFilePath(p));
 }
 
 /*!******************************************************************************************************************
  * \brief Loads KLayout .lib file content into LibMan.
- * \param fileName     Path to the file to be loaded.
  *******************************************************************************************************************/
 void MainWindow::loadProjectFile(const QString &fileName)
 {
@@ -93,29 +86,37 @@ void MainWindow::loadProjectFile(const QString &fileName)
     m_ui->txtCellSearch->clear();
     m_ui->txtViewSearch->clear();
 
-    QMap<QString, QString> loadedLibs;
-
     for(const LibDefinition& def : data.definitions) {
-        QString libName = def.name.trimmed();
-        QString libPath = expandShellVariables(def.path.trimmed());
+
+        const QString libName = def.name.trimmed();
+        const QString libPath = expandShellVariables(def.path.trimmed());
 
         if(libName.isEmpty()) {
+            error(QString("Skipping library with empty name from '%1'.").arg(def.sourceFile));
             continue;
         }
 
         if(libPath.isEmpty()) {
+            error(QString("Skipping library '%1' with empty path.").arg(libName));
             continue;
         }
 
-        if(!QFileInfo(libPath).exists()) {
-            error(QString("Library path does not exist for '%1': %2")
-                      .arg(libName, libPath));
+        QFileInfo fi(libPath);
+
+        if(!fi.exists()) {
+            error(QString("Library file does not exist for '%1': %2").arg(libName, libPath));
             continue;
         }
 
-        QString key = getLibraryKeyPrefix() + libName;
-        m_properties->set(key, libPath);
-        loadedLibs[libName] = libPath;
+        if(!fi.isFile()) {
+            error(QString("Library path is not a file for '%1': %2").arg(libName, libPath));
+            continue;
+        }
+
+        const QString viewName = detectViewFromPath(fi.absoluteFilePath());
+
+        QString key = getLibraryKeyPrefix() + libName + "/" + viewName;
+        m_properties->set(key, fi.absoluteFilePath());
     }
 
     loadLibraries();
@@ -141,7 +142,6 @@ void MainWindow::loadProjectFile(const QString &fileName)
 
 /*!******************************************************************************************************************
  * \brief Saves LibMan libraries into KLayout .lib file.
- * \param fileName     Path to the file to be saved.
  *******************************************************************************************************************/
 void MainWindow::saveProjectFile(const QString &fileName)
 {
@@ -160,6 +160,7 @@ void MainWindow::saveProjectFile(const QString &fileName)
     }
 
     QTextStream out(&file);
+    const QDir baseDir = QFileInfo(fileName).absoluteDir();
 
     out << "# KLayout library definition file\n";
     out << "# Generated by LibMan\n\n";
@@ -168,6 +169,7 @@ void MainWindow::saveProjectFile(const QString &fileName)
     QMap<QString, QString>::const_iterator it;
 
     for(it = projs.constBegin(); it != projs.constEnd(); ++it) {
+
         const QString libName = it.key().trimmed();
         const QString libPath = it.value().trimmed();
 
@@ -175,16 +177,27 @@ void MainWindow::saveProjectFile(const QString &fileName)
             continue;
         }
 
-        if(!QFileInfo(libPath).exists()) {
-            error(QString("Skipping library '%1': path does not exist: %2")
+        QFileInfo fi(libPath);
+
+        if(!fi.exists()) {
+            error(QString("Skipping library '%1': file does not exist: %2")
                       .arg(libName, libPath));
             continue;
         }
 
+        if(!fi.isFile()) {
+            error(QString("Skipping library '%1': path is not a file: %2")
+                      .arg(libName, libPath));
+            continue;
+        }
+
+        const QString storedPath =
+            QDir::toNativeSeparators(baseDir.relativeFilePath(fi.absoluteFilePath()));
+
         out << "define("
             << toLibStringLiteral(libName)
             << ", "
-            << toLibStringLiteral(QDir::toNativeSeparators(libPath))
+            << toLibStringLiteral(storedPath)
             << ");\n";
     }
 
@@ -196,17 +209,7 @@ void MainWindow::saveProjectFile(const QString &fileName)
 }
 
 /*!******************************************************************************************************************
- * \brief Converts a QString into a valid KLayout .lib string literal.
- *
- * Escapes special characters such as backslash, double quotes and control characters
- * (\n, \r, \t) so that the resulting string can be safely used inside define(...)
- * and include(...) statements in a .lib file.
- *
- * The resulting string is always enclosed in double quotes.
- *
- * \param value Input string.
- *
- * \return Escaped string literal ready for .lib file output.
+ * \brief Converts QString into valid .lib string literal.
  *******************************************************************************************************************/
 QString MainWindow::toLibStringLiteral(const QString& value)
 {
@@ -221,8 +224,7 @@ QString MainWindow::toLibStringLiteral(const QString& value)
 }
 
 /*!******************************************************************************************************************
- * \brief Creates an empty project file.
- * \param fileName     Path to the file to be created.
+ * \brief Creates empty project file.
  *******************************************************************************************************************/
 bool MainWindow::createNewFile(const QString &fileName)
 {
@@ -234,8 +236,8 @@ bool MainWindow::createNewFile(const QString &fileName)
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QMessageBox::warning(this, tr("LibManager"),
                              tr("Can not write to file '%1':\n%2.")
-                             .arg(fileName)
-                             .arg(file.errorString()));
+                                 .arg(fileName)
+                                 .arg(file.errorString()));
         error("Can not write to file '" + fileName + "'.");
         return false;
     }
