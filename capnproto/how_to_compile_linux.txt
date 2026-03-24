@@ -1,0 +1,6 @@
+cd capnproto/c++
+autoreconf -i
+./configure --prefix="$PWD/../../capnp-install"
+make -j"$(nproc)" check
+make install
+
