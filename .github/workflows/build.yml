@@ -43,6 +43,10 @@ jobs:
           make -j"$(nproc)"
           make install
 
+      - name: Export Cap'n Proto runtime path
+        run: |
+          echo "LD_LIBRARY_PATH=$GITHUB_WORKSPACE/capnp-install/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
       - name: Configure (qmake)
         run: |
           mkdir -p build
@@ -124,6 +128,10 @@ jobs:
           make -j"$(nproc)"
           make install
 
+      - name: Export Cap'n Proto runtime path
+        run: |
+          echo "LD_LIBRARY_PATH=$GITHUB_WORKSPACE/capnp-install/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
       - name: Configure tests (coverage enabled)
         run: |
           mkdir -p build-tests
@@ -145,7 +153,7 @@ jobs:
           cd build-tests
           xvfb-run -a ./tst_libman_gui -platform offscreen
 
-      - name: Generate coverage report
+      - name: Generate coverage report (text)
         run: |
           cd build-tests
           gcovr \
@@ -156,7 +164,7 @@ jobs:
             --print-summary \
             --txt
 
-      - name: Upload coverage HTML
+      - name: Generate coverage HTML
         run: |
           cd build-tests
           gcovr \
@@ -223,7 +231,7 @@ jobs:
           cd build
           mingw32-make -j"$(nproc)"
 
-      - name: Deploy Qt runtime and runtime resources
+      - name: Deploy Qt runtime and resources
         shell: cmd
         run: |
           cd build
@@ -247,9 +255,9 @@ jobs:
 
           windeployqt --dir dist dist\libman.exe
 
-          if exist ..\icons     xcopy /E /I /Y ..\icons     dist\icons
+          if exist ..\icons xcopy /E /I /Y ..\icons dist\icons
 
-      - name: Build Windows installer (Inno Setup)
+      - name: Build Windows installer
         shell: pwsh
         run: |
           if (!(Test-Path "installer\LibMan.iss")) {
