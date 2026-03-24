@@ -33,7 +33,15 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libgl1-mesa-dev
+          sudo apt-get install -y build-essential libgl1-mesa-dev autoconf automake libtool pkg-config
+
+      - name: Build Cap'n Proto
+        run: |
+          cd capnproto/c++
+          autoreconf -i
+          ./configure --prefix="$GITHUB_WORKSPACE/capnp-install"
+          make -j"$(nproc)"
+          make install
 
       - name: Configure (qmake)
         run: |
@@ -104,9 +112,17 @@ jobs:
       - name: Install test dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb build-essential libgl1-mesa-dev
+          sudo apt-get install -y xvfb build-essential libgl1-mesa-dev autoconf automake libtool pkg-config
           python3 -m pip install --upgrade pip
           python3 -m pip install gcovr
+
+      - name: Build Cap'n Proto
+        run: |
+          cd capnproto/c++
+          autoreconf -i
+          ./configure --prefix="$GITHUB_WORKSPACE/capnp-install"
+          make -j"$(nproc)"
+          make install
 
       - name: Configure tests (coverage enabled)
         run: |
@@ -182,6 +198,17 @@ jobs:
       - name: Install Inno Setup
         shell: pwsh
         run: choco install innosetup --yes
+
+      - name: Build Cap'n Proto
+        shell: bash
+        run: |
+          mkdir -p capnproto/build
+          cd capnproto/build
+          cmake .. -G "MinGW Makefiles" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/capnp-install"
+          mingw32-make -j"$(nproc)"
+          mingw32-make install
 
       - name: Configure (qmake)
         shell: bash
