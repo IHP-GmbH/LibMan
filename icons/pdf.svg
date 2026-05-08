@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+     fill="none" stroke="currentColor" stroke-width="1.6"
+     stroke-linecap="round" stroke-linejoin="round">
+
+  <!-- документ -->
+  <path d="M6 3h9l5 5v13H6z"/>
+
+  <!-- загнутый угол -->
+  <path d="M15 3v5h5"/>
+
+  <!-- контент (тоньше и короче) -->
+  <line x1="8" y1="10" x2="16" y2="10"/>
+  <line x1="8" y1="13" x2="16" y2="13"/>
+  <line x1="8" y1="16" x2="13" y2="16"/>
+
+  <!-- PDF (подняли выше и уменьшили) -->
+  <text x="12" y="19.5"
+        font-size="2.8"
+        text-anchor="middle"
+        fill="currentColor"
+        stroke="none"
+        font-family="Arial, sans-serif">
+    PDF
+  </text>
+
+</svg>
+

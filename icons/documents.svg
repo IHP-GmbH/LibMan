@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+     fill="none" stroke="currentColor" stroke-width="1.6"
+     stroke-linecap="round" stroke-linejoin="round">
+
+  <!-- задний документ -->
+  <path d="M7 5h8l4 4v10H7z"/>
+
+  <!-- передний документ -->
+  <path d="M4 8h8l4 4v9H4z"/>
+
+  <!-- загнутый угол переднего -->
+  <path d="M12 8v4h4"/>
+
+  <!-- строки -->
+  <line x1="7" y1="14" x2="13" y2="14"/>
+  <line x1="7" y1="17" x2="11" y2="17"/>
+
+</svg>
+
