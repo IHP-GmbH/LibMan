@@ -691,6 +691,11 @@ void NodeTranslator::compileNode(Declaration::Reader decl, schema::Node::Builder
       break;
   }
 
+  if (decl.which() != Declaration::ANNOTATION) {
+    builder.setStartByte(decl.getStartByte());
+    builder.setEndByte(decl.getEndByte());
+  }
+
   builder.adoptAnnotations(compileAnnotationApplications(decl.getAnnotations(), targetsFlagName));
 
   auto di = sourceInfo.get();
@@ -698,10 +703,11 @@ void NodeTranslator::compileNode(Declaration::Reader decl, schema::Node::Builder
   if (decl.hasDocComment()) {
     di.setDocComment(decl.getDocComment());
   }
+  di.setStartByte(decl.getStartByte());
+  di.setEndByte(decl.getEndByte());
 }
 
 static kj::StringPtr getExpressionTargetName(Expression::Reader exp) {
-  kj::StringPtr targetName;
   switch (exp.which()) {
     case Expression::ABSOLUTE_NAME:
       return exp.getAbsoluteName().getValue();
@@ -2200,6 +2206,11 @@ void ValueTranslator::fillStructValue(DynamicStruct::Builder builder,
                 // established `value` is not a tuple, this will only return a valid result if
                 // the value has unambiguous type.
                 auto result = compileValueInner(value, field->getType());
+
+                if (result.getType() == DynamicValue::UNKNOWN) {
+                  // Error already reported.
+                  break;
+                }
 
                 // Does it match the first field?
                 if (matchesType(value, groupField.getType(), result)) {

@@ -9,7 +9,7 @@ on:
 
 jobs:
   Linux:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -42,12 +42,12 @@ jobs:
         run: |
             ./super-test.sh
   MinGW-Wine:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      # See: https://github.com/actions/virtual-environments/issues/4589#issuecomment-1100899313
+      # See: https://github.com/actions/runner-images/issues/4589#issuecomment-1260157764
       # GitHub's Ubuntu image installs all kinds of stuff from non-Ubuntu repositories which cause
       # conflicts with Ubuntu packages ultimately preventing installation of wine32. Let's try to
       # fix that...
@@ -55,8 +55,7 @@ jobs:
         run: |
           sudo rm -f /etc/apt/sources.list.d/microsoft-prod.list
           sudo apt-get update -qq
-          sudo apt-get install -yqq --allow-downgrades libgd3/focal libpcre2-8-0/focal libpcre2-16-0/focal libpcre2-32-0/focal libpcre2-posix2/focal
-          sudo apt-get purge -yqq libmono* moby* mono* php* libgdiplus libpcre2-posix3 libzip4
+          sudo apt-get remove -qq libmono* moby* mono* nginx* php* libgdiplus libpcre2-posix3 libzip4
       - name: install dependencies
         run: |
             export DEBIAN_FRONTEND=noninteractive
@@ -71,7 +70,7 @@ jobs:
         run: |
             ./super-test.sh mingw i686-w64-mingw32
   cmake-packaging:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
     steps:
@@ -92,39 +91,39 @@ jobs:
       - name: cmake-static
         run: |
             ./super-test.sh cmake-package cmake-static
-  Android:
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v2
-      - name: install dependencies
-        run: |
-            export DEBIAN_FRONTEND=noninteractive
-            sudo apt-get install -y build-essential git
-      - name: fetch Android tools
-        if: steps.cache-android-sdk.outputs.cache-hit != 'true'
-        run: |
-            # The installed Android SDK is broken.
-            unset ANDROID_SDK_ROOT
-            unset ANDROID_HOME
-
-            mkdir android-sdk
-            cd android-sdk
-            curl -o commandlinetools.zip https://dl.google.com/android/repository/commandlinetools-linux-6200805_latest.zip
-            unzip commandlinetools.zip
-            (yes || true) | tools/bin/sdkmanager --sdk_root=$PWD platform-tools 'platforms;android-25' 'system-images;android-25;google_apis;armeabi-v7a' emulator 'build-tools;25.0.2' ndk-bundle
-      - name: 32-bit Build and Test
-        run: |
-            # The installed Android SDK is broken.
-            unset ANDROID_SDK_ROOT
-            unset ANDROID_HOME
-
-            echo | android-sdk/tools/bin/avdmanager create avd -n capnp -k 'system-images;android-25;google_apis;armeabi-v7a' -b google_apis/armeabi-v7a
-
-            # avdmanager seems to set image.sysdir.1 incorrectly in the AVD's config.ini, which
-            # causes the emulator to fail. I don't know why. I don't know how to fix it, other than
-            # to patch the config like so.
-            sed -i -re 's,^image\.sysdir\.1=android-sdk/,image.sysdir.1=,g' $HOME/.android/avd/capnp.avd/config.ini
-
-            ./super-test.sh android $PWD/android-sdk arm-linux-androideabi armv7a-linux-androideabi24
+  # Android:
+  #   runs-on: ubuntu-22.04
+  #   strategy:
+  #     fail-fast: false
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: install dependencies
+  #       run: |
+  #           export DEBIAN_FRONTEND=noninteractive
+  #           sudo apt-get install -y build-essential git
+  #     - name: fetch Android tools
+  #       if: steps.cache-android-sdk.outputs.cache-hit != 'true'
+  #       run: |
+  #           # The installed Android SDK is broken.
+  #           unset ANDROID_SDK_ROOT
+  #           unset ANDROID_HOME
+  #
+  #           mkdir android-sdk
+  #           cd android-sdk
+  #           curl -o commandlinetools.zip https://dl.google.com/android/repository/commandlinetools-linux-6200805_latest.zip
+  #           unzip commandlinetools.zip
+  #           (yes || true) | tools/bin/sdkmanager --sdk_root=$PWD platform-tools 'platforms;android-25' 'system-images;android-25;google_apis;armeabi-v7a' emulator 'build-tools;25.0.2' ndk-bundle
+  #     - name: 32-bit Build and Test
+  #       run: |
+  #           # The installed Android SDK is broken.
+  #           unset ANDROID_SDK_ROOT
+  #           unset ANDROID_HOME
+  #
+  #           echo | android-sdk/tools/bin/avdmanager create avd -n capnp -k 'system-images;android-25;google_apis;armeabi-v7a' -b google_apis/armeabi-v7a
+  #
+  #           # avdmanager seems to set image.sysdir.1 incorrectly in the AVD's config.ini, which
+  #           # causes the emulator to fail. I don't know why. I don't know how to fix it, other than
+  #           # to patch the config like so.
+  #           sed -i -re 's,^image\.sysdir\.1=android-sdk/,image.sysdir.1=,g' $HOME/.android/avd/capnp.avd/config.ini
+  #
+  #           ./super-test.sh android $PWD/android-sdk arm-linux-androideabi armv7a-linux-androideabi24

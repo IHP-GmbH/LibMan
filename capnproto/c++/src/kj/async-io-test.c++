@@ -378,7 +378,11 @@ bool systemSupportsAddress(StringPtr addr, StringPtr service = nullptr) {
   struct addrinfo hints;
   hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = 0;
+#if !defined(AI_V4MAPPED)
+  hints.ai_flags = AI_ADDRCONFIG;
+#else
   hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG;
+#endif
   hints.ai_protocol = 0;
   hints.ai_canonname = nullptr;
   hints.ai_addr = nullptr;
@@ -3224,7 +3228,7 @@ kj::String fillWriteBuffer(int fd) {
   // Fill up the write buffer of the given FD and return the contents written. We need to use the
   // raw syscalls to do this because KJ doesn't have a way to know how many bytes made it into the
   // socket buffer.
-  auto huge = bigString(2'000'000);
+  auto huge = bigString(4'200'000);
 
   size_t pos = 0;
   for (;;) {

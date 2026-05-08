@@ -3,7 +3,6 @@
 
 set(kj_sources_lite
   array.c++
-  cidr.c++
   list.c++
   common.c++
   debug.c++
@@ -38,7 +37,6 @@ else()
 endif()
 
 set(kj_headers
-  cidr.h
   common.h
   units.h
   memory.h
@@ -78,12 +76,26 @@ set(kj-std_headers
 )
 add_library(kj ${kj_sources})
 add_library(CapnProto::kj ALIAS kj)
-# TODO(cleanup): Use cxx_std_14 once it's safe to require cmake 3.8.
-target_compile_features(kj PUBLIC cxx_generic_lambdas)
+target_compile_features(kj PUBLIC cxx_std_17)
 
 if(UNIX AND NOT ANDROID)
   target_link_libraries(kj PUBLIC pthread)
 endif()
+
+include(CheckCXXSourceCompiles)
+check_cxx_source_compiles("#include <atomic>
+int main() {
+  std::atomic<uint8_t> w1;
+  std::atomic<uint16_t> w2;
+  std::atomic<uint32_t> w4;
+  std::atomic<uint64_t> w8;
+  return ++w1 + ++w2 + ++w4 + ++w8;
+}" CAPNP_BUILDS_WITHOUT_LIBATOMIC)
+
+if(NOT CAPNP_BUILDS_WITHOUT_LIBATOMIC)
+  target_link_libraries(kj PUBLIC atomic)
+endif()
+
 #make sure the lite flag propagates to all users (internal + external) of this library
 target_compile_definitions(kj PUBLIC ${CAPNP_LITE_FLAG})
 #make sure external consumers don't need to manually set the include dirs
@@ -124,6 +136,7 @@ set(kj-async_sources
   async-io-win32.c++
   async-io.c++
   async-io-unix.c++
+  cidr.c++
   timer.c++
 )
 set(kj-async_headers

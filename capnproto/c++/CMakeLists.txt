@@ -1,6 +1,8 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.10)
+include_guard(GLOBAL)
+
 project("Cap'n Proto" CXX)
-set(VERSION 1.0.1)
+set(VERSION 1.5-dev)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -206,43 +208,44 @@ install(FILES
 #install CapnProtoMacros for CapnProtoConfig.cmake build directory consumers
 configure_file(cmake/CapnProtoMacros.cmake cmake/CapnProtoMacros.cmake COPYONLY)
 
-if(NOT MSVC)  # Don't install pkg-config files when building with MSVC
-  # Variables for pkg-config files
-  set(prefix "${CMAKE_INSTALL_PREFIX}")
-  set(exec_prefix "") # not needed since we use absolute paths in libdir and includedir
-  set(libdir "${CMAKE_INSTALL_FULL_LIBDIR}")
-  set(includedir "${CMAKE_INSTALL_FULL_INCLUDEDIR}")
+# Variables for pkg-config files
+set(prefix "${CMAKE_INSTALL_PREFIX}")
+set(exec_prefix "") # not needed since we use absolute paths in libdir and includedir
+set(libdir "${CMAKE_INSTALL_FULL_LIBDIR}")
+set(includedir "${CMAKE_INSTALL_FULL_INCLUDEDIR}")
+if(NOT MSVC)
   set(PTHREAD_CFLAGS "-pthread")
-  set(STDLIB_FLAG)  # TODO: Unsupported
+endif()
+set(STDLIB_FLAG)  # TODO: Unsupported
+set(CAPNP_PKG_CONFIG_FILES
+  pkgconfig/kj.pc
+  pkgconfig/capnp.pc
+  pkgconfig/capnpc.pc
+)
 
-  set(CAPNP_PKG_CONFIG_FILES
-    pkgconfig/kj.pc
-    pkgconfig/capnp.pc
-    pkgconfig/capnpc.pc
+if(NOT CAPNP_LITE)
+  list(APPEND CAPNP_PKG_CONFIG_FILES
+    pkgconfig/kj-async.pc
+    pkgconfig/kj-gzip.pc
+    pkgconfig/kj-http.pc
+    pkgconfig/kj-test.pc
+    pkgconfig/kj-tls.pc
+    pkgconfig/capnp-rpc.pc
+    pkgconfig/capnp-websocket.pc
+    pkgconfig/capnp-json.pc
   )
+endif()
 
-  if(NOT CAPNP_LITE)
-    list(APPEND CAPNP_PKG_CONFIG_FILES
-      pkgconfig/kj-async.pc
-      pkgconfig/kj-gzip.pc
-      pkgconfig/kj-http.pc
-      pkgconfig/kj-test.pc
-      pkgconfig/kj-tls.pc
-      pkgconfig/capnp-rpc.pc
-      pkgconfig/capnp-websocket.pc
-      pkgconfig/capnp-json.pc
-    )
-  endif()
+foreach(pcfile ${CAPNP_PKG_CONFIG_FILES})
+  configure_file(${pcfile}.in "${CMAKE_CURRENT_BINARY_DIR}/${pcfile}" @ONLY)
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${pcfile}" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+endforeach()
 
-  foreach(pcfile ${CAPNP_PKG_CONFIG_FILES})
-    configure_file(${pcfile}.in "${CMAKE_CURRENT_BINARY_DIR}/${pcfile}" @ONLY)
-    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${pcfile}" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
-  endforeach()
-
-  unset(STDLIB_FLAG)
+unset(STDLIB_FLAG)
+unset(includedir)
+unset(libdir)
+unset(exec_prefix)
+unset(prefix)
+if(NOT MSVC)
   unset(PTHREAD_CFLAGS)
-  unset(includedir)
-  unset(libdir)
-  unset(exec_prefix)
-  unset(prefix)
 endif()

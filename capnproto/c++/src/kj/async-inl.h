@@ -401,6 +401,7 @@ public:
       //   code bloat to handle this case.
       next->arena = nullptr;
       T* ptr = reinterpret_cast<T*>(next.get()) - 1;
+      // NOLINTNEXTLINE(clang-analyzer-security.ArrayBound)
       ctor(*ptr, kj::mv(next), kj::fwd<Params>(params)...);
       ptr->arena = arena;
       KJ_IREQUIRE(reinterpret_cast<void*>(ptr) ==
@@ -606,6 +607,7 @@ class PtmfHelper {
     if (voff & 1) {
       voff &= ~1;
 #endif
+      // NOLINTNEXTLINE(clang-analyzer-core.UndefinedBinaryOperatorResult)
       return *(void**)(*(char**)obj + voff);
     } else {
       return ptr;
@@ -2082,7 +2084,7 @@ struct coroutine_traits<kj::Promise<T>, Args...> {
 
 namespace kj::_ {
 
-namespace stdcoro = KJ_COROUTINE_STD_NAMESPACE;
+namespace stdcoro = ::KJ_COROUTINE_STD_NAMESPACE;
 
 class CoroutineBase: public PromiseNode,
                      public Event {
@@ -2094,7 +2096,13 @@ public:
   void destroy() override;
 
   auto initial_suspend() { return stdcoro::suspend_never(); }
-  auto final_suspend() noexcept { return stdcoro::suspend_always(); }
+  auto final_suspend() noexcept {
+#if _MSC_VER && !defined(__clang__)
+    // See comment at `finalSuspendCalled`'s definition.
+    finalSuspendCalled = true;
+#endif
+    return stdcoro::suspend_always();
+  }
   // These adjust the suspension behavior of coroutines immediately upon initiation, and immediately
   // after completion.
   //
@@ -2135,6 +2143,17 @@ private:
   bool waiting = true;
 
   bool hasSuspendedAtLeastOnce = false;
+
+#if _MSC_VER && !defined(__clang__)
+  bool finalSuspendCalled = false;
+  // MSVC erroneously reports the coroutine as done (that is, `coroutine.done()` returns true)
+  // seemingly as soon as `return_value()`/`return_void()` are called. This matters in our
+  // implementation of `unhandled_exception()`, which must arrange to propagate exceptions during
+  // coroutine frame unwind via the returned promise, even if `return_value()`/`return_void()` have
+  // already been called. To prove that our assumptions are correct in that function, we want to be
+  // able to assert that `final_suspend()` has not yet been called. This boolean hack allows us to
+  // preserve that assertion.
+#endif
 
   Maybe<PromiseNode&> promiseNodeForTrace;
   // Whenever this coroutine is suspended waiting on another promise, we keep a reference to that
@@ -2293,7 +2312,7 @@ class Coroutine<T>::Awaiter: public AwaiterBase {
 public:
   explicit Awaiter(Promise<U> promise): AwaiterBase(PromiseNode::from(kj::mv(promise))) {}
 
-  U await_resume() KJ_NOINLINE {
+  KJ_NOINLINE U await_resume() {
     // This is marked noinline in order to ensure __builtin_return_address() is accurate for stack
     // trace purposes. In my experimentation, this method was not inlined anyway even in opt
     // builds, but I want to make sure it doesn't suddenly start being inlined later causing stack

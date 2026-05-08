@@ -169,6 +169,10 @@ public:
   virtual kj::Maybe<int> getFd() const { return nullptr; }
   // Get the underlying Unix file descriptor, if any. Returns nullptr if this object actually
   // isn't wrapping a file descriptor.
+
+  virtual Maybe<void*> getWin32Handle() const { return nullptr; }
+  // Get the underlying Win32 HANDLE, if any. Returns nullptr if this object actually isn't
+  // wrapping a handle.
 };
 
 Promise<uint64_t> unoptimizedPumpTo(
@@ -899,6 +903,16 @@ public:
   // Convenience wrappers which transfer ownership via AutoCloseFd (Unix) or AutoCloseHandle
   // (Windows). TAKE_OWNERSHIP will be implicitly added to `flags`.
 };
+
+template <typename T> struct Socketpair_ { T fds[2]; };
+using Socketpair = Socketpair_<LowLevelAsyncIoProvider::OwnFd>;
+// We use a template to work around the fact that LowLevelAsyncIoProvider::OwnFd
+// is an incomplete type, without having to include the io.h header.
+
+Socketpair newOsSocketpair();
+// Creates a socket pair, using socketpair(2) on Unix-like systems.
+// On Windows, which doesn't have a built-in socketpair(), a loopback
+// TCP connection is used.
 
 Own<AsyncIoProvider> newAsyncIoProvider(LowLevelAsyncIoProvider& lowLevel);
 // Make a new AsyncIoProvider wrapping a `LowLevelAsyncIoProvider`.

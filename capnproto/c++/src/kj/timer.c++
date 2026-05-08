@@ -110,16 +110,12 @@ Maybe<uint64_t> TimerImpl::timeoutToNextEvent(TimePoint start, Duration unit, ui
 }
 
 void TimerImpl::advanceTo(TimePoint newTime) {
-  // On Macs running an Intel processor, it has been observed that clock_gettime 
+  // It has been observed that clock_gettime 
   // may return non monotonic time, even when CLOCK_MONOTONIC is used.
-  // This workaround is to avoid the assert triggering on these machines.
-  // See also https://github.com/capnproto/capnproto/issues/1693
-#if __APPLE__ && defined(__x86_64__)
-  time = std::max(time, newTime);
-#else
-  KJ_REQUIRE(newTime >= time, "can't advance backwards in time") { return; }
-  time = newTime;
-#endif
+  // We use kj::max to guard against this rare issue.
+  // - on mac: https://github.com/capnproto/capnproto/issues/1693
+  // - on linux: https://github.com/capnproto/capnproto/issues/2261
+  time = kj::max(time, newTime);
 
   for (;;) {
     auto front = impl->timers.begin();

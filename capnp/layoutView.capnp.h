@@ -8,7 +8,7 @@
 
 #ifndef CAPNP_VERSION
 #error "CAPNP_VERSION is not defined, is capnp/generated-header-support.h missing?"
-#elif CAPNP_VERSION != 1000001
+#elif CAPNP_VERSION != 1005000
 #error "Version mismatch between generated code and library headers.  You must use the same version of the Cap'n Proto compiler and library."
 #endif
 
@@ -248,7 +248,7 @@ public:
 #endif  // !CAPNP_LITE
 
   template <typename Object2 = ::capnp::AnyPointer>
-  typename SingleObject<Object2>::Reader asGeneric() {
+  typename SingleObject<Object2>::Reader asGeneric() const {
     return typename SingleObject<Object2>::Reader(_reader);
   }
 
@@ -344,7 +344,7 @@ public:
 #endif  // !CAPNP_LITE
 
   template <typename Object2 = ::capnp::AnyPointer>
-  typename ObjectArray<Object2>::Reader asGeneric() {
+  typename ObjectArray<Object2>::Reader asGeneric() const {
     return typename ObjectArray<Object2>::Reader(_reader);
   }
 
@@ -445,7 +445,7 @@ public:
 #endif  // !CAPNP_LITE
 
   template <typename Object2 = ::capnp::AnyPointer>
-  typename ObjectWithProperties<Object2>::Reader asGeneric() {
+  typename ObjectWithProperties<Object2>::Reader asGeneric() const {
     return typename ObjectWithProperties<Object2>::Reader(_reader);
   }
 
@@ -546,7 +546,7 @@ public:
 #endif  // !CAPNP_LITE
 
   template <typename Object2 = ::capnp::AnyPointer>
-  typename ObjectContainerForType<Object2>::Reader asGeneric() {
+  typename ObjectContainerForType<Object2>::Reader asGeneric() const {
     return typename ObjectContainerForType<Object2>::Reader(_reader);
   }
 

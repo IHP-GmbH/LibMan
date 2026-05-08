@@ -539,39 +539,45 @@ KJ_TEST("send FD over RPC") {
 
   auto cap = client.bootstrap().castAs<test::TestMoreStuff>();
 
-  int pipeFds[2];
-  KJ_SYSCALL(kj::miniposix::pipe(pipeFds));
-  kj::AutoCloseFd in1(pipeFds[0]);
-  kj::AutoCloseFd out1(pipeFds[1]);
-  KJ_SYSCALL(kj::miniposix::pipe(pipeFds));
-  kj::AutoCloseFd in2(pipeFds[0]);
-  kj::AutoCloseFd out2(pipeFds[1]);
+  // Check with a number of message sizes. Large messages that bust receive buffer limits
+  // must not discard any of the file descriptors we have received with message fragments
+  for (size_t fillSize : {1024 * 1024, 65536, 8192, 0}) {
+    int pipeFds[2]{};
+    KJ_SYSCALL(kj::miniposix::pipe(pipeFds));
+    kj::AutoCloseFd in1(pipeFds[0]);
+    kj::AutoCloseFd out1(pipeFds[1]);
+    KJ_SYSCALL(kj::miniposix::pipe(pipeFds));
+    kj::AutoCloseFd in2(pipeFds[0]);
+    kj::AutoCloseFd out2(pipeFds[1]);
 
-  capnp::RemotePromise<test::TestMoreStuff::WriteToFdResults> promise = nullptr;
-  {
-    auto req = cap.writeToFdRequest();
+    capnp::RemotePromise<test::TestMoreStuff::WriteToFdResults> promise = nullptr;
+    {
+      auto req = cap.writeToFdRequest();
 
-    // Order reversal intentional, just trying to mix things up.
-    req.setFdCap1(kj::heap<TestFdCap>(kj::mv(out2)));
-    req.setFdCap2(kj::heap<TestFdCap>(kj::mv(out1)));
+      req.initFill(fillSize);
 
-    promise = req.send();
+      // Order reversal intentional, just trying to mix things up.
+      req.setFdCap1(kj::heap<TestFdCap>(kj::mv(out2)));
+      req.setFdCap2(kj::heap<TestFdCap>(kj::mv(out1)));
+
+      promise = req.send();
+    }
+
+    int in3 = KJ_ASSERT_NONNULL(promise.getFdCap3().getFd().wait(io.waitScope));
+    KJ_EXPECT(io.lowLevelProvider->wrapInputFd(kj::mv(in3))->readAllText().wait(io.waitScope)
+              == "baz");
+
+    {
+      auto promise2 = kj::mv(promise);  // make sure the PipelineHook also goes out of scope
+      auto response = promise2.wait(io.waitScope);
+      KJ_EXPECT(response.getSecondFdPresent());
+    }
+
+    KJ_EXPECT(io.lowLevelProvider->wrapInputFd(kj::mv(in1))->readAllText().wait(io.waitScope)
+              == "bar");
+    KJ_EXPECT(io.lowLevelProvider->wrapInputFd(kj::mv(in2))->readAllText().wait(io.waitScope)
+              == "foo");
   }
-
-  int in3 = KJ_ASSERT_NONNULL(promise.getFdCap3().getFd().wait(io.waitScope));
-  KJ_EXPECT(io.lowLevelProvider->wrapInputFd(kj::mv(in3))->readAllText().wait(io.waitScope)
-            == "baz");
-
-  {
-    auto promise2 = kj::mv(promise);  // make sure the PipelineHook also goes out of scope
-    auto response = promise2.wait(io.waitScope);
-    KJ_EXPECT(response.getSecondFdPresent());
-  }
-
-  KJ_EXPECT(io.lowLevelProvider->wrapInputFd(kj::mv(in1))->readAllText().wait(io.waitScope)
-            == "bar");
-  KJ_EXPECT(io.lowLevelProvider->wrapInputFd(kj::mv(in2))->readAllText().wait(io.waitScope)
-            == "foo");
 }
 
 KJ_TEST("FD per message limit") {

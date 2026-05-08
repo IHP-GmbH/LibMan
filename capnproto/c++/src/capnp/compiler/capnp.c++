@@ -23,6 +23,11 @@
 #define _GNU_SOURCE
 #endif
 
+#ifndef _FILE_OFFSET_BITS
+#define _FILE_OFFSET_BITS 64
+// Request 64-bit off_t and ino_t, otherwise this code will break when either value exceeds 2^32.
+#endif
+
 #if _WIN32
 #include <kj/win32-api-version.h>
 #endif
@@ -497,6 +502,26 @@ public:
       requestedFile.setFilename(sourceFiles[i].name);
       requestedFile.adoptImports(compiler->getFileImportTable(
           *sourceFiles[i].module, Orphanage::getForMessageContaining(requestedFile)));
+      // Populate FileSourceInfo with identifier resolutions, including type IDs and member details.
+      auto fileSourceInfo = requestedFile.initFileSourceInfo();
+      const auto resolutions = sourceFiles[i].module->getResolutions();
+      auto identifiers = fileSourceInfo.initIdentifiers(resolutions.size());
+      for (size_t j = 0; j < resolutions.size(); j++) {
+        auto identifier = identifiers[j];
+        identifier.setStartByte(resolutions[j].startByte);
+        identifier.setEndByte(resolutions[j].endByte);
+        KJ_SWITCH_ONEOF(resolutions[j].target) {
+          KJ_CASE_ONEOF(type, Resolution::Type) {
+            identifier.setTypeId(type.typeId);
+          }
+          KJ_CASE_ONEOF(member, Resolution::Member) {
+            identifier.initMember();
+            auto identifier_member = identifier.getMember();
+            identifier_member.setParentTypeId(member.parentTypeId);
+            identifier_member.setOrdinal(member.ordinal);
+          }
+        }
+      }
     }
 
     for (auto& output: outputs) {

@@ -1406,16 +1406,20 @@ public:
 
       uint64_t value = 0;
       for (char c: text) {
+        uint64_t digit;
         if ('0' <= c && c <= '9') {
-          value = value * 16 + (c - '0');
+          digit = c - '0';
         } else if ('a' <= c && c <= 'f') {
-          value = value * 16 + (c - 'a' + 10);
+          digit = c - 'a' + 10;
         } else if ('A' <= c && c <= 'F') {
-          value = value * 16 + (c - 'A' + 10);
+          digit = c - 'A' + 10;
         } else {
           KJ_FAIL_REQUIRE("invalid HTTP chunk size", text, text.asBytes()) { break; }
           return value;
         }
+        KJ_REQUIRE(value <= (uint64_t(kj::maxValue) >> 4),
+            "HTTP chunk size overflow", text, text.asBytes()) { break; }
+        value = value * 16 + digit;
       }
 
       return value;
@@ -1942,7 +1946,15 @@ kj::Own<kj::AsyncInputStream> HttpInputStreamImpl::getEntityBody(
       // Body elided.
       kj::Maybe<uint64_t> length;
       KJ_IF_MAYBE(cl, headers.get(HttpHeaderId::CONTENT_LENGTH)) {
-        length = strtoull(cl->cStr(), nullptr, 10);
+        // Validate that the Content-Length is a non-negative integer. Note that strtoull() accepts
+        // leading '-' signs and silently converts negative values to large unsigned values, so we
+        // must explicitly check for a leading digit.
+        char* end;
+        uint64_t parsedValue = strtoull(cl->cStr(), &end, 10);
+        if ((*cl)[0] >= '0' && (*cl)[0] <= '9' && end > cl->begin() && *end == '\0') {
+          length = parsedValue;
+        }
+        // If invalid, we just leave `length` as nullptr, since the body is elided anyway.
       } else if (headers.get(HttpHeaderId::TRANSFER_ENCODING) == nullptr) {
         // HACK: Neither Content-Length nor Transfer-Encoding header in response to HEAD
         //   request. Propagate this fact with a 0 expected body length.
@@ -1991,12 +2003,16 @@ kj::Own<kj::AsyncInputStream> HttpInputStreamImpl::getEntityBody(
     //   "Content-Length: 5, 5, 5". Hopefully no one actually does that...
     char* end;
     uint64_t length = strtoull(cl->cStr(), &end, 10);
-    if (end > cl->begin() && *end == '\0') {
+    // Note that strtoull() accepts leading '-' signs and silently converts negative values to
+    // large unsigned values, so we must explicitly check for a leading digit.
+    if ((*cl)[0] >= '0' && (*cl)[0] <= '9' && end > cl->begin() && *end == '\0') {
       // #5
       return kj::heap<HttpFixedLengthEntityReader>(*this, length);
     } else {
       // #4 (bad content-length)
-      KJ_FAIL_REQUIRE("invalid Content-Length header value", *cl);
+      KJ_FAIL_REQUIRE("invalid Content-Length header value", *cl) { break; }
+      // To pass the -fno-exceptions test (but KJ-HTTP is really not safe to use in that mode).
+      return kj::heap<HttpNullEntityReader>(*this, uint64_t(0));
     }
   }
 
@@ -2574,6 +2590,7 @@ public:
     }
 
     bool isFin = recvHeader.isFin();
+    bool isCompressed = false;
 
     kj::Array<byte> message;           // space to allocate
     byte* payloadTarget;               // location into which to read payload (size is payloadLen)
@@ -2584,6 +2601,7 @@ public:
         // Add 4 since we append 0x00 0x00 0xFF 0xFF to the tail of the payload.
         // See: https://datatracker.ietf.org/doc/html/rfc7692#section-7.2.2
         amountToAllocate = payloadLen + 4;
+        isCompressed = true;
       } else {
         // Add space for NUL terminator when allocating text message.
         amountToAllocate = payloadLen + (opcode == OPCODE_TEXT && isFin);
@@ -2632,7 +2650,8 @@ public:
     Mask mask = recvHeader.getMask();
 
     auto handleMessage =
-        [this,opcode,payloadTarget,payloadLen,mask,isFin,maxSize,originalMaxSize,message=kj::mv(message)]() mutable
+        [this,opcode,payloadTarget,payloadLen,mask,isFin,maxSize,originalMaxSize,
+         isCompressed,message=kj::mv(message)]() mutable
         -> kj::Promise<Message> {
       if (!mask.isZero()) {
         mask.apply(kj::arrayPtr(payloadTarget, payloadLen));
@@ -2645,14 +2664,25 @@ public:
         return receive(newMax);
       }
 
+      // Provide a reasonable error if a compressed frame is received without compression enabled.
+      if (isCompressed && compressionConfig == nullptr) {
+        return errorHandler.handleWebSocketProtocolError({
+          1002, kj::str(
+              "Received a WebSocket frame whose compression bit was set, but the compression "
+              "extension was not negotiated for this connection.")
+        });
+      }
+
       switch (opcode) {
         case OPCODE_CONTINUATION:
           // Shouldn't get here; handled above.
           KJ_UNREACHABLE;
         case OPCODE_TEXT:
 #if KJ_HAS_ZLIB
-          KJ_IF_MAYBE(config, compressionConfig) {
+          if (isCompressed) {
+            auto& config = KJ_ASSERT_NONNULL(compressionConfig);
             auto& decompressor = KJ_ASSERT_NONNULL(decompressionContext);
+            KJ_ASSERT(message.size() >= 4);
             auto tail = message.slice(message.size() - 4, message.size());
             // Note that we added an additional 4 bytes to `message`s capacity to account for these
             // extra bytes. See `amountToAllocate` in the if(recvHeader.isCompressed()) block above.
@@ -2660,7 +2690,7 @@ public:
             memcpy(tail.begin(), tailBytes, sizeof(tailBytes));
             // We have to append 0x00 0x00 0xFF 0xFF to the message before inflating.
             // See: https://datatracker.ietf.org/doc/html/rfc7692#section-7.2.2
-            if (config->inboundNoContextTakeover) {
+            if (config.inboundNoContextTakeover) {
               // We must reset context on each message.
               decompressor.reset();
             }
@@ -2675,8 +2705,10 @@ public:
           return Message(kj::String(message.releaseAsChars()));
         case OPCODE_BINARY:
 #if KJ_HAS_ZLIB
-          KJ_IF_MAYBE(config, compressionConfig) {
+          if (isCompressed) {
+            auto& config = KJ_ASSERT_NONNULL(compressionConfig);
             auto& decompressor = KJ_ASSERT_NONNULL(decompressionContext);
+            KJ_ASSERT(message.size() >= 4);
             auto tail = message.slice(message.size() - 4, message.size());
             // Note that we added an additional 4 bytes to `message`s capacity to account for these
             // extra bytes. See `amountToAllocate` in the if(recvHeader.isCompressed()) block above.
@@ -2684,7 +2716,7 @@ public:
             memcpy(tail.begin(), tailBytes, sizeof(tailBytes));
             // We have to append 0x00 0x00 0xFF 0xFF to the message before inflating.
             // See: https://datatracker.ietf.org/doc/html/rfc7692#section-7.2.2
-            if (config->inboundNoContextTakeover) {
+            if (config.inboundNoContextTakeover) {
               // We must reset context on each message.
               decompressor.reset();
             }
@@ -5428,8 +5460,7 @@ HttpClient::WebSocketResponse HttpClientErrorHandler::handleWebSocketProtocolErr
 
 kj::Exception WebSocketErrorHandler::handleWebSocketProtocolError(
       WebSocket::ProtocolError protocolError) {
-  return KJ_EXCEPTION(FAILED, kj::str("code=", protocolError.statusCode,
-                                        ": ", protocolError.description));
+  return KJ_EXCEPTION(FAILED, "WebSocket protocol error", protocolError.statusCode, protocolError.description);
 }
 
 class PausableReadAsyncIoStream::PausableRead {

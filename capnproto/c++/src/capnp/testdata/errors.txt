@@ -61,4 +61,5 @@ file:156:37-51: error: Couldn't read file for embed: no-such-file
 file:162:23-27: error: Only pointer parameters can declare their default as 'null'.
 file:163:10-16: error: 'stream' can only appear after '->', not before.
 file:163:10-16: error: A method declaration uses streaming, but '/capnp/stream.capnp' is not found in the import path. This is a standard file that should always be installed with the Cap'n Proto compiler.
+file:173:8-22: error: Not defined: undefinedValue
 file:158:20-45: error: Import failed: nosuchfile-unused.capnp

@@ -25,7 +25,8 @@ project's documentation for details.
 
 ##### Serialization only
 
-* [C](https://github.com/opensourcerouting/c-capnproto) by [OpenSourceRouting](https://www.opensourcerouting.org/) / [@eqvinox](https://github.com/eqvinox) (originally by [@jmckaskill](https://github.com/jmckaskill))
+* [C](https://github.com/opensourcerouting/c-capnproto) by [OpenSourceRouting](https://www.opensourcerouting.org/) / [@eqvinox](https://github.com/eqvinox) (originally by [@jmckaskill](https://github.com/jmckaskill)) (no longer maintained)
+    * [Forked and maintained](https://gitlab.com/dkml/ext/c-capnproto) by [@jonahbeckford](https://github.com/jonahbeckford)
 * [D](https://github.com/capnproto/capnproto-dlang) by [@ThomasBrixLarsen](https://github.com/ThomasBrixLarsen)
 * [Java](https://github.com/capnproto/capnproto-java/) by [@dwrensha](https://github.com/dwrensha)
 * [JavaScript](https://github.com/capnp-js/plugin/) by [@popham](https://github.com/popham)
@@ -47,6 +48,9 @@ new languages.
 * [Wireshark Dissector Plugin](https://github.com/kaos/wireshark-plugins) by [@kaos](https://github.com/kaos)
 * [VS Code Syntax Highlighter](https://marketplace.visualstudio.com/items?itemName=xmonader.vscode-capnp) by [@xmonader](https://github.com/xmonader)
 * [IntelliJ Syntax Highlighter](https://github.com/xmonader/sercapnp) by [@xmonader](https://github.com/xmonader)
+* [RPC Tracer](https://github.com/Toyota/capnp-trace) by [@t-kondo-tmc](https://github.com/t-kondo-tmc)
+* [Flow-IPC](https://github.com/Flow-IPC) (shared memory IPC transport in C++) by [Akamai](https://www.akamai.com) / [@ygoldfeld](https://github.com/ygoldfeld)
+* [Cap'n Proto Language Server](https://github.com/trickstar0301/capnp-ls) by [@trickstar0301](https://github.com/trickstar0301)
 
 ## Contribute Your Own!
 
