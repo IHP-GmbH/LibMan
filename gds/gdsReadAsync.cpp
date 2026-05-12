@@ -1,6 +1,7 @@
 #include <QtConcurrent/QtConcurrent>
 #include <QFutureWatcher>
 #include <QMovie>
+#include <QStatusBar>
 #include <QPointer>
 #include <QTreeWidget>
 #include <QPainter>
@@ -11,7 +12,7 @@
 
 #include "gds/gdsreader.h"
 #include "src/mainwindow.h"
-#include "ui_mainwindow.h"
+#include "mainwindow.h"
 
 /*!********************************************************************************************************************
  * \brief Creates a spinner icon pixmap for loading indication.

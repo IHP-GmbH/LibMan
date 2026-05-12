@@ -14,7 +14,11 @@ class About;
 class About : public QDialog
 {
     Q_OBJECT
-    
+
+#ifdef COVERAGE_BUILD
+    friend class DialogsTest;
+#endif
+
 public:
     explicit About(QWidget *parent = 0);
     ~About();
@@ -24,7 +28,7 @@ private slots:
 
 private:
     QStringList                 getLicenseText() const;
-    
+
 private:
     Ui::About                   *m_ui;      /*!< A pointer to acess About graphic items.*/
     QString                     m_version;  /*!< Keeps information about LibMan version.*/
