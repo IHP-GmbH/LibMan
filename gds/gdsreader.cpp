@@ -74,23 +74,33 @@ GdsReader::GdsReader(const QString &fileName)
  *  - BGNLIB
  *  - LIBNAME
  *  - UNITS
+ *  - BGNSTR
+ *  - STRNAME
+ *  - ENDSTR
  *  - ENDLIB
  *
  * \param cellName Name of the top-level cell.
  *********************************************************************************************************************/
 void GdsReader::gdsCreate(const QString &cellName)
 {
-    if (m_fileName.isEmpty()) {
+    if(m_fileName.isEmpty()) {
         return;
     }
 
+    m_errorList.clear();
+
     m_gdsFile = fopen(m_fileName.toStdString().c_str(), "wb");
-    if (!m_gdsFile) {
+    if(!m_gdsFile) {
         m_errorList << QString("Failed to open GDS for write: '%1'").arg(m_fileName);
         return;
     }
 
     gdsBegin(cellName);
+
+    writeInt(GDS_BGNSTR, gdsTime(), 12);
+    writeStr(GDS_STRNAME, cellName.toStdString());
+    writeRec(GDS_ENDSTR);
+
     gdsEnd();
 
     fclose(m_gdsFile);
