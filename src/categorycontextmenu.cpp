@@ -16,15 +16,13 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include "property.h"
-
 /*!*********************************************************************************************************************
  * \brief Displays menu for category widget.
  * \param pos       Point(x, y) where menu will be displayed.
  **********************************************************************************************************************/
 void MainWindow::showCategoryMenu(const QPoint &pos)
 {
-    QString libPath = getCurrentLibraryPath();
+    const QString libPath = getCurrentLibraryPath();
     if(!QFileInfo(libPath).exists()) {
         return;
     }
@@ -35,25 +33,35 @@ void MainWindow::showCategoryMenu(const QPoint &pos)
     QMenu *menu = new QMenu(this);
 
     QAction *group = new QAction(tr("&Create..."), this);
-    group->setStatusTip(tr("Add new cell."));
-    connect(group, SIGNAL(triggered()), this, SLOT(addNewCategory()));
+    group->setIcon(QIcon(":/icons/category.svg"));
+    group->setStatusTip(tr("Create new category."));
+    connect(group, &QAction::triggered, this, &MainWindow::addNewCategory);
     menu->addAction(group);
 
     QList<QTreeWidgetItem *> items = m_ui->listCategories->selectedItems();
     if(items.count()) {
+        menu->addSeparator();
+
         QAction *delGroup = new QAction(tr("&Delete"), this);
-        delGroup->setStatusTip(tr("Detele Project."));
-        connect(delGroup, SIGNAL(triggered()), this, SLOT(removeSelectedCategory()));
+        delGroup->setIcon(QIcon(":/icons/delete.svg"));
+        delGroup->setShortcut(QKeySequence::Delete);
+        delGroup->setStatusTip(tr("Delete category."));
+        delGroup->setShortcutContext(Qt::WidgetShortcut);
+        connect(delGroup, &QAction::triggered, this, &MainWindow::removeSelectedCategory);
         menu->addAction(delGroup);
+        addAction(delGroup);
 
         QAction *groupInfo = new QAction(tr("&Info"), this);
-        groupInfo->setStatusTip(tr("Detele Project."));
-        connect(groupInfo, SIGNAL(triggered()), this, SLOT(showCategoryInfo()));
+        groupInfo->setIcon(QIcon(":/icons/info.svg"));
+        groupInfo->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Return));
+        groupInfo->setStatusTip(tr("Show category information."));
+        groupInfo->setShortcutContext(Qt::WidgetShortcut);
+        connect(groupInfo, &QAction::triggered, this, &MainWindow::showCategoryInfo);
         menu->addAction(groupInfo);
+        addAction(groupInfo);
     }
 
-    menu->popup(QCursor::pos());
-    menu->exec();
+    menu->exec(QCursor::pos());
 
     delete menu;
 }

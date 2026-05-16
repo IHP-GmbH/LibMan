@@ -298,6 +298,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionReload"/>
    <addaction name="actionShow_Documents"/>
    <addaction name="actionShow_Categories"/>
   </widget>
@@ -437,6 +438,21 @@
   <action name="actionClear_Recent_File_Stack">
    <property name="text">
     <string>Clear Recent File Stack</string>
+   </property>
+  </action>
+  <action name="actionReload">
+   <property name="icon">
+    <iconset resource="../icons.qrc">
+     <normaloff>:/reload</normaloff>:/reload</iconset>
+   </property>
+   <property name="text">
+    <string>Reload</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
  </widget>

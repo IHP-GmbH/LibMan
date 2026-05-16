@@ -163,7 +163,7 @@ inline unsigned Properties::getValueCount(const QString &name) const
     QMap<QString, PropertyItem*>::const_iterator it = m_data.find(name);
     if(it == m_data.end()) {
         QString msg = "Failed to find value '" + name + "'";
-        QMessageBox::critical(0, QString( "RdeProperty Critical" ), msg );
+        QMessageBox::critical(0, QString( "Property Critical" ), msg );
         return 0;
     }
 
@@ -179,7 +179,7 @@ template <class T> inline T Properties::get(const QString &name) const
     QMap<QString, PropertyItem*>::const_iterator it = m_data.find(name);
     if(it == m_data.end()) {
         QString msg = "Failed to find value '" + name + "'";
-        QMessageBox::critical(0, QString( "RdeProperty Critical" ), msg );
+        QMessageBox::critical(0, QString( "Property Critical" ), msg );
         return 0;
     }
 
@@ -203,7 +203,7 @@ template <class T> inline QList<T> Properties::getList(const QString &name) cons
     QList<T> list;
     if(it == m_data.end()) {
         QString msg = "Failed to find value '" + name + "'";
-        QMessageBox::critical(0, QString( "RdeProperty Critical" ), msg );
+        QMessageBox::critical(0, QString( "Property Critical" ), msg );
         return list;
     }
 
@@ -229,7 +229,7 @@ template <class T> inline void Properties::add(const QString &name, const T &val
     QMap<QString, PropertyItem*>::const_iterator it = m_data.find(name);
     if(it == m_data.end()) {
         QString msg = "Failed to find value '" + name + "'";
-        QMessageBox::critical(0, QString( "RdeProperty Critical" ), msg );
+        QMessageBox::critical(0, QString( "Property Critical" ), msg );
         return;
     }
 

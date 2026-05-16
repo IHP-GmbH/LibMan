@@ -23,7 +23,7 @@
  **********************************************************************************************************************/
 void MainWindow::showGroupMenu(const QPoint &pos)
 {
-    QString libPath = getCurrentLibraryPath();
+    const QString libPath = getCurrentLibraryPath();
     if(!QFileInfo(libPath).exists()) {
         return;
     }
@@ -34,14 +34,16 @@ void MainWindow::showGroupMenu(const QPoint &pos)
     QMenu *menu = new QMenu(this);
 
     QAction *group = new QAction(tr("&Add New..."), this);
+    group->setIcon(QIcon(":/icons/view.svg"));
     group->setStatusTip(tr("Add new cell."));
-    connect(group, SIGNAL(triggered()), this, SLOT(addNewGroup()));
+    connect(group, &QAction::triggered, this, &MainWindow::addNewGroup);
     menu->addAction(group);
 
     if(isGroupCopied() && m_copyData.count() > 1) {
-        QString groupName = m_copyData[0];
+        const QString groupName = m_copyData[0];
         if(!groupName.isEmpty()) {
             bool addPasteMenu = true;
+
             for(int i = 0; i < m_ui->listGroups->count(); ++i) {
                 QListWidgetItem *item = m_ui->listGroups->item(i);
                 if(item && item->text() == groupName) {
@@ -52,63 +54,100 @@ void MainWindow::showGroupMenu(const QPoint &pos)
 
             if(addPasteMenu) {
                 QAction *pasteGroup = new QAction(tr("&Paste"), this);
-                pasteGroup->setStatusTip(tr("Paste Project."));
-                connect(pasteGroup, SIGNAL(triggered()), this, SLOT(pasteSelectedData()));
+                pasteGroup->setIcon(QIcon(":/icons/paste.svg"));
+                pasteGroup->setShortcut(QKeySequence::Paste);
+                pasteGroup->setStatusTip(tr("Paste cell."));
+                pasteGroup->setShortcutContext(Qt::WidgetShortcut);
+                connect(pasteGroup, &QAction::triggered, this, &MainWindow::pasteSelectedData);
                 menu->addAction(pasteGroup);
+                addAction(pasteGroup);
             }
         }
     }
 
     QList<QListWidgetItem *> items = m_ui->listGroups->selectedItems();
     if(items.count()) {
+        menu->addSeparator();
+
         QAction *copyGroup = new QAction(tr("&Copy"), this);
-        copyGroup->setStatusTip(tr("Copy view."));
-        connect(copyGroup, SIGNAL(triggered()), this, SLOT(copySelectedGroup()));
+        copyGroup->setIcon(QIcon(":/icons/copy.svg"));
+        copyGroup->setShortcut(QKeySequence::Copy);
+        copyGroup->setStatusTip(tr("Copy cell."));
+        copyGroup->setShortcutContext(Qt::WidgetShortcut);
+        connect(copyGroup, &QAction::triggered, this, &MainWindow::copySelectedGroup);
         menu->addAction(copyGroup);
+        addAction(copyGroup);
 
         QAction *delGroup = new QAction(tr("&Delete"), this);
-        delGroup->setStatusTip(tr("Detele Project."));
-        connect(delGroup, SIGNAL(triggered()), this, SLOT(removeSelectedGroup()));
+        delGroup->setIcon(QIcon(":/icons/delete.svg"));
+        delGroup->setShortcut(QKeySequence::Delete);
+        delGroup->setStatusTip(tr("Delete cell."));
+        delGroup->setShortcutContext(Qt::WidgetShortcut);
+        connect(delGroup, &QAction::triggered, this, &MainWindow::removeSelectedGroup);
         menu->addAction(delGroup);
+        addAction(delGroup);
 
         QAction *groupInfo = new QAction(tr("&Info"), this);
-        groupInfo->setStatusTip(tr("Detele Project."));
-        connect(groupInfo, SIGNAL(triggered()), this, SLOT(showGroupInfo()));
+        groupInfo->setIcon(QIcon(":/icons/info.svg"));
+        groupInfo->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Return));
+        groupInfo->setStatusTip(tr("Show cell information."));
+        groupInfo->setShortcutContext(Qt::WidgetShortcut);
+        connect(groupInfo, &QAction::triggered, this, &MainWindow::showGroupInfo);
         menu->addAction(groupInfo);
+        addAction(groupInfo);
     }
 
-    QMenu *gitMenu = menu->addMenu("Git");
+    menu->addSeparator();
+
+    QMenu *gitMenu = menu->addMenu(tr("Git"));
+    gitMenu->setIcon(QIcon(":/icons/git_branch.svg"));
 
     QAction *gitStatus = new QAction(tr("Status"), this);
-    connect(gitStatus, SIGNAL(triggered()), this, SLOT(gitShowStatus()));
+    gitStatus->setIcon(QIcon(":/icons/git_status.svg"));
+    gitStatus->setStatusTip(tr("Show git status."));
+    connect(gitStatus, &QAction::triggered, this, &MainWindow::gitShowStatus);
     gitMenu->addAction(gitStatus);
 
     QAction *gitCommit = new QAction(tr("Commit"), this);
-    connect(gitCommit, SIGNAL(triggered()), this, SLOT(gitCommitChanges()));
+    gitCommit->setIcon(QIcon(":/icons/git_commit.svg"));
+    gitCommit->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_K));
+    gitCommit->setStatusTip(tr("Commit changes."));
+    gitCommit->setShortcutContext(Qt::WidgetShortcut);
+    connect(gitCommit, &QAction::triggered, this, &MainWindow::gitCommitChanges);
     gitMenu->addAction(gitCommit);
+    addAction(gitCommit);
 
     QAction *gitLog = new QAction(tr("Log"), this);
-    connect(gitLog, SIGNAL(triggered()), this, SLOT(gitShowLog()));
+    gitLog->setIcon(style()->standardIcon(QStyle::SP_FileDialogDetailedView));
+    gitLog->setStatusTip(tr("Show git log."));
+    connect(gitLog, &QAction::triggered, this, &MainWindow::gitShowLog);
     gitMenu->addAction(gitLog);
 
     QAction *gitDiff = new QAction(tr("Diff"), this);
-    connect(gitDiff, SIGNAL(triggered()), this, SLOT(gitShowDiff()));
+    gitDiff->setIcon(style()->standardIcon(QStyle::SP_FileDialogContentsView));
+    gitDiff->setStatusTip(tr("Show git diff."));
+    connect(gitDiff, &QAction::triggered, this, &MainWindow::gitShowDiff);
     gitMenu->addAction(gitDiff);
 
     QAction *gitPull = new QAction(tr("Pull"), this);
-    connect(gitPull, SIGNAL(triggered()), this, SLOT(gitPull()));
+    gitPull->setIcon(QIcon(":/icons/git_pull.svg"));
+    gitPull->setStatusTip(tr("Pull changes from remote repository."));
+    connect(gitPull, &QAction::triggered, this, &MainWindow::gitPull);
     gitMenu->addAction(gitPull);
 
     QAction *gitPush = new QAction(tr("Push"), this);
-    connect(gitPush, SIGNAL(triggered()), this, SLOT(gitPush()));
+    gitPush->setIcon(QIcon(":/icons/git_push.svg"));
+    gitPush->setStatusTip(tr("Push changes to remote repository."));
+    connect(gitPush, &QAction::triggered, this, &MainWindow::gitPush);
     gitMenu->addAction(gitPush);
 
     QAction *gitCheckout = new QAction(tr("Checkout..."), this);
-    connect(gitCheckout, SIGNAL(triggered()), this, SLOT(gitCheckout()));
+    gitCheckout->setIcon(QIcon(":/icons/git_branch.svg"));
+    gitCheckout->setStatusTip(tr("Checkout branch."));
+    connect(gitCheckout, &QAction::triggered, this, &MainWindow::gitCheckout);
     gitMenu->addAction(gitCheckout);
 
-    menu->popup(QCursor::pos());
-    menu->exec();
+    menu->exec(QCursor::pos());
 
     delete menu;
 }
@@ -123,6 +162,8 @@ void MainWindow::addNewGroup()
     groupId->setFlags(groupId->flags() | Qt::ItemIsEditable);
     m_ui->listGroups->addItem(groupId);
     m_ui->listGroups->sortItems();
+    m_ui->listViews->clear();
+    groupId->setSelected(true);
 }
 
 /*!*********************************************************************************************************************

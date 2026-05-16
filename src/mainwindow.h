@@ -12,9 +12,14 @@
 
 class Properties;
 class QTreeWidget;
+
+#ifdef LIBMAN_TESTING
+class MainWindowTestHooks;
+#endif
 class QListWidget;
 class QListWidgetItem;
 class QTreeWidgetItem;
+class QFileSystemWatcher;
 
 namespace Ui {
 class MainWindow;
@@ -29,6 +34,9 @@ class MainWindow : public QMainWindow
 
     friend class NewView;
     friend class ProjectManager;
+#ifdef LIBMAN_TESTING
+    friend class MainWindowTestHooks;
+#endif
 
     /*!
      * \brief The RECENT_FILES enum specifies maximum number of recent project files.
@@ -55,7 +63,8 @@ class MainWindow : public QMainWindow
         RoleGdsPath              = Qt::UserRole + 2,    /*!< Absolute path to GDS file for "gds" view node. */
         RoleCellName             = Qt::UserRole + 3,    /*!< Cell name for hierarchy nodes. */
         RoleOasPath              = Qt::UserRole + 4,    /*!< Absolute path to OASIS file for "oas" view node. */
-        RoleLStreamPath          = Qt::UserRole + 5     /*!< Absolute path to LStream file for "lstream" view node. */
+        RoleLStreamPath          = Qt::UserRole + 5,    /*!< Absolute path to LStream file for "lstream" view node. */
+        RoleDocumentPath         = Qt::UserRole + 6     /*!< Absolute path to document (pdf/txt/etc). */
     };
 
     /*!
@@ -123,12 +132,21 @@ private slots:
     void                                closeEvent(QCloseEvent *event) override;
     bool                                eventFilter(QObject *obj, QEvent *event) override;
 
+    void                                onProjectFileChanged(const QString &path);
+    void                                on_treeLibs_itemSelectionChanged();
+
     void                                showViewMenu(const QPoint &pos);
     void                                showGroupMenu(const QPoint &pos);
     void                                showLibraryMenu(const QPoint &pos);
     void                                showCategoryMenu(const QPoint &pos);
 
     void                                on_viewItemExpanded(QTreeWidgetItem *item);
+    void                                renameSelectedLibrary();
+    void                                addExistingCell();
+
+    void                                addNewGdsView();
+    void                                addNewOasView();
+    void                                addNewLStreamView();
 
     void                                addNewGroup();
     void                                addNewProject();
@@ -167,6 +185,8 @@ private slots:
     void                                saveProjectFile(const QString &);
     void                                setRecentProject(const QString &);
     QString                             resolveProjectPath(const QString& projectsFile, const QString& rawPath);
+    QString                             findRepresentativeLibraryFile(const QString &libName) const;
+    QList<QPair<QString, QString>>      getCurrentProjectEntries() const;
 
     void                                gitShowStatus();
     void                                gitCommitChanges();
@@ -207,11 +227,15 @@ private slots:
     void                                on_actionCategory_triggered();
     void                                on_actionSession_triggered();
 
+    void                                on_actionReload_triggered();
+
 private:
     void                                loadSettings();
 
     void                                info(const QString &msg, bool clear = true);
     void                                error(const QString &msg, bool clear = true);
+
+    void                                initIcons();
 
     void                                initRecentProjectMenu();
 
@@ -222,7 +246,19 @@ private:
     void                                setStateSaved();
     void                                setStateChanged();
 
+    QString                             getCurrentProjectDirectory() const;
+    QStringList                         findProjectPdfDocuments(const QString &projectDir) const;
+
+    void                                setupProjectFileWatcher(const QString &projFile);
+    void                                clearCurrentProjectData();
+    void                                reloadProjectFileFromDisk();
+
     bool                                filterViewsTreeItemNoPopulate(QTreeWidgetItem *item, const QString &filter);
+
+    bool                                registerCreatedView(const QString &libName,
+                                                            const QString &groupName,
+                                                            const QString &viewName,
+                                                            const QString &viewPath);
 
     void                                loadGdsHierarchyAsync(const QString &gdsPath,
                                                               const std::shared_ptr<GdsCacheEntry> &entry,
@@ -268,6 +304,8 @@ private:
     void                                loadCombinedLibs(const QMap<QString, QStringList> &);
     void                                loadViews(const QString &libPath, const QString &groupName);
 
+    void                                clearLibrarySelectionDependentViews();
+
     void                                hideTreeItem(QTreeWidget *, const QString &filter);
     void                                hideListItem(QListWidget *, const QString &filter);
     bool                                filterTreeItem(QTreeWidgetItem *item, const QString &filter);
@@ -284,7 +322,6 @@ private:
     void                                copyDir(const QString &, const QString &) const;
 
     QString                             getLibraryPath(const QString &) const;
-    QString                             getLibraryPath(const QString &libName, const QString &viewName) const;
     QString                             getLibraryKeyPrefix() const;
 
     QString                             getProjectFileFromDir(const QString &) const;
@@ -335,6 +372,10 @@ private:
                                                                 const QStringList &args,
                                                                 const QString &scriptPath);
 
+    QMap<QString, QStringList>          getSupportedViewsByTool() const;
+    bool                                updateProjectFileLibraryName(const QString &oldName,
+                                                                     const QString &newName);
+
 private:
     Ui::MainWindow                     *m_ui                   = nullptr;  /*!< Main window UI instance (Qt Designer). */
     Properties                         *m_properties           = nullptr;  /*!< Properties collection with all settings. */
@@ -355,6 +396,9 @@ private:
     QString                             m_klayoutServerScript;             /*!< Path to generated KLayout server script. */
 
     QHash<QTreeWidgetItem*, SpinnerState> m_spinnerStates;                 /*!< Spinner animation state per tree item. */
+
+    QFileSystemWatcher                  *m_projFileWatcher = nullptr;      /*!< Watches current project file for external modifications (edit/replace/remove). */
+    bool                                m_ignoreProjectFileChange = false; /*!< Suppresses watcher reaction during internal save operations. */
 
     QHash<QString, std::shared_ptr<GdsCacheEntry>> m_gdsCache;             /*!< GDS hierarchy cache: abs path -> entry. */
     QHash<QString, std::shared_ptr<OasCacheEntry>> m_oasCache;             /*!< OASIS hierarchy cache: abs path -> entry. */

@@ -9,8 +9,11 @@
 #include <QMouseEvent>
 #include <QTextStream>
 #include <QFileDialog>
+#include <QDirIterator>
+#include <QInputDialog>
 #include <QTemporaryFile>
 #include <QGuiApplication>
+#include <QFileSystemWatcher>
 
 #include <QListWidgetItem>
 
@@ -42,7 +45,8 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     m_itemText(""),
     m_runDirectory(runDir),
     m_currentProjFile(QString("")),
-    m_currentCopyState(NONE)
+    m_currentCopyState(NONE),
+    m_projFileWatcher(new QFileSystemWatcher(this))
 {
     m_ui->setupUi(this);
 
@@ -63,6 +67,7 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     loadSettings();
 
     setWindowIcon(QIcon(":logo"));
+    initIcons();
 
     m_ui->treeLibs->setContextMenuPolicy(Qt::CustomContextMenu);
     m_ui->listViews->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -73,6 +78,7 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     connect(m_ui->listGroups, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showGroupMenu(const QPoint &)));
     connect(m_ui->listCategories, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showCategoryMenu(const QPoint &)));
     connect(m_ui->listViews, SIGNAL(itemExpanded(QTreeWidgetItem*)), this, SLOT(on_viewItemExpanded(QTreeWidgetItem*)));
+    connect(m_ui->treeLibs, SIGNAL(itemSelectionChanged()), this, SLOT(on_treeLibs_itemSelectionChanged()));
 
     m_ui->listViews->viewport()->installEventFilter(this);
 
@@ -88,6 +94,11 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
         }
     }
 
+    connect(m_projFileWatcher,
+            SIGNAL(fileChanged(QString)),
+            this,
+            SLOT(onProjectFileChanged(QString)));
+
     m_ui->listViews->setHeaderHidden(true);
 }
 
@@ -98,6 +109,57 @@ MainWindow::~MainWindow()
 {
     delete m_ui;
     delete m_properties;
+}
+
+/*!********************************************************************************************************************
+ * \brief Initializes all action icons in the main window.
+ *
+ * This function assigns SVG icons to all UI actions, ensuring a consistent
+ * visual style across menus and toolbars. It should be called once after
+ * the UI has been set up (e.g. in the constructor after setupUi()).
+ *********************************************************************************************************************/
+void MainWindow::initIcons()
+{
+    // File / Project
+    m_ui->actionProject->setIcon(QIcon(":/icons/category.svg"));
+    m_ui->actionGroup->setIcon(QIcon(":/icons/category.svg"));
+    m_ui->actionUnion->setIcon(QIcon(":/icons/view.svg"));
+
+    // Open / Save
+    m_ui->actionOpen->setIcon(QIcon(":/icons/category.svg"));
+    m_ui->actionSave->setIcon(QIcon(":/icons/save.svg"));
+    m_ui->actionSave_As->setIcon(QIcon(":/icons/save.svg"));
+
+    // Exit
+    m_ui->actionExit->setIcon(QIcon(":/icons/exit.svg"));
+
+    // View switching
+    m_ui->actionShow_Documents->setIcon(QIcon(":/icons/show_documents.svg"));
+    m_ui->actionShow_Categories->setIcon(QIcon(":/icons/show_categories.svg"));
+
+    // Category
+    m_ui->actionCategory->setIcon(QIcon(":/icons/category.svg"));
+
+    // Session
+    m_ui->actionSession->setIcon(QIcon(":/icons/view.svg"));
+
+    // Reload
+    m_ui->actionReload->setIcon(QIcon(":/icons/reload.svg"));
+
+    // Tools / About
+    m_ui->actionTools->setIcon(style()->standardIcon(QStyle::SP_FileDialogDetailedView));
+    m_ui->actionAbout->setIcon(QIcon(":/icons/info.svg"));
+
+    // Recent
+    QIcon recentIcon(":/icons/documents.svg");
+    m_ui->actionRecent1->setIcon(recentIcon);
+    m_ui->actionRecent2->setIcon(recentIcon);
+    m_ui->actionRecent3->setIcon(recentIcon);
+    m_ui->actionRecent4->setIcon(recentIcon);
+    m_ui->actionRecent5->setIcon(recentIcon);
+
+    // Clear recent
+    m_ui->actionClear_Recent_File_Stack->setIcon(QIcon(":/icons/delete.svg"));
 }
 
 /*!*******************************************************************************************************************
@@ -266,26 +328,38 @@ QMap<QString, QString> MainWindow::getCurrentLibraries() const
 {
     QMap<QString, QString> libMap;
 
-    QMap<QString, PropertyItem*> propItems = m_properties->getMap();
-    QMap<QString, PropertyItem*>::const_iterator it;
+    const QMap<QString, PropertyItem*> propItems = m_properties->getMap();
 
-    for(it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
-        QString key = it.key();
-        if(key.toUpper().startsWith(getLibraryKeyPrefix())) {
+    for(auto it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
+        const QString key = it.key();
+        if(!key.toUpper().startsWith(getLibraryKeyPrefix())) {
+            continue;
+        }
 
-            QString tail = key;
-            tail.remove(getLibraryKeyPrefix());
+        QString tail = key;
+        tail.remove(getLibraryKeyPrefix());
 
-            int pos = tail.lastIndexOf('/');
-            QString libName = (pos >= 0) ? tail.left(pos) : tail;
+        const int pos = tail.indexOf('/');
+        const QString libName = (pos >= 0) ? tail.left(pos).trimmed() : tail.trimmed();
+        if(libName.isEmpty()) {
+            continue;
+        }
 
-            QString libPath = m_properties->get<QString>(key);
+        const QString filePath = m_properties->get<QString>(key).trimmed();
+        QFileInfo fi(filePath);
+        if(!fi.exists() || !fi.isFile()) {
+            continue;
+        }
 
-            if(!libName.isEmpty() && QFileInfo(libPath).exists()) {
-                if(!libMap.contains(libName)) {
-                    libMap[libName] = libPath;
-                }
-            }
+        QDir libDir = fi.dir();
+        if(!libDir.cdUp()) {
+            continue;
+        }
+
+        const QString rootPath = QDir::toNativeSeparators(libDir.absolutePath());
+
+        if(!libMap.contains(libName)) {
+            libMap[libName] = rootPath;
         }
     }
 
@@ -421,54 +495,34 @@ QString MainWindow::getCurrentWorkingDir() const
  **********************************************************************************************************************/
 QString MainWindow::getLibraryPath(const QString &libName) const
 {
-    QMap<QString, PropertyItem*> propItems = m_properties->getMap();
-    QMap<QString, PropertyItem*>::const_iterator it;
-
+    const QMap<QString, PropertyItem*> propItems = m_properties->getMap();
     const QString prefix = getLibraryKeyPrefix() + libName + "/";
 
-    for(it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
+    for(auto it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
         const QString key = it.key();
-        if(key.startsWith(prefix)) {
-            const QString libPath = m_properties->get<QString>(key);
-            QFileInfo fi(libPath);
-            if(fi.exists() && fi.isFile()) {
-                return fi.absoluteFilePath();
-            }
+        if(!key.startsWith(prefix)) {
+            continue;
         }
+
+        const QString filePath = m_properties->get<QString>(key).trimmed();
+        if(filePath.isEmpty()) {
+            continue;
+        }
+
+        QFileInfo fi(filePath);
+        if(!fi.exists() || !fi.isFile()) {
+            continue;
+        }
+
+        QDir viewDir = fi.dir();
+        if(!viewDir.cdUp()) {
+            return QString();
+        }
+
+        return QDir::toNativeSeparators(viewDir.absolutePath());
     }
 
     return QString();
-}
-
-/*!*******************************************************************************************************************
- * \brief Returns absolute file path for the specified library view.
- *
- * In .lib based workflow a library may contain multiple views (e.g. gds, oas, lstr),
- * each stored as a separate file. These are internally mapped using keys in the form
- * "<library>/<view>", therefore this function retrieves the corresponding file path
- * for the given library and view combination.
- *
- * If the view does not exist or the file is invalid, an empty string is returned.
- *
- * \param libName      Name of the library.
- * \param viewName     Name of the view (e.g. "gds", "oas", "lstr").
- *
- * \return Absolute path to the view file or empty string on failure.
- **********************************************************************************************************************/
-QString MainWindow::getLibraryPath(const QString &libName, const QString &viewName) const
-{
-    const QString key = getLibraryKeyPrefix() + libName + "/" + viewName;
-    if(!m_properties->exists(key)) {
-        return QString();
-    }
-
-    QString libPath = m_properties->get<QString>(key);
-    QFileInfo fi(libPath);
-    if(!fi.exists() || !fi.isFile()) {
-        return QString();
-    }
-
-    return fi.absoluteFilePath();
 }
 
 /*!*******************************************************************************************************************
@@ -581,12 +635,20 @@ QString MainWindow::getDocumentTool(const QString &documentName) const
  * \param groupName     Name of the group (cell).
  * \param viewName      Name of the view.
  **********************************************************************************************************************/
-QString MainWindow::getViewPath(const QString &libName, const QString &groupName, const QString &viewName) const
+QString MainWindow::getViewPath(const QString &libName,
+                                const QString &groupName,
+                                const QString &viewName) const
 {
-    Q_UNUSED(groupName);
-    Q_UNUSED(viewName);
+    if(libName.isEmpty() || groupName.isEmpty() || viewName.isEmpty()) {
+        return QString();
+    }
 
-    return getLibraryPath(libName);
+    const QString key = getLibraryKeyPrefix() + libName + "/" + groupName + "/" + viewName;
+    if(!m_properties->exists(key)) {
+        return QString();
+    }
+
+    return m_properties->get<QString>(key).trimmed();
 }
 
 /*!*******************************************************************************************************************
@@ -811,16 +873,44 @@ QString MainWindow::getCurrentDocumentFilePath(const QString &docName) const
  *
  * \return List containing a single group name or empty list on failure.
  **********************************************************************************************************************/
-QStringList MainWindow::getCurrentGroups(const QString &libPath) const
+QStringList MainWindow::getCurrentGroups(const QString &libName) const
 {
     QStringList groups;
 
-    QFileInfo fi(libPath);
-    if(!fi.exists() || !fi.isFile()) {
+    if(libName.isEmpty()) {
         return groups;
     }
 
-    groups << fi.completeBaseName();
+    const QMap<QString, PropertyItem*> propItems = m_properties->getMap();
+    const QString prefix = getLibraryKeyPrefix() + libName + "/";
+
+    for(auto it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
+        const QString key = it.key();
+        if(!key.startsWith(prefix)) {
+            continue;
+        }
+
+        const QString tail = key.mid(prefix.length()).trimmed();
+        if(tail.isEmpty()) {
+            continue;
+        }
+
+        const int pos = tail.indexOf('/');
+        if(pos < 0) {
+            continue;
+        }
+
+        const QString groupName = tail.left(pos).trimmed();
+        if(groupName.isEmpty()) {
+            continue;
+        }
+
+        if(!groups.contains(groupName)) {
+            groups << groupName;
+        }
+    }
+
+    groups.sort();
     return groups;
 }
 
@@ -835,22 +925,28 @@ QStringList MainWindow::getCurrentGroups(const QString &libPath) const
  **********************************************************************************************************************/
 QStringList MainWindow::getCurrentViews(const QString &libName, const QString &groupName) const
 {
-    Q_UNUSED(groupName);
-
     QStringList views;
 
-    QMap<QString, PropertyItem*> propItems = m_properties->getMap();
-    QMap<QString, PropertyItem*>::const_iterator it;
+    if(libName.isEmpty() || groupName.isEmpty()) {
+        return views;
+    }
 
-    const QString prefix = getLibraryKeyPrefix() + libName + "/";
+    const QMap<QString, PropertyItem*> propItems = m_properties->getMap();
+    const QString prefix = getLibraryKeyPrefix() + libName + "/" + groupName + "/";
 
-    for(it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
+    for(auto it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
         const QString key = it.key();
-        if(key.startsWith(prefix)) {
-            QString viewName = key.mid(prefix.length()).trimmed();
-            if(!viewName.isEmpty() && !views.contains(viewName)) {
-                views << viewName;
-            }
+        if(!key.startsWith(prefix)) {
+            continue;
+        }
+
+        const QString viewName = key.mid(prefix.length()).trimmed();
+        if(viewName.isEmpty()) {
+            continue;
+        }
+
+        if(!views.contains(viewName)) {
+            views << viewName;
         }
     }
 
@@ -859,40 +955,179 @@ QStringList MainWindow::getCurrentViews(const QString &libName, const QString &g
 }
 
 /*!*******************************************************************************************************************
+ * \brief Returns absolute directory path of the currently loaded project file.
+ *
+ * \return Absolute project directory path or empty string if no project file is loaded.
+ **********************************************************************************************************************/
+QString MainWindow::getCurrentProjectDirectory() const
+{
+    if(m_currentProjFile.isEmpty()) {
+        return QString();
+    }
+
+    QFileInfo fi(m_currentProjFile);
+    if(!fi.exists() || !fi.isFile()) {
+        return QString();
+    }
+
+    return QDir::toNativeSeparators(fi.absolutePath());
+}
+
+/*!*******************************************************************************************************************
+ * \brief Searches recursively for PDF documents inside the given project directory.
+ * \param projectDir      Absolute path to the project directory.
+ *
+ * \return List of absolute PDF file paths.
+ **********************************************************************************************************************/
+QStringList MainWindow::findProjectPdfDocuments(const QString &projectDir) const
+{
+    QStringList result;
+
+    if(projectDir.isEmpty() || !QFileInfo(projectDir).isDir()) {
+        return result;
+    }
+
+    QDirIterator it(projectDir,
+                    QStringList() << "*.pdf",
+                    QDir::Files,
+                    QDirIterator::Subdirectories);
+
+    while(it.hasNext()) {
+        const QString filePath = QDir::toNativeSeparators(it.next());
+        if(!result.contains(filePath, Qt::CaseInsensitive)) {
+            result << filePath;
+        }
+    }
+
+    result.sort();
+    return result;
+}
+
+/*!*******************************************************************************************************************
  * \brief Adds documents for the given project (library) into the document tree widget.
+ *        In addition to the local "doc" folder, PDF files are searched recursively
+ *        inside the current project directory.
+ *
  * \param libPath      Path to the library, where documentation is located.
  **********************************************************************************************************************/
 void MainWindow::loadDocuments(const QString &libPath)
 {
     m_ui->listDocumentation->clear();
 
-    QString docPath = QDir::toNativeSeparators(libPath + "/doc");
-    if(!QFileInfo(docPath).isDir()) {
+    QSet<QString> addedPaths;
+
+    const QString docPath = QDir::toNativeSeparators(libPath + "/doc");
+    if(QFileInfo(docPath).isDir()) {
+        QStringList formats;
+        formats<<"*.pdf";
+
+        QDir docDir(docPath);
+        docDir.setNameFilters(formats);
+        docDir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
+
+        const QStringList fileList = docDir.entryList(QDir::Files, QDir::Name);
+        foreach(const QString &docName, fileList) {
+            const QString absPath = QDir::toNativeSeparators(docDir.absoluteFilePath(docName));
+            if(addedPaths.contains(absPath)) {
+                continue;
+            }
+
+            QTreeWidgetItem *docItem = new QTreeWidgetItem;
+            docItem->setText(0, docName);
+            docItem->setData(0, RoleDocumentPath, absPath);
+
+            const QString suffix = QFileInfo(absPath).suffix().toLower();
+            if(suffix == "pdf") {
+                docItem->setIcon(0, QIcon(":/icons/pdf.svg"));
+            }
+            else {
+                docItem->setIcon(0, QIcon(":/icons/info.svg"));
+            }
+
+            m_ui->listDocumentation->addTopLevelItem(docItem);
+        }
+    }
+
+    const QString projectDir = getCurrentProjectDirectory();
+    const QStringList pdfFiles = findProjectPdfDocuments(projectDir);
+
+    foreach(const QString &pdfPath, pdfFiles) {
+        if(addedPaths.contains(pdfPath)) {
+            continue;
+        }
+
+        QFileInfo fi(pdfPath);
+
+        QTreeWidgetItem *docItem = new QTreeWidgetItem;
+        docItem->setText(0, fi.fileName());
+        docItem->setToolTip(0, pdfPath);
+        docItem->setData(0, RoleDocumentPath, pdfPath);
+        docItem->setIcon(0, QIcon(":/icons/pdf.svg"));
+
+        m_ui->listDocumentation->addTopLevelItem(docItem);
+        addedPaths.insert(pdfPath);
+    }
+
+#if QT_VERSION >= 0x050000
+    m_ui->listDocumentation->sortByColumn(0, Qt::AscendingOrder);
+#else
+    m_ui->listDocumentation->sortByColumn(0);
+#endif
+
+    m_ui->listDocumentation->resizeColumnToContents(0);
+}
+
+/*!*******************************************************************************************************************
+ * \brief Clears all UI widgets that depend on currently selected library.
+ *
+ * This function is used when no library is selected anymore, for example after
+ * clicking on an empty area in the library tree widget. It resets lists,
+ * search fields and related action states so that stale data is not shown.
+ **********************************************************************************************************************/
+void MainWindow::clearLibrarySelectionDependentViews()
+{
+    m_itemText.clear();
+
+    m_ui->txtLibSearch->clear();
+    m_ui->txtCatSearch->clear();
+    m_ui->txtCellSearch->clear();
+    m_ui->txtViewSearch->clear();
+
+    m_ui->listGroups->clear();
+    m_ui->listViews->clear();
+    m_ui->listDocumentation->clear();
+    m_ui->listCategories->clear();
+
+    m_ui->actionGroup->setEnabled(false);
+    m_ui->actionUnion->setEnabled(false);
+    m_ui->actionCategory->setEnabled(false);
+}
+
+/*!*******************************************************************************************************************
+ * \brief Handles library tree selection changes.
+ *
+ * If the current library selection becomes empty, all dependent widgets on the
+ * right side are cleared to avoid showing stale groups, views, categories and
+ * documents from previously selected library.
+ **********************************************************************************************************************/
+void MainWindow::on_treeLibs_itemSelectionChanged()
+{
+    const QList<QTreeWidgetItem*> items = m_ui->treeLibs->selectedItems();
+    if(items.isEmpty()) {
+        clearLibrarySelectionDependentViews();
         return;
     }
 
-    QStringList formats;
-    formats<<"*.txt"<<"*.pdf"<<"*.doc"<<"*.celllist";
-
-    QDir docDir(docPath);
-    docDir.setNameFilters(formats);
-
-    QStringList fileList = docDir.entryList();
-    foreach(QString docName, fileList) {
-        QTreeWidgetItem *docItem = new QTreeWidgetItem;
-        docItem->setText(0, docName);
-        if(QFileInfo(docName).completeSuffix().toLower() == "pdf") {
-            docItem->setIcon(0, QIcon(":pdf"));
-        }
-        else {
-            docItem->setIcon(0, QIcon(":new"));
-        }
-
-        m_ui->listDocumentation->addTopLevelItem(docItem);
+    QTreeWidgetItem *item = items.first();
+    if(!item) {
+        clearLibrarySelectionDependentViews();
+        return;
     }
 
-    m_ui->listDocumentation->sortColumn();
-    m_ui->listDocumentation->resizeColumnToContents(0);
+    if(item->childCount()) {
+        clearLibrarySelectionDependentViews();
+        return;
+    }
 }
 
 /*!*******************************************************************************************************************
@@ -936,12 +1171,12 @@ void MainWindow::loadCategories(const QString &libPath)
  *
  * \param libPath      Path to the library view file.
  **********************************************************************************************************************/
-void MainWindow::loadGroups(const QString &libPath)
+void MainWindow::loadGroups(const QString &libName)
 {
     m_ui->listGroups->clear();
     m_ui->listViews->clear();
 
-    QStringList groups = getCurrentGroups(libPath);
+    QStringList groups = getCurrentGroups(libName);
 
     foreach(const QString &groupName, groups) {
         QListWidgetItem *groupItem = new QListWidgetItem;
@@ -965,17 +1200,14 @@ void MainWindow::loadGroups(const QString &libPath)
  **********************************************************************************************************************/
 void MainWindow::loadViews(const QString &libName, const QString &groupName)
 {
-    Q_UNUSED(groupName);
-
     m_ui->listViews->clear();
-
     m_ui->listViews->setHeaderHidden(true);
     m_ui->listViews->setRootIsDecorated(true);
 
     const QStringList views = getCurrentViews(libName, groupName);
 
     foreach(const QString &viewName, views) {
-        const QString viewPath = getLibraryPath(libName, viewName);
+        const QString viewPath = getViewPath(libName, groupName, viewName);
         if(viewPath.isEmpty()) {
             continue;
         }
@@ -1096,14 +1328,11 @@ void MainWindow::on_treeLibs_itemClicked(QTreeWidgetItem *item, int)
 
     m_ui->txtLibSearch->setText(item->text(0));
 
-    QString libPath = getLibraryPath(item->text(0));
+    loadGroups(item->text(0));
 
-    QFileInfo fi(libPath);
-    if(fi.exists() && fi.isFile()) {
-        loadGroups(fi.absoluteFilePath());
-        m_ui->listDocumentation->clear();
-        m_ui->listCategories->clear();
-    }
+    const QString libPath = getLibraryPath(item->text(0));
+    loadDocuments(libPath);
+    loadCategories(libPath);
 
     m_ui->actionGroup->setEnabled(false);
     m_ui->actionUnion->setEnabled(false);
@@ -1124,6 +1353,7 @@ void MainWindow::on_listGroups_itemClicked(QListWidgetItem *item)
 
     m_ui->txtCellSearch->clear();
     m_ui->txtViewSearch->clear();
+    m_ui->listViews->clear();
 
     QList<QTreeWidgetItem*> libItems = m_ui->treeLibs->selectedItems();
     if(!libItems.count()) {
@@ -1395,7 +1625,7 @@ void MainWindow::startToolWithTempScript(const QString &tool, const QStringList 
     connect(p,
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this,
-            [this, p, scriptPath](int, QProcess::ExitStatus)
+            [p, scriptPath](int, QProcess::ExitStatus)
             {
                 if(!scriptPath.isEmpty() && QFileInfo(scriptPath).exists()) {
                     QFile::remove(scriptPath);
@@ -1406,7 +1636,7 @@ void MainWindow::startToolWithTempScript(const QString &tool, const QStringList 
     connect(p,
             &QProcess::errorOccurred,
             this,
-            [this, scriptPath](QProcess::ProcessError)
+            [scriptPath](QProcess::ProcessError)
             {
                 if(!scriptPath.isEmpty() && QFileInfo(scriptPath).exists()) {
                     QFile::remove(scriptPath);
@@ -1677,6 +1907,10 @@ void MainWindow::on_listCategories_itemClicked(QTreeWidgetItem *item)
  * \brief Slot is to execute document viewer with specified documentation.
  * \param item       Pointer to tree item document.
  **********************************************************************************************************************/
+/*!*******************************************************************************************************************
+ * \brief Slot is to execute document viewer with specified documentation.
+ * \param item       Pointer to tree item document.
+ **********************************************************************************************************************/
 void MainWindow::on_listDocumentation_itemDoubleClicked(QTreeWidgetItem *item)
 {
     if(!item) {
@@ -1685,27 +1919,26 @@ void MainWindow::on_listDocumentation_itemDoubleClicked(QTreeWidgetItem *item)
 
     m_itemText = item->text(0);
 
-    QString docName = item->text(0);
+    const QString docName = item->text(0);
     if(docName.isEmpty()) {
         return;
     }
 
-    QString docPath = getCurrentDocumentFilePath(docName);
-    if(!QFileInfo(docPath).exists()) {
-        error(QString("Failed to find document '%1'").arg(docPath));
+    const QString docPath = item->data(0, RoleDocumentPath).toString();
+    if(docPath.isEmpty() || !QFileInfo(docPath).exists()) {
+        error(QString("Failed to find document '%1'.").arg(docPath), false);
         return;
     }
 
-
-    QString tool = getDocumentTool(docName);
+    const QString tool = getDocumentTool(docName);
     if(tool.isEmpty()) {
-        error(QString("Please specify tool first."));
+        error(QString("Please specify tool first."), false);
         return;
     }
 
     QProcess proc;
     QStringList args;
-    args<<docPath;
+    args << docPath;
 
     proc.startDetached(tool, args);
 }
@@ -2118,7 +2351,7 @@ void MainWindow::on_actionSession_triggered()
    loadSettings();
 
    setWindowTitle(getLibManTitle());
-
+   setupProjectFileWatcher(QString());
    setStateSaved();
 }
 
@@ -2137,4 +2370,486 @@ void MainWindow::on_actionClear_Recent_File_Stack_triggered()
     settings.beginGroup("RecentProjects");
     settings.setValue("RecentProjList", QStringList());
     settings.endGroup();
+}
+
+/*!*******************************************************************************************************************
+ * \brief Sets up watcher for the current project file to detect external modifications.
+ * \param projFile     Absolute path to the current project file.
+ **********************************************************************************************************************/
+void MainWindow::setupProjectFileWatcher(const QString &projFile)
+{
+    if(!m_projFileWatcher) {
+        return;
+    }
+
+    QStringList files = m_projFileWatcher->files();
+    if(!files.isEmpty()) {
+        m_projFileWatcher->removePaths(files);
+    }
+
+    if(projFile.isEmpty()) {
+        return;
+    }
+
+    QFileInfo fi(projFile);
+    if(fi.exists() && fi.isFile()) {
+        m_projFileWatcher->addPath(fi.absoluteFilePath());
+    }
+}
+
+/*!*******************************************************************************************************************
+ * \brief Clears currently loaded project-related UI data and properties.
+ **********************************************************************************************************************/
+void MainWindow::clearCurrentProjectData()
+{
+    m_ui->treeLibs->clear();
+    m_ui->listViews->clear();
+    m_ui->listGroups->clear();
+    m_ui->listCategories->clear();
+    m_ui->listDocumentation->clear();
+
+    m_itemText.clear();
+    m_currentProjFile.clear();
+
+    if(m_properties) {
+        delete m_properties;
+    }
+
+    m_properties = new Properties;
+
+    loadSettings();
+
+    setWindowTitle(getLibManTitle());
+    setStateSaved();
+}
+
+/*!*******************************************************************************************************************
+ * \brief Reloads currently opened project file from disk.
+ **********************************************************************************************************************/
+void MainWindow::reloadProjectFileFromDisk()
+{
+    const QString projFile = m_currentProjFile;
+    if(projFile.isEmpty()) {
+        return;
+    }
+
+    if(!QFileInfo(projFile).exists()) {
+        error(QString("Project file '%1' does not exist anymore.").arg(projFile), false);
+        return;
+    }
+
+    clearCurrentProjectData();
+    loadProjectFile(projFile);
+    setupProjectFileWatcher(projFile);
+
+    info(QString("Project file '%1' was reloaded.").arg(projFile), false);
+}
+
+/*!*******************************************************************************************************************
+ * \brief Handles external project file modification detected by QFileSystemWatcher.
+ * \param path        Changed project file path.
+ **********************************************************************************************************************/
+void MainWindow::onProjectFileChanged(const QString &path)
+{
+    if(m_ignoreProjectFileChange) {
+        setupProjectFileWatcher(path);
+        return;
+    }
+
+    QFileInfo fi(path);
+
+    // QFileSystemWatcher can drop the path after change/remove, so re-arm it.
+    if(fi.exists() && fi.isFile()) {
+        setupProjectFileWatcher(path);
+    }
+
+    QMessageBox msgBox(this);
+    msgBox.setIcon(QMessageBox::Question);
+    msgBox.setWindowTitle("Project File Changed");
+    msgBox.setText(QString("The project file\n\n%1\n\nhas been modified outside LibMan.").arg(path));
+    msgBox.setInformativeText("Would you like to reload it?");
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::Yes);
+
+    const int ret = msgBox.exec();
+    if(ret == QMessageBox::Yes) {
+        reloadProjectFileFromDisk();
+    }
+    else {
+        info(QString("Project file '%1' was modified externally. Reload skipped.").arg(path), false);
+    }
+}
+
+/*!*******************************************************************************************************************
+ * \brief Reloads currently opened project file from disk.
+ *
+ * This slot is triggered by the "Reload" action. It discards all current
+ * in-memory project data (libraries, groups, views, categories, caches)
+ * and loads the project file again from disk.
+ *
+ * If no project file is currently loaded or the file does not exist,
+ * the operation is aborted and an error message is displayed.
+ *
+ * \note This function does not prompt for saving changes. It is assumed that
+ *       the user intentionally wants to reload the project state from disk.
+ **********************************************************************************************************************/
+void MainWindow::on_actionReload_triggered()
+{
+    const QString projFile = getCurrentProjectFile();
+
+    if(projFile.isEmpty()) {
+        error("No project file loaded.", false);
+        return;
+    }
+
+    if(!QFileInfo(projFile).exists()) {
+        error(QString("Project file '%1' does not exist.").arg(projFile), false);
+        return;
+    }
+
+    m_ignoreProjectFileChange = true;
+
+    clearCurrentProjectData();
+    loadProjectFile(projFile);
+    setupProjectFileWatcher(projFile);
+
+    m_ignoreProjectFileChange = false;
+
+    info(QString("Project '%1' reloaded.").arg(projFile), false);
+}
+
+/*!*********************************************************************************************************************
+ * \brief Renames the currently selected library.
+ *
+ * Prompts the user for a new library name using an input dialog. If confirmed,
+ * all property keys associated with the selected library are updated to use
+ * the new library name prefix.
+ *
+ * Only internal LibMan property mappings are updated. File system contents
+ * (directories and view files) remain unchanged.
+ *
+ * After successful renaming, the library list is reloaded and the UI is updated.
+ **********************************************************************************************************************/
+void MainWindow::renameSelectedLibrary()
+{
+    QTreeWidgetItem *item = m_ui->treeLibs->currentItem();
+    if(!item) {
+        return;
+    }
+
+    const QString oldLibName = item->text(0).trimmed();
+    if(oldLibName.isEmpty()) {
+        return;
+    }
+
+    bool ok = false;
+    const QString newLibName = QInputDialog::getText(this,
+                                                     tr("Rename Library"),
+                                                     tr("Enter new library name:"),
+                                                     QLineEdit::Normal,
+                                                     oldLibName,
+                                                     &ok).trimmed();
+
+    if(!ok || newLibName.isEmpty() || newLibName == oldLibName) {
+        return;
+    }
+
+    if(!updateProjectFileLibraryName(oldLibName, newLibName)) {
+        error("Failed to update project file.", false);
+        return;
+    }
+
+    const QString oldPrefix = getLibraryKeyPrefix() + oldLibName + "/";
+    const QString newPrefix = getLibraryKeyPrefix() + newLibName + "/";
+
+    QMap<QString, PropertyItem*> propItems = m_properties->getMap();
+    QList<QString> keysToUpdate;
+
+    for(auto it = propItems.begin(); it != propItems.end(); ++it) {
+        const QString key = it.key();
+        if(key.startsWith(oldPrefix)) {
+            keysToUpdate << key;
+        }
+    }
+
+    for(const QString &oldKey : keysToUpdate) {
+        const QString value = m_properties->get<QString>(oldKey);
+
+        QString newKey = oldKey;
+        newKey.replace(oldPrefix, newPrefix);
+
+        m_properties->set(newKey, value);
+        m_properties->remove(oldKey);
+    }
+
+    loadLibraries();
+
+    info(QString("Library '%1' renamed to '%2'.")
+             .arg(oldLibName, newLibName), false);
+}
+
+/*!*********************************************************************************************************************
+ * \brief Updates library name in the current project file.
+ *
+ * This function scans the loaded project file and replaces all occurrences
+ * of the given old library name with the new one inside library definitions
+ * (e.g. define("libName", "...")).
+ *
+ * The file is read entirely, modified in memory, and then rewritten.
+ *
+ * \param oldName    Original library name to be replaced.
+ * \param newName    New library name to assign.
+ *
+ * \return True if the project file was successfully updated, false otherwise.
+ **********************************************************************************************************************/
+bool MainWindow::updateProjectFileLibraryName(const QString &oldName,
+                                              const QString &newName)
+{
+    if(m_currentProjFile.isEmpty()) {
+        return false;
+    }
+
+    QFile file(m_currentProjFile);
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        error("Failed to open project file for reading.", false);
+        return false;
+    }
+
+    QStringList lines;
+    QTextStream in(&file);
+    while(!in.atEnd()) {
+        lines << in.readLine();
+    }
+    file.close();
+
+    bool changed = false;
+    for(QString &line : lines) {
+        if(line.contains(QString("\"%1\"").arg(oldName))) {
+            line.replace(QString("\"%1\"").arg(oldName),
+                         QString("\"%1\"").arg(newName));
+            changed = true;
+        }
+    }
+
+    if(!changed) {
+        return false;
+    }
+
+    m_ignoreProjectFileChange = true;
+
+    if(m_projFileWatcher) {
+        m_projFileWatcher->removePath(m_currentProjFile);
+    }
+
+    if(!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+        if(m_projFileWatcher) {
+            m_projFileWatcher->addPath(m_currentProjFile);
+        }
+        m_ignoreProjectFileChange = false;
+        error("Failed to open project file for writing.", false);
+        return false;
+    }
+
+    QTextStream out(&file);
+    for(const QString &line : lines) {
+        out << line << "\n";
+    }
+    file.close();
+
+    if(m_projFileWatcher) {
+        m_projFileWatcher->addPath(m_currentProjFile);
+    }
+
+    m_ignoreProjectFileChange = false;
+    return true;
+}
+
+/*!******************************************************************************************************************
+ * \brief Retrieves supported view types grouped by tool.
+ *
+ * This function collects all tools defined in the "ToolList" property and extracts
+ * their associated view types from corresponding "<ToolName>Views" properties.
+ *
+ * Each tool may define a comma-separated list of view suffixes (e.g. "gds,oas,lstr"),
+ * which are parsed, normalized (trimmed and converted to lower case), and stored
+ * as a list of supported views for that tool.
+ *
+ * The result is a map where:
+ *   - key   = tool name
+ *   - value = list of supported view suffixes for that tool
+ *
+ * Only tools with valid and non-empty view definitions are included.
+ *
+ * \return QMap mapping tool names to their supported view suffix lists.
+ *******************************************************************************************************************/
+QMap<QString, QStringList> MainWindow::getSupportedViewsByTool() const
+{
+    QMap<QString, QStringList> toolViewsMap;
+    QStringList tools;
+
+    if(m_properties->exists("ToolList")) {
+        tools = m_properties->get<QString>("ToolList").split(",", QString::SkipEmptyParts);
+    }
+
+    for(QString toolName : tools) {
+        toolName = toolName.trimmed();
+        if(toolName.isEmpty()) {
+            continue;
+        }
+
+        const QString key = toolName + "Views";
+        if(!m_properties->exists(key)) {
+            continue;
+        }
+
+        const QString rawViews = m_properties->get<QString>(key).trimmed();
+        if(rawViews.isEmpty()) {
+            continue;
+        }
+
+        QStringList views;
+        const QStringList toolViews = rawViews.split(",", QString::SkipEmptyParts);
+        for(QString view : toolViews) {
+            view = view.trimmed().toLower();
+            if(!view.isEmpty() && !views.contains(view)) {
+                views << view;
+            }
+        }
+
+        views.sort();
+
+        if(views.count()) {
+            toolViewsMap.insert(toolName, views);
+        }
+    }
+
+    return toolViewsMap;
+}
+
+/*!*********************************************************************************************************************
+ * \brief Adds an existing cell view file to the currently selected library.
+ *
+ * Opens a file dialog filtered by supported view suffixes, copies the selected file
+ * into a newly created cell directory inside the current library, and creates the
+ * corresponding LibMan property entry so that the new cell/view becomes visible
+ * in the UI.
+ *
+ * The cell name is derived from the selected file base name.
+ **********************************************************************************************************************/
+void MainWindow::addExistingCell()
+{
+    const QString libName = getCurrentLibraryName();
+    if(libName.isEmpty()) {
+        return;
+    }
+
+    const QString libRoot = getLibraryPath(libName);
+    if(libRoot.isEmpty()) {
+        error(QString("Failed to determine root path for library '%1'.").arg(libName), false);
+        return;
+    }
+
+    const QMap<QString, QStringList> supportedViewsByTool = getSupportedViewsByTool();
+    if(supportedViewsByTool.isEmpty()) {
+        error("No supported views configured.", false);
+        return;
+    }
+
+    qDebug()<<1;
+    QStringList allViews;
+    for(auto it = supportedViewsByTool.constBegin(); it != supportedViewsByTool.constEnd(); ++it) {
+        for(const QString &view : it.value()) {
+            if(!allViews.contains(view)) {
+                allViews << view;
+            }
+        }
+    }
+    allViews.sort();
+
+    if(allViews.isEmpty()) {
+        error("No supported view suffixes found.", false);
+        return;
+    }
+
+    QStringList filters;
+
+    QStringList allPatterns;
+    for(const QString &view : allViews) {
+        allPatterns << QString("*.%1").arg(view);
+    }
+    filters << tr("Supported Views (%1)").arg(allPatterns.join(" "));
+
+    for(const QString &view : allViews) {
+        filters << QString("%1 (*.%2)").arg(view.toUpper(), view);
+    }
+
+    filters << tr("All Files (*.*)");
+
+    qDebug()<<filters;
+
+    const QString srcFilePath = QFileDialog::getOpenFileName(this,
+                                                             tr("Add Existing Cell"),
+                                                             QString(),
+                                                             filters.join(";;"));
+    if(srcFilePath.isEmpty()) {
+        return;
+    }
+
+    QFileInfo srcFi(srcFilePath);
+    if(!srcFi.exists() || !srcFi.isFile()) {
+        error(QString("Selected file does not exist: %1").arg(srcFilePath), false);
+        return;
+    }
+
+    const QString groupName = srcFi.completeBaseName().trimmed();
+    if(groupName.isEmpty()) {
+        error(QString("Failed to determine cell name from '%1'.").arg(srcFilePath), false);
+        return;
+    }
+
+    const QString viewName = srcFi.suffix().trimmed().toLower();
+    if(viewName.isEmpty()) {
+        error(QString("Failed to determine view type from '%1'.").arg(srcFilePath), false);
+        return;
+    }
+
+    if(!allViews.contains(viewName)) {
+        error(QString("View '%1' is not supported.").arg(viewName), false);
+        return;
+    }
+
+    const QString cellDirPath = QDir::toNativeSeparators(libRoot + "/" + groupName);
+    QDir dir;
+    if(!dir.mkpath(cellDirPath)) {
+        error(QString("Failed to create cell directory '%1'.").arg(cellDirPath), false);
+        return;
+    }
+
+    const QString dstFilePath = QDir::toNativeSeparators(cellDirPath + "/" + groupName + "." + viewName);
+    if(QFileInfo(dstFilePath).exists()) {
+        error(QString("Cell view already exists: %1").arg(dstFilePath), false);
+        return;
+    }
+
+    if(!QFile::copy(srcFilePath, dstFilePath)) {
+        error(QString("Failed to copy '%1' to '%2'.").arg(srcFilePath, dstFilePath), false);
+        return;
+    }
+
+    const QString key = getLibraryKeyPrefix() + libName + "/" + groupName + "/" + viewName;
+    m_properties->set(key, dstFilePath);
+
+    loadGroups(libName);
+
+    QList<QListWidgetItem*> items = m_ui->listGroups->findItems(groupName, Qt::MatchExactly);
+    if(items.count()) {
+        m_ui->listGroups->setCurrentItem(items.first());
+        on_listGroups_itemClicked(items.first());
+    }
+
+    saveProjectFile(m_currentProjFile);
+
+    info(QString("Added existing cell '%1' to library '%2'.")
+             .arg(groupName)
+             .arg(libName), false);
 }

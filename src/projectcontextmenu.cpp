@@ -211,46 +211,82 @@ void MainWindow::showLibraryMenu(const QPoint &pos)
     QMenu *menu = new QMenu(this);
 
     QAction *proj = new QAction(tr("&Add New..."), this);
+    proj->setIcon(QIcon(":/icons/category.svg"));
     proj->setStatusTip(tr("Add new project."));
-    connect(proj, SIGNAL(triggered()), this, SLOT(addNewProject()));
+    connect(proj, &QAction::triggered, this, &MainWindow::addNewProject);
     menu->addAction(proj);
 
     QList<QTreeWidgetItem *> items = m_ui->treeLibs->selectedItems();
     if(items.count()) {
+        menu->addSeparator();
+
         QAction *copyProj = new QAction(tr("&Copy"), this);
-        copyProj->setStatusTip(tr("Copy Project."));
-        connect(copyProj, SIGNAL(triggered()), this, SLOT(copySelectedProject()));
+        copyProj->setIcon(QIcon(":/icons/copy.svg"));
+        copyProj->setShortcut(QKeySequence::Copy);
+        copyProj->setStatusTip(tr("Copy project."));
+        copyProj->setShortcutContext(Qt::WidgetShortcut);
+        connect(copyProj, &QAction::triggered, this, &MainWindow::copySelectedProject);
         menu->addAction(copyProj);
+        addAction(copyProj);
 
         if(isProjectCopied()) {
             QAction *pasteProj = new QAction(tr("&Paste"), this);
-            pasteProj->setStatusTip(tr("Paste Project."));
-            connect(pasteProj, SIGNAL(triggered()), this, SLOT(pasteSelectedData()));
+            pasteProj->setIcon(QIcon(":/icons/paste.svg"));
+            pasteProj->setShortcut(QKeySequence::Paste);
+            pasteProj->setStatusTip(tr("Paste project."));
+            pasteProj->setShortcutContext(Qt::WidgetShortcut);
+            connect(pasteProj, &QAction::triggered, this, &MainWindow::pasteSelectedData);
             menu->addAction(pasteProj);
+            addAction(pasteProj);
         }
 
         QAction *delProj = new QAction(tr("&Delete"), this);
-        delProj->setStatusTip(tr("Detele Project."));
-        connect(delProj, SIGNAL(triggered()), this, SLOT(removeSelectedProject()));
+        delProj->setIcon(QIcon(":/icons/delete.svg"));
+        delProj->setShortcut(QKeySequence::Delete);
+        delProj->setStatusTip(tr("Delete project."));
+        delProj->setShortcutContext(Qt::WidgetShortcut);
+        connect(delProj, &QAction::triggered, this, &MainWindow::removeSelectedProject);
         menu->addAction(delProj);
+        addAction(delProj);
 
         QAction *projInfo = new QAction(tr("&Info"), this);
-        projInfo->setStatusTip(tr("Detele Project."));
-        connect(projInfo, SIGNAL(triggered()), this, SLOT(showProjectInfo()));
+        projInfo->setIcon(QIcon(":/icons/info.svg"));
+        projInfo->setShortcut(QKeySequence(Qt::ALT | Qt::Key_Return));
+        projInfo->setStatusTip(tr("Show project information."));
+        projInfo->setShortcutContext(Qt::WidgetShortcut);
+        connect(projInfo, &QAction::triggered, this, &MainWindow::showProjectInfo);
         menu->addAction(projInfo);
+        addAction(projInfo);
+
+        QAction *renameLib = new QAction(tr("&Rename"), this);
+        renameLib->setIcon(style()->standardIcon(QStyle::SP_FileDialogContentsView));
+        renameLib->setShortcut(QKeySequence(Qt::Key_F2));
+        renameLib->setStatusTip(tr("Rename selected library."));
+        renameLib->setShortcutContext(Qt::WidgetShortcut);
+        connect(renameLib, &QAction::triggered, this, &MainWindow::renameSelectedLibrary);
+        menu->addAction(renameLib);
+        addAction(renameLib);
+
+        QAction *addExisting = new QAction(tr("Add &Existing Cell..."), this);
+        addExisting->setIcon(QIcon(":/icons/view.svg"));
+        addExisting->setStatusTip(tr("Add existing supported cell view."));
+        connect(addExisting, &QAction::triggered, this, &MainWindow::addExistingCell);
+        menu->addAction(addExisting);
 
         QMap<QString, QString> projects = getCurrentLibraries();
         if(projects.count() && currentItem && !currentItem->parent()) {
-            QMenu *menuGroup = menu->addMenu("Group with");
+            QMenu *menuGroup = menu->addMenu(tr("Group with"));
+            menuGroup->setIcon(QIcon(":/icons/category.svg"));
 
-            QString curProjName = getCurrentLibraryName();
+            const QString curProjName = getCurrentLibraryName();
             if(curProjName.isEmpty()) {
+                delete menu;
                 return;
             }
 
             QMap<QString, QString>::const_iterator it;
             for(it = projects.constBegin(); it != projects.constEnd(); ++it) {
-                QString projName = it.key();
+                const QString projName = it.key();
 
                 if(projName.isEmpty()) {
                     continue;
@@ -261,60 +297,77 @@ void MainWindow::showLibraryMenu(const QPoint &pos)
                 }
 
                 QTreeWidgetItem *item = getTreeItemByName(projName);
-                if(item) {
-                    if(item->parent()) {
-                        continue;
-                    }
+                if(item && item->parent()) {
+                    continue;
                 }
 
                 QAction *projId = new QAction(projName, this);
+                projId->setIcon(QIcon(":/icons/category.svg"));
                 projId->setStatusTip(projName);
-                connect(projId, SIGNAL(triggered()), this, SLOT(mergeProjectIntoGroup()));
+                connect(projId, &QAction::triggered, this, &MainWindow::mergeProjectIntoGroup);
                 menuGroup->addAction(projId);
             }
-
-            menu->addMenu(menuGroup);
         }
         else if(currentItem && currentItem->parent()) {
             QAction *ungroupInfo = new QAction(tr("&Ungroup"), this);
-            ungroupInfo->setStatusTip(tr("Detele Project."));
-            connect(ungroupInfo, SIGNAL(triggered()), this, SLOT(removeFromGroup()));
+            ungroupInfo->setIcon(QIcon(":/icons/delete.svg"));
+            ungroupInfo->setStatusTip(tr("Remove project from group."));
+            connect(ungroupInfo, &QAction::triggered, this, &MainWindow::removeFromGroup);
             menu->addAction(ungroupInfo);
         }
     }
 
-    QMenu *gitMenu = menu->addMenu("Git");
+    menu->addSeparator();
+
+    QMenu *gitMenu = menu->addMenu(tr("Git"));
+    gitMenu->setIcon(QIcon(":/icons/git_branch.svg"));
 
     QAction *gitStatus = new QAction(tr("Status"), this);
-    connect(gitStatus, SIGNAL(triggered()), this, SLOT(gitShowStatus()));
+    gitStatus->setIcon(QIcon(":/icons/git_status.svg"));
+    gitStatus->setStatusTip(tr("Show git status."));
+    connect(gitStatus, &QAction::triggered, this, &MainWindow::gitShowStatus);
     gitMenu->addAction(gitStatus);
 
     QAction *gitCommit = new QAction(tr("Commit"), this);
-    connect(gitCommit, SIGNAL(triggered()), this, SLOT(gitCommitChanges()));
+    gitCommit->setIcon(QIcon(":/icons/git_commit.svg"));
+    gitCommit->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_K));
+    gitCommit->setStatusTip(tr("Commit changes."));
+    gitCommit->setShortcutContext(Qt::WidgetShortcut);
+    connect(gitCommit, &QAction::triggered, this, &MainWindow::gitCommitChanges);
     gitMenu->addAction(gitCommit);
+    addAction(gitCommit);
 
     QAction *gitLog = new QAction(tr("Log"), this);
-    connect(gitLog, SIGNAL(triggered()), this, SLOT(gitShowLog()));
+    gitLog->setIcon(style()->standardIcon(QStyle::SP_FileDialogDetailedView));
+    gitLog->setStatusTip(tr("Show git log."));
+    connect(gitLog, &QAction::triggered, this, &MainWindow::gitShowLog);
     gitMenu->addAction(gitLog);
 
     QAction *gitDiff = new QAction(tr("Diff"), this);
-    connect(gitDiff, SIGNAL(triggered()), this, SLOT(gitShowDiff()));
+    gitDiff->setIcon(style()->standardIcon(QStyle::SP_FileDialogContentsView));
+    gitDiff->setStatusTip(tr("Show git diff."));
+    connect(gitDiff, &QAction::triggered, this, &MainWindow::gitShowDiff);
     gitMenu->addAction(gitDiff);
 
     QAction *gitPull = new QAction(tr("Pull"), this);
-    connect(gitPull, SIGNAL(triggered()), this, SLOT(gitPull()));
+    gitPull->setIcon(QIcon(":/icons/git_pull.svg"));
+    gitPull->setStatusTip(tr("Pull changes from remote repository."));
+    connect(gitPull, &QAction::triggered, this, &MainWindow::gitPull);
     gitMenu->addAction(gitPull);
 
     QAction *gitPush = new QAction(tr("Push"), this);
-    connect(gitPush, SIGNAL(triggered()), this, SLOT(gitPush()));
+    gitPush->setIcon(QIcon(":/icons/git_push.svg"));
+    gitPush->setStatusTip(tr("Push changes to remote repository."));
+    connect(gitPush, &QAction::triggered, this, &MainWindow::gitPush);
     gitMenu->addAction(gitPush);
 
     QAction *gitCheckout = new QAction(tr("Checkout..."), this);
-    connect(gitCheckout, SIGNAL(triggered()), this, SLOT(gitCheckout()));
+    gitCheckout->setIcon(QIcon(":/icons/git_branch.svg"));
+    gitCheckout->setStatusTip(tr("Checkout branch."));
+    connect(gitCheckout, &QAction::triggered, this, &MainWindow::gitCheckout);
     gitMenu->addAction(gitCheckout);
 
-    menu->popup(QCursor::pos());
-    menu->exec();
+    menu->exec(QCursor::pos());
 
     delete menu;
 }

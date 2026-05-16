@@ -21,14 +21,18 @@ namespace Ui {
 class ProjectManager : public QDialog
 {
     Q_OBJECT
-    
+
+#ifdef COVERAGE_BUILD
+    friend class DialogsTest;
+#endif
+
 public:
     explicit ProjectManager(QWidget *parent, Properties *properties);
     ~ProjectManager();
 
 private slots:
     void                                closeEvent(QCloseEvent *);
-    void                                settingsChanged(QtProperty*, QVariant);    
+    void                                settingsChanged(QtProperty*, QVariant);
 
     void                                on_btnOk_clicked();
     void                                on_btnCancel_clicked();
@@ -39,7 +43,7 @@ private:
     bool                                isStateChanged() const;
     void                                setStateSaved();
     void                                setStateChanged();
-    
+
 private:
     Ui::ProjectManager                  *m_ui; /*!< A pointer to acess ProjectManager graphic items. */
 

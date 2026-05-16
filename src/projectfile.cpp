@@ -9,6 +9,7 @@
 #include <QFileDialog>
 #include <QListWidgetItem>
 #include <QRegularExpression>
+#include <QFileSystemWatcher>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -86,6 +87,8 @@ void MainWindow::loadProjectFile(const QString &fileName)
     m_ui->txtCellSearch->clear();
     m_ui->txtViewSearch->clear();
 
+    QSet<QString> loadedLibraries;
+
     for(const LibDefinition& def : data.definitions) {
 
         const QString libName = def.name.trimmed();
@@ -114,9 +117,21 @@ void MainWindow::loadProjectFile(const QString &fileName)
         }
 
         const QString viewName = detectViewFromPath(fi.absoluteFilePath());
+        if(viewName.isEmpty()) {
+            error(QString("Skipping file with unknown view type: %1").arg(fi.absoluteFilePath()));
+            continue;
+        }
 
-        QString key = getLibraryKeyPrefix() + libName + "/" + viewName;
+        const QString groupName = fi.completeBaseName().trimmed();
+        if(groupName.isEmpty()) {
+            error(QString("Skipping file with empty group name: %1").arg(fi.absoluteFilePath()));
+            continue;
+        }
+
+        const QString key = getLibraryKeyPrefix() + libName + "/" + groupName + "/" + viewName;
         m_properties->set(key, fi.absoluteFilePath());
+
+        loadedLibraries.insert(libName);
     }
 
     loadLibraries();
@@ -135,9 +150,99 @@ void MainWindow::loadProjectFile(const QString &fileName)
     setWindowTitle(getLibManTitle() + " (" + fileTitle + ")");
     setStateSaved();
 
+    setupProjectFileWatcher(fileName);
+
     info(QString("Lib file '%1' has been loaded. %2 libraries found.")
              .arg(fileName)
-             .arg(data.definitions.count()));
+             .arg(loadedLibraries.count()));
+}
+
+/*!*********************************************************************************************************************
+ * \brief Finds a representative view file for the specified library.
+ *
+ * This function searches all LibMan property entries belonging to the given library
+ * and returns the absolute path of the first existing view file found.
+ *
+ * The returned file path can be used in the project file as a reference entry for
+ * the library. During project loading, LibMan will restore the full library content
+ * by scanning the library root directory.
+ *
+ * \param libName     Name of the library.
+ *
+ * \return Absolute path to an existing view file, or an empty string if none was found.
+ **********************************************************************************************************************/
+QString MainWindow::findRepresentativeLibraryFile(const QString &libName) const
+{
+    if(libName.isEmpty()) {
+        return QString();
+    }
+
+    const QMap<QString, PropertyItem*> propItems = m_properties->getMap();
+    const QString prefix = getLibraryKeyPrefix() + libName + "/";
+
+    for(auto it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
+        const QString key = it.key();
+        if(!key.startsWith(prefix)) {
+            continue;
+        }
+
+        const QString filePath = m_properties->get<QString>(key).trimmed();
+        QFileInfo fi(filePath);
+        if(fi.exists() && fi.isFile()) {
+            return fi.absoluteFilePath();
+        }
+    }
+
+    return QString();
+}
+
+/*!*********************************************************************************************************************
+ * \brief Returns all current project file entries derived from registered library views.
+ *
+ * This function iterates through all LibMan library property entries and collects
+ * pairs of:
+ *   - library name
+ *   - absolute view file path
+ *
+ * Each returned pair corresponds to one define(...) line that can be written
+ * to the project file.
+ *
+ * Unlike getCurrentLibraries(), this function preserves multiple entries for the
+ * same library name.
+ *
+ * \return List of (library name, absolute file path) pairs.
+ **********************************************************************************************************************/
+QList<QPair<QString, QString>> MainWindow::getCurrentProjectEntries() const
+{
+    QList<QPair<QString, QString>> entries;
+
+    const QMap<QString, PropertyItem*> propItems = m_properties->getMap();
+
+    for(auto it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
+        const QString key = it.key();
+        if(!key.toUpper().startsWith(getLibraryKeyPrefix())) {
+            continue;
+        }
+
+        QString tail = key;
+        tail.remove(getLibraryKeyPrefix());
+
+        const int pos = tail.indexOf('/');
+        const QString libName = (pos >= 0) ? tail.left(pos).trimmed() : tail.trimmed();
+        if(libName.isEmpty()) {
+            continue;
+        }
+
+        const QString filePath = m_properties->get<QString>(key).trimmed();
+        QFileInfo fi(filePath);
+        if(!fi.exists() || !fi.isFile()) {
+            continue;
+        }
+
+        entries.append(qMakePair(libName, fi.absoluteFilePath()));
+    }
+
+    return entries;
 }
 
 /*!******************************************************************************************************************
@@ -149,8 +254,21 @@ void MainWindow::saveProjectFile(const QString &fileName)
         return;
     }
 
+    m_ignoreProjectFileChange = true;
+
+    if(m_projFileWatcher) {
+        m_projFileWatcher->removePath(fileName);
+    }
+
     QFile file(fileName);
     if(!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+
+        if(m_projFileWatcher && QFileInfo(fileName).exists()) {
+            m_projFileWatcher->addPath(fileName);
+        }
+
+        m_ignoreProjectFileChange = false;
+
         QMessageBox::warning(this, tr("LibManager"),
                              tr("Can not write to file '%1':\n%2.")
                                  .arg(fileName)
@@ -165,29 +283,21 @@ void MainWindow::saveProjectFile(const QString &fileName)
     out << "# KLayout library definition file\n";
     out << "# Generated by LibMan\n\n";
 
-    QMap<QString, QString> projs = getCurrentLibraries();
-    QMap<QString, QString>::const_iterator it;
+    const QList<QPair<QString, QString>> entries = getCurrentProjectEntries();
 
-    for(it = projs.constBegin(); it != projs.constEnd(); ++it) {
+    for(const auto &entry : entries) {
 
-        const QString libName = it.key().trimmed();
-        const QString libPath = it.value().trimmed();
+        const QString libName = entry.first.trimmed();
+        const QString filePath = entry.second.trimmed();
 
-        if(libName.isEmpty() || libPath.isEmpty()) {
+        if(libName.isEmpty() || filePath.isEmpty()) {
             continue;
         }
 
-        QFileInfo fi(libPath);
-
-        if(!fi.exists()) {
-            error(QString("Skipping library '%1': file does not exist: %2")
-                      .arg(libName, libPath));
-            continue;
-        }
-
-        if(!fi.isFile()) {
-            error(QString("Skipping library '%1': path is not a file: %2")
-                      .arg(libName, libPath));
+        QFileInfo fi(filePath);
+        if(!fi.exists() || !fi.isFile()) {
+            error(QString("Skipping library entry '%1': file does not exist: %2")
+                      .arg(libName, filePath));
             continue;
         }
 
@@ -202,6 +312,12 @@ void MainWindow::saveProjectFile(const QString &fileName)
     }
 
     file.close();
+
+    if(m_projFileWatcher && QFileInfo(fileName).exists()) {
+        m_projFileWatcher->addPath(fileName);
+    }
+
+    m_ignoreProjectFileChange = false;
 
     info(QString("Project '%1' has been saved.").arg(fileName));
 

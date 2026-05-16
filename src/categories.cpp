@@ -30,8 +30,6 @@ QStringList MainWindow::readLibraryCategories(const QString &libPath, const QStr
 
     QString fileName = QDir::toNativeSeparators(libPath + "/" + catName + ".group");
     if(!QFileInfo(fileName).exists()) {
-        QMessageBox::critical(this, tr("LibManager"),
-                              tr("Can not find category '%1'.").arg(fileName));
         error("Can not find category '" + fileName + "'.");
         return categories;
     }
@@ -39,10 +37,6 @@ QStringList MainWindow::readLibraryCategories(const QString &libPath, const QStr
 
     QFile file(fileName);
     if(!file.open(QFile::ReadOnly | QFile::Text)) {
-        QMessageBox::critical(this, tr("LibManager"),
-                              tr("Can not read category '%1':\n%2.")
-                              .arg(fileName)
-                              .arg(file.errorString()));
         error("Can not read category '" + fileName + "'.");
         return categories;
     }
