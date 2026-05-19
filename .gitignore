@@ -40,12 +40,9 @@ docs/latex/
 html/
 latex/
 
-# --- Cap'n Proto local build/install artifacts ---
+# --- Cap'n Proto (fetched and built by libman.pro / tests.pro on first make) ---
+capnproto/
 capnp-install/
-capnproto/build/
-
-# --- Keep vendored Cap'n Proto sources ---
-!capnproto/
 
 # -------------------------------------------------
 # Coverage (gcov / gcovr)

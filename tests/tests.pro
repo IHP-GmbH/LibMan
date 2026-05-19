@@ -110,14 +110,10 @@ TESTDATA += \
     $$PWD/data/sample.gds \
     $$PWD/data/sg13g2_stdcell/lstr/sg13g2_stdcell.lstr
 
-# include Capnp
-CAPNP_GEN_DIR = $$PWD/../capnp
-INCLUDEPATH += $$CAPNP_GEN_DIR
+# Cap'n Proto (same clone-on-make flow as libman.pro)
+LIBMAN_ROOT = $$PWD/..
+include($$LIBMAN_ROOT/capnp_deps.pri)
+
+CAPNP_GEN_DIR = $$LIBMAN_ROOT/capnp
 SOURCES += $$files($$CAPNP_GEN_DIR/*.cc)
 HEADERS += $$files($$CAPNP_GEN_DIR/*.h)
-
-CAPNP_ROOT = $$PWD/../capnp-install
-INCLUDEPATH += $$CAPNP_ROOT/include
-LIBS += -L$$CAPNP_ROOT/lib
-
-LIBS += -lcapnp -lkj

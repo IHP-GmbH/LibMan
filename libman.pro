@@ -95,34 +95,11 @@ FORMS += \
 RESOURCES += icons.qrc
 
 # -----------------------------
-# Cap'n Proto paths
+# Cap'n Proto (clone + build on first make via capnp_deps.pri)
 # -----------------------------
-CAPNP_ROOT = $$PWD/capnp-install
-CAPNP_REPO_DIR = $$PWD/capnproto
-CAPNP_GEN_DIR = $$PWD/capnp
+LIBMAN_ROOT = $$PWD
+include(capnp_deps.pri)
 
-INCLUDEPATH += $$CAPNP_GEN_DIR
-INCLUDEPATH += $$CAPNP_ROOT/include
-LIBS += -L$$CAPNP_ROOT/lib
-LIBS += -lcapnp -lkj
-
-# -----------------------------
-# Upstream repos
-# -----------------------------
-CAPNP_GIT_URL = https://github.com/capnproto/capnproto.git
-CAPNP_VERSION_MODE = branch
-CAPNP_GIT_BRANCH = master
-CAPNP_GIT_TAG =
-CAPNP_GIT_COMMIT =
-
-LSTREAM_GIT_URL = https://codeberg.org/klayoutmatthias/lstream.git
-LSTREAM_VERSION_MODE = branch
-LSTREAM_GIT_BRANCH = main
-LSTREAM_GIT_TAG =
-LSTREAM_GIT_COMMIT =
-LSTREAM_SCHEMA_REPO_DIR = $$PWD/.deps/lstream
-
-# -----------------------------
 # Generated Cap'n Proto files
 # Must be listed explicitly so qmake knows them.
 # -----------------------------
@@ -149,74 +126,3 @@ HEADERS += \
     capnp/propertySet.capnp.h \
     capnp/repetition.capnp.h \
     capnp/variant.capnp.h
-
-# -----------------------------
-# Prepare external dependencies before target
-# -----------------------------
-win32 {
-    CAPNP_STAMP = $$CAPNP_ROOT/.built
-    LSTREAM_STAMP = $$CAPNP_GEN_DIR/.schemas_built
-
-    CAPNP_BUILD_CMD = cmd /c \"$$shell_path($$PWD/scripts/build_capnp_windows.bat)\"
-    CAPNP_BUILD_CMD += \"$$CAPNP_GIT_URL\"
-    CAPNP_BUILD_CMD += \"$$CAPNP_VERSION_MODE\"
-    CAPNP_BUILD_CMD += \"$$CAPNP_GIT_BRANCH\"
-    CAPNP_BUILD_CMD += \"$$CAPNP_GIT_TAG\"
-    CAPNP_BUILD_CMD += \"$$CAPNP_GIT_COMMIT\"
-    CAPNP_BUILD_CMD += \"$$shell_path($$CAPNP_REPO_DIR)\"
-    CAPNP_BUILD_CMD += \"$$shell_path($$CAPNP_ROOT)\"
-
-    capnpbuild.target = $$CAPNP_STAMP
-    capnpbuild.commands = $$CAPNP_BUILD_CMD
-    QMAKE_EXTRA_TARGETS += capnpbuild
-
-    LSTREAM_BUILD_CMD = cmd /c \"$$shell_path($$PWD/scripts/update_lstream_schemas_windows.bat)\"
-    LSTREAM_BUILD_CMD += \"$$LSTREAM_GIT_URL\"
-    LSTREAM_BUILD_CMD += \"$$LSTREAM_VERSION_MODE\"
-    LSTREAM_BUILD_CMD += \"$$LSTREAM_GIT_BRANCH\"
-    LSTREAM_BUILD_CMD += \"$$LSTREAM_GIT_TAG\"
-    LSTREAM_BUILD_CMD += \"$$LSTREAM_GIT_COMMIT\"
-    LSTREAM_BUILD_CMD += \"$$shell_path($$LSTREAM_SCHEMA_REPO_DIR)\"
-    LSTREAM_BUILD_CMD += \"$$shell_path($$CAPNP_GEN_DIR)\"
-    LSTREAM_BUILD_CMD += \"$$shell_path($$CAPNP_ROOT)\"
-
-    lstreamschemas.target = $$LSTREAM_STAMP
-    lstreamschemas.commands = $$LSTREAM_BUILD_CMD
-    lstreamschemas.depends = $$CAPNP_STAMP
-    QMAKE_EXTRA_TARGETS += lstreamschemas
-
-    PRE_TARGETDEPS += $$LSTREAM_STAMP
-} else {
-    CAPNP_STAMP = $$CAPNP_ROOT/.built
-    LSTREAM_STAMP = $$CAPNP_GEN_DIR/.schemas_built
-
-    CAPNP_BUILD_CMD = bash $$shell_path($$PWD/scripts/build_capnp_linux.sh)
-    CAPNP_BUILD_CMD += \"$$CAPNP_GIT_URL\"
-    CAPNP_BUILD_CMD += \"$$CAPNP_VERSION_MODE\"
-    CAPNP_BUILD_CMD += \"$$CAPNP_GIT_BRANCH\"
-    CAPNP_BUILD_CMD += \"$$CAPNP_GIT_TAG\"
-    CAPNP_BUILD_CMD += \"$$CAPNP_GIT_COMMIT\"
-    CAPNP_BUILD_CMD += \"$$CAPNP_REPO_DIR\"
-    CAPNP_BUILD_CMD += \"$$CAPNP_ROOT\"
-
-    capnpbuild.target = $$CAPNP_STAMP
-    capnpbuild.commands = $$CAPNP_BUILD_CMD
-    QMAKE_EXTRA_TARGETS += capnpbuild
-
-    LSTREAM_BUILD_CMD = bash $$shell_path($$PWD/scripts/update_lstream_schemas_linux.sh)
-    LSTREAM_BUILD_CMD += \"$$LSTREAM_GIT_URL\"
-    LSTREAM_BUILD_CMD += \"$$LSTREAM_VERSION_MODE\"
-    LSTREAM_BUILD_CMD += \"$$LSTREAM_GIT_BRANCH\"
-    LSTREAM_BUILD_CMD += \"$$LSTREAM_GIT_TAG\"
-    LSTREAM_BUILD_CMD += \"$$LSTREAM_GIT_COMMIT\"
-    LSTREAM_BUILD_CMD += \"$$LSTREAM_SCHEMA_REPO_DIR\"
-    LSTREAM_BUILD_CMD += \"$$CAPNP_GEN_DIR\"
-    LSTREAM_BUILD_CMD += \"$$CAPNP_ROOT\"
-
-    lstreamschemas.target = $$LSTREAM_STAMP
-    lstreamschemas.commands = $$LSTREAM_BUILD_CMD
-    lstreamschemas.depends = $$CAPNP_STAMP
-    QMAKE_EXTRA_TARGETS += lstreamschemas
-
-    PRE_TARGETDEPS += $$LSTREAM_STAMP
-}
