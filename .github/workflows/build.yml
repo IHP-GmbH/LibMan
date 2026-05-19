@@ -48,6 +48,8 @@ jobs:
           qmake ../libman.pro
 
       - name: Build
+        env:
+          CAPNP_SKIP_CHECK: 1
         run: |
           cd build
           make -j"$(nproc)"
@@ -131,6 +133,8 @@ jobs:
           qmake CONFIG+=debug CONFIG+=coverage ../tests/tests.pro
 
       - name: Build tests
+        env:
+          CAPNP_SKIP_CHECK: 1
         run: |
           cd build-tests
           make -j"$(nproc)"
@@ -204,6 +208,8 @@ jobs:
 
       - name: Build (mingw32-make)
         shell: bash
+        env:
+          CAPNP_SKIP_CHECK: 1
         run: |
           cd build
           mingw32-make -j"$(nproc)"

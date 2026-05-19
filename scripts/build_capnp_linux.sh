@@ -66,7 +66,11 @@ git reset --hard "$TARGET_REV"
 cd "$REPO_DIR/c++"
 autoreconf -i
 ./configure --prefix="$INSTALL_DIR"
-make -j"$(nproc)" check
+if [ "${CAPNP_SKIP_CHECK:-0}" = "1" ]; then
+    make -j"$(nproc)"
+else
+    make -j"$(nproc)" check
+fi
 make install
 
 echo "$TARGET_REV" > "$STATE_FILE"

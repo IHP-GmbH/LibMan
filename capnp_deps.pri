@@ -14,6 +14,9 @@ INCLUDEPATH += $$CAPNP_ROOT/include
 LIBS += -L$$CAPNP_ROOT/lib
 LIBS += -lcapnp -lkj
 
+CAPNP_STAMP = $$CAPNP_ROOT/.built
+LSTREAM_STAMP = $$CAPNP_GEN_DIR/.schemas_built
+
 CAPNP_GIT_URL = https://github.com/capnproto/capnproto.git
 CAPNP_VERSION_MODE = branch
 CAPNP_GIT_BRANCH = master
@@ -28,9 +31,6 @@ LSTREAM_GIT_COMMIT =
 LSTREAM_SCHEMA_REPO_DIR = $$LIBMAN_ROOT/.deps/lstream
 
 win32 {
-    CAPNP_STAMP = $$CAPNP_ROOT/.built
-    LSTREAM_STAMP = $$CAPNP_GEN_DIR/.schemas_built
-
     CAPNP_BUILD_CMD = cmd /c \"$$shell_path($$LIBMAN_ROOT/scripts/build_capnp_windows.bat)\"
     CAPNP_BUILD_CMD += \"$$CAPNP_GIT_URL\"
     CAPNP_BUILD_CMD += \"$$CAPNP_VERSION_MODE\"
@@ -64,9 +64,6 @@ win32 {
         PRE_TARGETDEPS += $$LSTREAM_STAMP
     }
 } else {
-    CAPNP_STAMP = $$CAPNP_ROOT/.built
-    LSTREAM_STAMP = $$CAPNP_GEN_DIR/.schemas_built
-
     CAPNP_BUILD_CMD = bash $$shell_path($$LIBMAN_ROOT/scripts/build_capnp_linux.sh)
     CAPNP_BUILD_CMD += \"$$CAPNP_GIT_URL\"
     CAPNP_BUILD_CMD += \"$$CAPNP_VERSION_MODE\"
@@ -99,4 +96,11 @@ win32 {
     !exists($$CAPNP_GEN_DIR/.schemas_built) {
         PRE_TARGETDEPS += $$LSTREAM_STAMP
     }
+}
+
+# PRE_TARGETDEPS alone only orders the final link, not parallel compilation.
+for(_capnp_cc, $$files($$CAPNP_GEN_DIR/*.cc)) {
+    _capnp_cc_rel = $$relative_path($$LIBMAN_ROOT, $$_capnp_cc)
+    isEmpty(_capnp_cc_rel): _capnp_cc_rel = $$_capnp_cc
+    eval($${_capnp_cc_rel}.depends += $$CAPNP_STAMP)
 }
