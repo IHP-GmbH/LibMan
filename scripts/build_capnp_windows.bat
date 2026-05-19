@@ -14,38 +14,56 @@ set STATE_FILE=%INSTALL_DIR%\.capnp_revision
 
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 
-if not exist "%REPO_DIR%\.git" (
+if exist "%STAMP_FILE%" if exist "%INSTALL_DIR%\bin\capnp.exe" (
+    echo Cap'n Proto already installed at %INSTALL_DIR%
+    exit /b 0
+)
+
+set USE_VENDORED=0
+if exist "%REPO_DIR%\.git" (
+    set USE_VENDORED=0
+) else if exist "%REPO_DIR%\c++\CMakeLists.txt" (
+    set USE_VENDORED=1
+    echo Using vendored Cap'n Proto sources at %REPO_DIR%
+) else if exist "%REPO_DIR%" (
+    echo ERROR: %REPO_DIR% exists but is not a git clone and does not contain Cap'n Proto sources
+    exit /b 1
+) else (
     git clone "%GIT_URL%" "%REPO_DIR%"
     if errorlevel 1 exit /b 1
 )
 
-cd /d "%REPO_DIR%"
-git fetch --tags origin
-if errorlevel 1 exit /b 1
+if "%USE_VENDORED%"=="0" (
+    cd /d "%REPO_DIR%"
+    git fetch --tags origin
+    if errorlevel 1 exit /b 1
 
-if /I "%VERSION_MODE%"=="branch" (
-    for /f %%i in ('git rev-parse origin/%GIT_BRANCH%') do set TARGET_REV=%%i
-) else if /I "%VERSION_MODE%"=="tag" (
-    for /f %%i in ('git rev-parse refs/tags/%GIT_TAG%') do set TARGET_REV=%%i
-) else if /I "%VERSION_MODE%"=="commit" (
-    for /f %%i in ('git rev-parse %GIT_COMMIT%') do set TARGET_REV=%%i
+    if /I "%VERSION_MODE%"=="branch" (
+        for /f %%i in ('git rev-parse origin/%GIT_BRANCH%') do set TARGET_REV=%%i
+    ) else if /I "%VERSION_MODE%"=="tag" (
+        for /f %%i in ('git rev-parse refs/tags/%GIT_TAG%') do set TARGET_REV=%%i
+    ) else if /I "%VERSION_MODE%"=="commit" (
+        for /f %%i in ('git rev-parse %GIT_COMMIT%') do set TARGET_REV=%%i
+    ) else (
+        echo Unsupported CAPNP_VERSION_MODE: %VERSION_MODE%
+        exit /b 1
+    )
+
+    set CURRENT_REV=
+    if exist "%STATE_FILE%" (
+        set /p CURRENT_REV=<"%STATE_FILE%"
+    )
+
+    if "%CURRENT_REV%"=="%TARGET_REV%" if exist "%STAMP_FILE%" (
+        echo Cap'n Proto is already up to date: %TARGET_REV%
+        exit /b 0
+    )
+
+    git reset --hard %TARGET_REV%
+    if errorlevel 1 exit /b 1
 ) else (
-    echo Unsupported CAPNP_VERSION_MODE: %VERSION_MODE%
-    exit /b 1
+    set TARGET_REV=vendored
 )
-
-set CURRENT_REV=
-if exist "%STATE_FILE%" (
-    set /p CURRENT_REV=<"%STATE_FILE%"
-)
-
-if "%CURRENT_REV%"=="%TARGET_REV%" if exist "%STAMP_FILE%" (
-    echo Cap'n Proto is already up to date: %TARGET_REV%
-    exit /b 0
-)
-
-git reset --hard %TARGET_REV%
-if errorlevel 1 exit /b 1
 
 if not exist "%REPO_DIR%\c++\build" mkdir "%REPO_DIR%\c++\build"
 cd /d "%REPO_DIR%\c++\build"

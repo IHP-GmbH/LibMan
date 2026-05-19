@@ -48,6 +48,8 @@ jobs:
           ./configure --prefix="$GITHUB_WORKSPACE/capnp-install"
           make -j"$(nproc)"
           make install
+          echo vendored > "$GITHUB_WORKSPACE/capnp-install/.capnp_revision"
+          touch "$GITHUB_WORKSPACE/capnp-install/.built"
 
       - name: Export Cap'n Proto runtime path
         run: |
@@ -143,6 +145,8 @@ jobs:
           ./configure --prefix="$GITHUB_WORKSPACE/capnp-install"
           make -j"$(nproc)"
           make install
+          echo vendored > "$GITHUB_WORKSPACE/capnp-install/.capnp_revision"
+          touch "$GITHUB_WORKSPACE/capnp-install/.built"
 
       - name: Export Cap'n Proto runtime path
         run: |
@@ -225,6 +229,8 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="$GITHUB_WORKSPACE/capnp-install"
           mingw32-make -j"$(nproc)"
           mingw32-make install
+          echo vendored > "$GITHUB_WORKSPACE/capnp-install/.capnp_revision"
+          touch "$GITHUB_WORKSPACE/capnp-install/.built"
 
       - name: Configure (qmake)
         shell: bash
