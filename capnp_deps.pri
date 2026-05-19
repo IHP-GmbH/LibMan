@@ -97,10 +97,3 @@ win32 {
         PRE_TARGETDEPS += $$LSTREAM_STAMP
     }
 }
-
-# PRE_TARGETDEPS alone only orders the final link, not parallel compilation.
-for(_capnp_cc, $$files($$CAPNP_GEN_DIR/*.cc)) {
-    _capnp_cc_rel = $$relative_path($$LIBMAN_ROOT, $$_capnp_cc)
-    isEmpty(_capnp_cc_rel): _capnp_cc_rel = $$_capnp_cc
-    eval($${_capnp_cc_rel}.depends += $$CAPNP_STAMP)
-}

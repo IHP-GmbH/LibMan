@@ -126,3 +126,5 @@ HEADERS += \
     capnp/propertySet.capnp.h \
     capnp/repetition.capnp.h \
     capnp/variant.capnp.h
+
+include(capnp_deps_finalize.pri)

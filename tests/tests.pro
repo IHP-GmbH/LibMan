@@ -5,15 +5,11 @@
 QT += core gui widgets testlib
 LIBS += -lz
 
-unix {
-    QMAKE_CXXFLAGS += --coverage -O0 -g
-    QMAKE_LFLAGS   += --coverage
-}
-
 TEMPLATE = app
 TARGET = tst_libman_gui
 CONFIG += console c++17 debug
-DEFINES += QT_NO_DEPRECATED_WARNINGS
+CONFIG+=coverage
+DEFINES += QT_NO_DEPRECATED_WARNINGS LIBMAN_TESTING
 
 win32:QMAKE_CXXFLAGS += -Wa,-mbig-obj
 
@@ -35,6 +31,8 @@ SOURCES += \
     $$PWD/../gds/gdsReadAsync.cpp \
     $$PWD/../oas/oasReadAsync.cpp \
     $$PWD/../oas/oasReader.cpp \
+    $$PWD/../oas/oasCreate.cpp \
+    $$PWD/../lstream/lstreamcellwriter.cpp \
     $$PWD/../lstream/lstrReadAsync.cpp \
     $$PWD/../src/libfileparser.cpp \
     $$PWD/../src/klayoutServer.cpp \
@@ -66,7 +64,20 @@ SOURCES += \
     $$PWD/../src/projectcontextmenu.cpp \
     $$PWD/../src/categorycontextmenu.cpp \
     $$PWD/../src/about.cpp \
-    $$PWD/../src/newview.cpp
+    $$PWD/../src/newview.cpp \
+    main.cpp \
+    tst_dialogs.cpp \
+    tst_klayout_requests.cpp \
+    tst_libfileparser.cpp \
+    tst_libman_layoutview_create.cpp \
+    tst_libman_viewops.cpp \
+    tst_lstream_writer.cpp \
+    tst_mainwindow_categories.cpp \
+    tst_mainwindow_loaders.cpp \
+    tst_oas_writer.cpp \
+    tst_toolmanager.cpp \
+    tst_coverage_expansion.cpp \
+    tst_coverage_80.cpp
 
 HEADERS += \
     $$PWD/tst_libman_gui.h \
@@ -93,7 +104,19 @@ HEADERS += \
     $$PWD/../src/property.h \
     $$PWD/../src/toolmanager.h \
     $$PWD/../src/about.h \
-    $$PWD/../src/newview.h
+    $$PWD/../src/newview.h \
+    tst_dialogs.h \
+    tst_klayout_requests.h \
+    tst_libfileparser.h \
+    tst_libman_layoutview_create.h \
+    tst_libman_viewops.h \
+    tst_lstream_writer.h \
+    tst_mainwindow_categories.h \
+    tst_mainwindow_loaders.h \
+    tst_oas_writer.h \
+    tst_toolmanager.h \
+    tst_coverage_expansion.h \
+    tst_coverage_80.h
 
 FORMS += \
     $$PWD/../src/mainwindow.ui \
@@ -117,3 +140,20 @@ include($$LIBMAN_ROOT/capnp_deps.pri)
 CAPNP_GEN_DIR = $$LIBMAN_ROOT/capnp
 SOURCES += $$files($$CAPNP_GEN_DIR/*.cc)
 HEADERS += $$files($$CAPNP_GEN_DIR/*.h)
+
+coverage {
+    win32-g++|unix:!macx {
+        QMAKE_CXXFLAGS += -O0 -g --coverage -fprofile-abs-path
+        QMAKE_CFLAGS   += -O0 -g --coverage -fprofile-abs-path
+        QMAKE_LFLAGS   += --coverage
+
+        DEFINES += COVERAGE_BUILD
+
+        QMAKE_DISTCLEAN += *.gcda *.gcno
+
+        report.commands = gcovr -r $$PWD/.. --html-details -o coverage.html --print-summary --exclude ".*moc_.*" --exclude ".*qrc_.*"
+        QMAKE_EXTRA_TARGETS += report
+    }
+}
+
+include($$LIBMAN_ROOT/capnp_deps_finalize.pri)

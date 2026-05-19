@@ -77,4 +77,5 @@ echo "$TARGET_REV" > "$STATE_FILE"
 touch "$STAMP_FILE"
 
 echo "Cap'n Proto installed at revision $TARGET_REV"
+exit 0
 
