@@ -4,6 +4,22 @@ LibMan - an easy way to manage your open source design flow
 
 ![](https://github.com/IHP-GmbH/LibMan/blob/main/icons/logo.png)
 
+---
+
+## 📚 **Development Documentation**
+
+**All setup and development documentation is organized in the [`docs/` folder](docs/INDEX.md).**
+
+| Quick Links |  |
+|--|--|
+| **Getting Started** | [Quick Start (5 min)](docs/getting-started/QUICK_START.md) |
+| **All Documentation** | [Documentation Index](docs/INDEX.md) |
+| **Setup Help** | [VS Code Setup](docs/setup/VSCODE_SETUP.md) |
+| **Troubleshooting** | [Common Issues](docs/reference/TROUBLESHOOTING.md) |
+| **Quick Reference** | [Shortcuts & Commands](docs/reference/QUICK_REFERENCE.md) |
+
+---
+
 ### Goals of the project
 - Develop a Library Manager to unite Open Source EDA tools into a flow.
 - Provide similar Library Manager functionality to the ones provided by to commercial companies.

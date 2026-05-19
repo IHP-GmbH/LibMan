@@ -12,7 +12,7 @@
 
 #include "gds/gdsreader.h"
 #include "src/mainwindow.h"
-#include "mainwindow.h"
+#include "src/mainwindow.h"
 
 /*!********************************************************************************************************************
  * \brief Creates a spinner icon pixmap for loading indication.

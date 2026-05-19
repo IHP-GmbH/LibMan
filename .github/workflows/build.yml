@@ -33,7 +33,13 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libgl1-mesa-dev autoconf automake libtool pkg-config
+          sudo apt-get install -y \
+            build-essential \
+            libgl1-mesa-dev \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config
 
       - name: Build Cap'n Proto
         run: |
@@ -116,7 +122,17 @@ jobs:
       - name: Install test dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb build-essential libgl1-mesa-dev autoconf automake libtool pkg-config
+          sudo apt-get install -y \
+            xvfb \
+            build-essential \
+            libgl1-mesa-dev \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            python3 \
+            python3-pip
+
           python3 -m pip install --upgrade pip
           python3 -m pip install gcovr
 
@@ -143,40 +159,32 @@ jobs:
           cd build-tests
           make -j"$(nproc)"
 
-      - name: Clean old coverage data
+      - name: Make Linux test script executable
         run: |
-          cd build-tests
-          find . -name "*.gcda" -delete || true
+          chmod +x scripts/run_tests.sh
 
-      - name: Run tests (headless Qt)
+      - name: Run tests and generate coverage
+        env:
+          QT_QPA_PLATFORM: offscreen
         run: |
-          cd build-tests
-          xvfb-run -a ./tst_libman_gui -platform offscreen
+          xvfb-run -a ./scripts/run_tests.sh
 
-      - name: Generate coverage report (text)
-        run: |
-          cd build-tests
-          gcovr \
-            --root .. \
-            --exclude '../tests' \
-            --exclude '.*moc_.*' \
-            --exclude '.*qrc_.*' \
-            --print-summary \
-            --txt
+      - name: Upload test log
+        uses: actions/upload-artifact@v4
+        with:
+          name: libman-test-log-linux
+          path: test_results.txt
+          if-no-files-found: warn
 
-      - name: Generate coverage HTML
-        run: |
-          cd build-tests
-          gcovr \
-            --root .. \
-            --exclude '../tests' \
-            --html-details coverage.html
-
-      - name: Upload coverage artifact
+      - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
         with:
           name: libman-coverage-html
-          path: build-tests/coverage.html
+          path: |
+            coverage.html
+            coverage.*.html
+            coverage.css
+            coverage.js
           if-no-files-found: warn
 
 

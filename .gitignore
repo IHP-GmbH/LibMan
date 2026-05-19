@@ -2,6 +2,8 @@
 build/
 build-*/
 cmake-build-*/
+tests/build/
+.deps/
 
 # --- QtCreator / qmake project user files ---
 *.pro.user
@@ -32,10 +34,36 @@ ui_*.h
 *.tmp
 *.cache
 
-# --- Doxygen output (if generated into docs/) ---
+# --- Doxygen output ---
 docs/html/
 docs/latex/
+html/
+latex/
 
 # --- Cap'n Proto local build/install artifacts ---
 capnp-install/
 capnproto/build/
+
+# --- Keep vendored Cap'n Proto sources ---
+!capnproto/
+
+# -------------------------------------------------
+# Coverage (gcov / gcovr)
+# -------------------------------------------------
+
+# Main report
+coverage.html
+coverage.css
+coverage.js
+
+# Per-file html reports
+coverage.*.html
+
+# Raw coverage data
+*.gcda
+*.gcno
+*.gcov
+
+# Optional logs
+test_results.txt
+gcovr_verbose.txt
