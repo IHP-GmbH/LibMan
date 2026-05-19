@@ -59,7 +59,10 @@ win32 {
     lstreamschemas.depends = $$CAPNP_STAMP
     QMAKE_EXTRA_TARGETS += lstreamschemas
 
-    PRE_TARGETDEPS += $$LSTREAM_STAMP
+    PRE_TARGETDEPS += $$CAPNP_STAMP
+    !exists($$CAPNP_GEN_DIR/.schemas_built) {
+        PRE_TARGETDEPS += $$LSTREAM_STAMP
+    }
 } else {
     CAPNP_STAMP = $$CAPNP_ROOT/.built
     LSTREAM_STAMP = $$CAPNP_GEN_DIR/.schemas_built
@@ -92,5 +95,8 @@ win32 {
     lstreamschemas.depends = $$CAPNP_STAMP
     QMAKE_EXTRA_TARGETS += lstreamschemas
 
-    PRE_TARGETDEPS += $$LSTREAM_STAMP
+    PRE_TARGETDEPS += $$CAPNP_STAMP
+    !exists($$CAPNP_GEN_DIR/.schemas_built) {
+        PRE_TARGETDEPS += $$LSTREAM_STAMP
+    }
 }

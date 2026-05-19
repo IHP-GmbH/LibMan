@@ -38,7 +38,17 @@ if not exist "%CAPNPC_CXX%" (
 
 set PATH=%CAPNP_ROOT%\bin;%PATH%
 
+if exist "%STAMP_FILE%" if exist "%OUT_DIR%\cell.capnp.cc" (
+    echo LStream schemas already present at %OUT_DIR%
+    exit /b 0
+)
+
 if not exist "%REPO_DIR%\.git" (
+    if exist "%REPO_DIR%" (
+        echo ERROR: %REPO_DIR% exists but is not a git clone.
+        echo Remove it so LStream schemas can be fetched automatically: rmdir /s /q "%REPO_DIR%"
+        exit /b 1
+    )
     git clone "%GIT_URL%" "%REPO_DIR%"
     if errorlevel 1 exit /b 1
 )

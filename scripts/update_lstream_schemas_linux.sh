@@ -24,9 +24,19 @@ if [ ! -x "$CAPNP_EXE" ]; then
     exit 1
 fi
 
+if [ -f "$STAMP_FILE" ] && [ -f "$OUT_DIR/cell.capnp.cc" ]; then
+    echo "LStream schemas already present at $OUT_DIR"
+    exit 0
+fi
+
 mkdir -p "$(dirname "$REPO_DIR")"
 
 if [ ! -d "$REPO_DIR/.git" ]; then
+    if [ -e "$REPO_DIR" ]; then
+        echo "ERROR: $REPO_DIR exists but is not a git clone."
+        echo "Remove it so LStream schemas can be fetched automatically: rm -rf \"$REPO_DIR\""
+        exit 1
+    fi
     git clone "$GIT_URL" "$REPO_DIR"
 fi
 
