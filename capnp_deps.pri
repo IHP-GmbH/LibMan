@@ -15,6 +15,7 @@ LIBS += -L$$CAPNP_ROOT/lib
 LIBS += -lcapnp -lkj
 
 CAPNP_STAMP = $$CAPNP_ROOT/.built
+CAPNP_BUILD_TARGET = capnpbuild
 LSTREAM_STAMP = $$CAPNP_GEN_DIR/.schemas_built
 
 CAPNP_GIT_URL = https://github.com/capnproto/capnproto.git
@@ -40,7 +41,7 @@ win32 {
     CAPNP_BUILD_CMD += \"$$shell_path($$CAPNP_REPO_DIR)\"
     CAPNP_BUILD_CMD += \"$$shell_path($$CAPNP_ROOT)\"
 
-    capnpbuild.target = $$CAPNP_STAMP
+    capnpbuild.target = capnpbuild
     capnpbuild.commands = $$CAPNP_BUILD_CMD
     QMAKE_EXTRA_TARGETS += capnpbuild
 
@@ -56,10 +57,10 @@ win32 {
 
     lstreamschemas.target = $$LSTREAM_STAMP
     lstreamschemas.commands = $$LSTREAM_BUILD_CMD
-    lstreamschemas.depends = $$CAPNP_STAMP
+    lstreamschemas.depends = capnpbuild
     QMAKE_EXTRA_TARGETS += lstreamschemas
 
-    PRE_TARGETDEPS += $$CAPNP_STAMP
+    PRE_TARGETDEPS += capnpbuild
     !exists($$CAPNP_GEN_DIR/.schemas_built) {
         PRE_TARGETDEPS += $$LSTREAM_STAMP
     }
@@ -73,7 +74,7 @@ win32 {
     CAPNP_BUILD_CMD += \"$$CAPNP_REPO_DIR\"
     CAPNP_BUILD_CMD += \"$$CAPNP_ROOT\"
 
-    capnpbuild.target = $$CAPNP_STAMP
+    capnpbuild.target = capnpbuild
     capnpbuild.commands = $$CAPNP_BUILD_CMD
     QMAKE_EXTRA_TARGETS += capnpbuild
 
@@ -89,10 +90,10 @@ win32 {
 
     lstreamschemas.target = $$LSTREAM_STAMP
     lstreamschemas.commands = $$LSTREAM_BUILD_CMD
-    lstreamschemas.depends = $$CAPNP_STAMP
+    lstreamschemas.depends = capnpbuild
     QMAKE_EXTRA_TARGETS += lstreamschemas
 
-    PRE_TARGETDEPS += $$CAPNP_STAMP
+    PRE_TARGETDEPS += capnpbuild
     !exists($$CAPNP_GEN_DIR/.schemas_built) {
         PRE_TARGETDEPS += $$LSTREAM_STAMP
     }
