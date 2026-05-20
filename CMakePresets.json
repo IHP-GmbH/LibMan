@@ -1,0 +1,61 @@
+{
+  "version": 5,
+  "configurePresets": [
+    {
+      "name": "default",
+      "hidden": true,
+      "description": "Default configuration for LibMan",
+      "binaryDir": "${sourceDir}/build",
+      "generator": "MinGW Makefiles",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_CXX_STANDARD_REQUIRED": "ON",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
+      "environment": {
+        "Qt5_DIR": "C:/Qt/5.15.2/mingw81_64/lib/cmake/Qt5"
+      }
+    },
+    {
+      "name": "debug",
+      "inherits": "default",
+      "displayName": "Debug Configuration",
+      "description": "Debug build configuration",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "release",
+      "inherits": "default",
+      "displayName": "Release Configuration",
+      "description": "Release build configuration",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug-build",
+      "configurePreset": "debug",
+      "description": "Build in Debug mode",
+      "jobs": 4
+    },
+    {
+      "name": "release-build",
+      "configurePreset": "release",
+      "description": "Build in Release mode",
+      "jobs": 4
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "test-default",
+      "configurePreset": "debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

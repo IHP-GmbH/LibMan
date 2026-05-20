@@ -1,0 +1,367 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "CMake: Clean Build Folder",
+      "type": "shell",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "if exist build rmdir /s /q build"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "CMake: Configure Debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-S",
+        ".",
+        "-B",
+        "build",
+        "-G",
+        "MinGW Makefiles",
+        "-DCMAKE_BUILD_TYPE=Debug",
+        "-DCMAKE_C_COMPILER=C:/Qt/Tools/mingw810_64/bin/gcc.exe",
+        "-DCMAKE_CXX_COMPILER=C:/Qt/Tools/mingw810_64/bin/g++.exe",
+        "-DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/mingw810_64/bin/mingw32-make.exe",
+        "-DCMAKE_PREFIX_PATH=C:/Qt/5.15.2/mingw81_64",
+        "-DQt5_DIR=C:/Qt/5.15.2/mingw81_64/lib/cmake/Qt5"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": "$cmake",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "CMake: Configure Release",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-S",
+        ".",
+        "-B",
+        "build",
+        "-G",
+        "MinGW Makefiles",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_C_COMPILER=C:/Qt/Tools/mingw810_64/bin/gcc.exe",
+        "-DCMAKE_CXX_COMPILER=C:/Qt/Tools/mingw810_64/bin/g++.exe",
+        "-DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/mingw810_64/bin/mingw32-make.exe",
+        "-DCMAKE_PREFIX_PATH=C:/Qt/5.15.2/mingw81_64",
+        "-DQt5_DIR=C:/Qt/5.15.2/mingw81_64/lib/cmake/Qt5"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": "$cmake",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Compilation & Running LibMan: Build Debug",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "build",
+        "-j4"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": [
+        "CMake: Configure Debug"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$gcc",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Compilation & Running LibMan: Build Release",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "build",
+        "-j4"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": [
+        "CMake: Configure Release"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": "$gcc",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Compilation & Running LibMan: Run Debug",
+      "type": "shell",
+      "command": "${workspaceFolder}/build/libman.exe",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "PATH": "C:/Qt/5.15.2/mingw81_64/bin;C:/Qt/Tools/mingw810_64/bin;${env:PATH}"
+        }
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Compilation & Running LibMan: Run Release",
+      "type": "shell",
+      "command": "${workspaceFolder}/build/libman.exe",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "PATH": "C:/Qt/5.15.2/mingw81_64/bin;C:/Qt/Tools/mingw810_64/bin;${env:PATH}"
+        }
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Compilation & Running LibMan: Build & Run Debug",
+      "type": "shell",
+      "command": "cmake --build build -j4 && ${workspaceFolder}/build/libman.exe",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "PATH": "C:/Qt/5.15.2/mingw81_64/bin;C:/Qt/Tools/mingw810_64/bin;${env:PATH}"
+        }
+      },
+      "dependsOn": [
+        "CMake: Configure Debug"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "problemMatcher": "$gcc",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Compilation & Running LibMan: Build & Run Release",
+      "type": "shell",
+      "command": "cmake --build build -j4 && ${workspaceFolder}/build/libman.exe",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "PATH": "C:/Qt/5.15.2/mingw81_64/bin;C:/Qt/Tools/mingw810_64/bin;${env:PATH}"
+        }
+      },
+      "dependsOn": [
+        "CMake: Configure Release"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "problemMatcher": "$gcc",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Tests: Clean Build Folder",
+      "type": "shell",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "if exist build rmdir /s /q build"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/tests"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Tests: Configure Coverage",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "-S",
+        ".",
+        "-B",
+        "build",
+        "-G",
+        "MinGW Makefiles",
+        "-DCMAKE_BUILD_TYPE=Debug",
+        "-DLIBMAN_ENABLE_COVERAGE=ON",
+        "-DCMAKE_C_COMPILER=C:/Qt/Tools/mingw810_64/bin/gcc.exe",
+        "-DCMAKE_CXX_COMPILER=C:/Qt/Tools/mingw810_64/bin/g++.exe",
+        "-DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/mingw810_64/bin/mingw32-make.exe",
+        "-DCMAKE_PREFIX_PATH=C:/Qt/5.15.2/mingw81_64",
+        "-DQt5_DIR=C:/Qt/5.15.2/mingw81_64/lib/cmake/Qt5"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/tests"
+      },
+      "dependsOn": [
+        "Tests: Clean Build Folder"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": "$cmake",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Tests: Build Coverage",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "build",
+        "-j4"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/tests"
+      },
+      "dependsOn": [
+        "Tests: Configure Coverage"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": "$gcc",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Tests: Run Coverage Script",
+      "type": "shell",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "\"${workspaceFolder}\\scripts\\run_tests.bat\""
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "PATH": "C:/Qt/5.15.2/mingw81_64/bin;C:/Qt/Tools/mingw810_64/bin;${env:PATH}"
+        }
+      },
+      "dependsOn": [
+        "Tests: Build Coverage"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Tests: Run With Coverage",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Tests: Clean Build Folder",
+        "Tests: Configure Coverage",
+        "Tests: Build Coverage",
+        "Tests: Run Coverage Script"
+      ],
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}

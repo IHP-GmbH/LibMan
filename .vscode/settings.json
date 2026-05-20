@@ -1,0 +1,68 @@
+{
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "C_Cpp.default.cppStandard": "c++17",
+  "C_Cpp.default.compilerPath": "C:/Qt/Tools/mingw810_64/bin/g++.exe",
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
+
+  "C_Cpp.codeAnalysis.exclude": {
+    "**/node_modules": true,
+    "**/build": true,
+    "**/tests/build": true,
+    "**/.deps": true,
+    "**/capnproto": true,
+    "**/capnp-install": true
+  },
+
+  "cmake.sourceDirectory": "${workspaceFolder}",
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+  "cmake.generator": "MinGW Makefiles",
+  "cmake.configureArgs": [
+    "-DCMAKE_C_COMPILER=C:/Qt/Tools/mingw810_64/bin/gcc.exe",
+    "-DCMAKE_CXX_COMPILER=C:/Qt/Tools/mingw810_64/bin/g++.exe",
+    "-DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/mingw810_64/bin/mingw32-make.exe",
+    "-DCMAKE_PREFIX_PATH=C:/Qt/5.15.2/mingw81_64",
+    "-DQt5_DIR=C:/Qt/5.15.2/mingw81_64/lib/cmake/Qt5"
+  ],
+  "cmake.parallelJobs": 4,
+
+  "editor.formatOnSave": false,
+  "editor.rulers": [
+    80,
+    120
+  ],
+
+  "files.exclude": {
+    "**/build": true,
+    "**/.deps": true,
+    "**/capnproto": true,
+    "**/capnp-install": true,
+    "**/coverage.*": true,
+    "coverage.*": true,
+    "**/*.txt": false
+  },
+
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools",
+    "editor.formatOnSave": false
+  },
+
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
+
+  "search.exclude": {
+    "**/build": true,
+    "**/.deps": true,
+    "**/capnproto": true,
+    "**/capnp-install": true,
+    "**/lstream": true,
+    "**/coverage.*": true,
+    "coverage.*": true,
+    "**/*.txt": true
+  },
+
+  "files.associations": {
+    "*.ui": "xml",
+    "*.qrc": "xml"
+  }
+}
