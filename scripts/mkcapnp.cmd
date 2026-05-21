@@ -1,5 +1,5 @@
 @echo off
-rem Invoked from build/ via: cd .. && cmd /c scripts/mkcapnp.cmd
+rem Invoked from repo root (CI) or build/ via: cd .. && cmd /c scripts/mkcapnp.cmd
 rem Filename avoids "\c" in "\capnp..." when mingw32-make runs recipes under bash.
 setlocal EnableExtensions
 set "ROOT=%~dp0.."
