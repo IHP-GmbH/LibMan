@@ -59,7 +59,7 @@ set(LSTREAM_SCHEMA_REPO_DIR "${CMAKE_SOURCE_DIR}/.deps/lstream")
 # External dependency preparation
 # -----------------------------------------------------------------------------
 
-set(CAPNP_STAMP "${CAPNP_ROOT}/.built")
+set(CAPNP_STAMP "${CAPNP_ROOT}/capnp-built.stamp")
 set(LSTREAM_STAMP "${CAPNP_GEN_DIR}/.schemas_built")
 
 if(WIN32)

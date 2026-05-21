@@ -18,9 +18,10 @@ win32 {
 LIBS += -L$$CAPNP_ROOT/lib
 LIBS += -lcapnp -lkj
 
-CAPNP_STAMP = $$CAPNP_ROOT/.built
-# File target (from build/): blocks parallel .o builds until install finishes.
-CAPNP_BUILD_TARGET = ../capnp-install/\\.built
+CAPNP_STAMP = $$CAPNP_ROOT/capnp-built.stamp
+# From build/: real file target (qmake cannot emit rules for ../capnp-install/.built).
+CAPNP_STAMP_REL = ../capnp-install/capnp-built.stamp
+CAPNP_STAMP_REL_ESC = ../capnp-install/capnp-built\\.stamp
 LSTREAM_STAMP = $$CAPNP_GEN_DIR/.schemas_built
 
 CAPNP_GIT_URL = https://github.com/capnproto/capnproto.git
@@ -41,18 +42,18 @@ win32 {
     # Recipe uses only forward slashes; script names avoid \c and \b after a backslash.
     CAPNP_BUILD_CMD = cd .. && cmd /c scripts/mkcapnp.cmd
 
-    capnpbuild.target = $$CAPNP_BUILD_TARGET
-    capnpbuild.commands = $$CAPNP_BUILD_CMD
-    QMAKE_EXTRA_TARGETS += capnpbuild
+    capnp_stamp.target = $$CAPNP_STAMP_REL
+    capnp_stamp.commands = $$CAPNP_BUILD_CMD
+    QMAKE_EXTRA_TARGETS += capnp_stamp
 
     LSTREAM_BUILD_CMD = cd .. && cmd /c scripts/mklstream.cmd
 
     lstreamschemas.target = $$LSTREAM_STAMP
     lstreamschemas.commands = $$LSTREAM_BUILD_CMD
-    lstreamschemas.depends = $$CAPNP_BUILD_TARGET
+    lstreamschemas.depends = $$CAPNP_STAMP_REL
     QMAKE_EXTRA_TARGETS += lstreamschemas
 
-    PRE_TARGETDEPS += $$CAPNP_BUILD_TARGET
+    PRE_TARGETDEPS += $$CAPNP_STAMP_REL
     !exists($$CAPNP_GEN_DIR/.schemas_built) {
         PRE_TARGETDEPS += $$LSTREAM_STAMP
     }
@@ -66,9 +67,9 @@ win32 {
     CAPNP_BUILD_CMD += \"$$CAPNP_REPO_DIR\"
     CAPNP_BUILD_CMD += \"$$CAPNP_ROOT\"
 
-    capnpbuild.target = $$CAPNP_BUILD_TARGET
-    capnpbuild.commands = $$CAPNP_BUILD_CMD
-    QMAKE_EXTRA_TARGETS += capnpbuild
+    capnp_stamp.target = $$CAPNP_STAMP_REL
+    capnp_stamp.commands = $$CAPNP_BUILD_CMD
+    QMAKE_EXTRA_TARGETS += capnp_stamp
 
     LSTREAM_BUILD_CMD = bash $$shell_path($$LIBMAN_ROOT/scripts/update_lstream_schemas_linux.sh)
     LSTREAM_BUILD_CMD += \"$$LSTREAM_GIT_URL\"
@@ -82,10 +83,10 @@ win32 {
 
     lstreamschemas.target = $$LSTREAM_STAMP
     lstreamschemas.commands = $$LSTREAM_BUILD_CMD
-    lstreamschemas.depends = $$CAPNP_BUILD_TARGET
+    lstreamschemas.depends = $$CAPNP_STAMP_REL
     QMAKE_EXTRA_TARGETS += lstreamschemas
 
-    PRE_TARGETDEPS += $$CAPNP_BUILD_TARGET
+    PRE_TARGETDEPS += $$CAPNP_STAMP_REL
     !exists($$CAPNP_GEN_DIR/.schemas_built) {
         PRE_TARGETDEPS += $$LSTREAM_STAMP
     }

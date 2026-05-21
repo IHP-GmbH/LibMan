@@ -20,7 +20,7 @@ rem Use forward slashes only (\c++ is broken in batch %VAR%\suffix parsing).
 set "REPO_DIR=!REPO_DIR:\=/!"
 set "INSTALL_DIR=!INSTALL_DIR:\=/!"
 
-set "STAMP_FILE=!INSTALL_DIR!/.built"
+set "STAMP_FILE=!INSTALL_DIR!/capnp-built.stamp"
 set "STATE_FILE=!INSTALL_DIR!/.capnp_revision"
 set "CAPNP_EXE=!INSTALL_DIR!/bin/capnp.exe"
 set "CAPNP_CPP_BUILD=!REPO_DIR!/c++/build"
@@ -90,7 +90,7 @@ if not exist "!INSTALL_DIR!/include/capnp/message.h" (
 )
 
 echo !TARGET_REV!>"!STATE_FILE!"
-echo built>"!STAMP_FILE!"
+echo Cap'n Proto installed>"!STAMP_FILE!"
 
 echo Cap'n Proto installed at revision !TARGET_REV!
 exit /b 0
