@@ -131,6 +131,13 @@ RESOURCES += \
 TESTDATA += \
     $$PWD/data/sg13g2.projects \
     $$PWD/data/sample.gds \
+    $$PWD/data/sg13g2_stdcell/Test/Test.gds \
+    $$PWD/data/sg13g2_stdcell/Test/Test.oas \
+    $$PWD/data/sg13g2_stdcell/Test/Test.lstr \
+    $$PWD/data/sg13g2_stdcell/sg13g2_io/sg13g2_io.gds \
+    $$PWD/data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.gds \
+    $$PWD/data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.oas \
+    $$PWD/data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.lstr \
     $$PWD/data/sg13g2_stdcell/lstr/sg13g2_stdcell.lstr
 
 # Cap'n Proto (same clone-on-make flow as libman.pro)

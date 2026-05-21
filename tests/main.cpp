@@ -151,7 +151,9 @@ int main(int argc, char **argv)
         QFile::remove(logFile);
 
         const int testStatus = test.run(logFile);
-        status |= testStatus;
+        if(testStatus != 0) {
+            status += testStatus;
+        }
         logFiles << logFile;
 
         fprintf(stdout,

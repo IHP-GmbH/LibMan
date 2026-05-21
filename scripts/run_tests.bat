@@ -43,12 +43,25 @@ for %%d in ("%FOUND_EXE%\..") do (
     set TEST_OBJECT_DIR=%%~fd
 )
 
+set TESTDATA_SRC=%ROOT_DIR%\tests\data
+
 REM =========================
-REM Clean coverage artifacts
+REM Sync fixtures next to the test binary
 REM =========================
-echo Cleaning old coverage data...
-del /s /q "%ROOT_DIR%\*.gcda" > nul 2>&1
-del /s /q "%ROOT_DIR%\*.gcov" > nul 2>&1
+if exist "%TESTDATA_SRC%" (
+    echo Syncing test fixtures to "%TEST_OBJECT_DIR%\data"...
+    if not exist "%TEST_OBJECT_DIR%\data" mkdir "%TEST_OBJECT_DIR%\data"
+    xcopy /E /I /Y "%TESTDATA_SRC%\*" "%TEST_OBJECT_DIR%\data\" > nul
+) else (
+    echo Warning: test data source not found: %TESTDATA_SRC%
+)
+
+REM =========================
+REM Clean coverage artifacts (object dir only)
+REM =========================
+echo Cleaning old coverage data in "%TEST_OBJECT_DIR%"...
+del /s /q "%TEST_OBJECT_DIR%\*.gcda" > nul 2>&1
+del /s /q "%TEST_OBJECT_DIR%\*.gcov" > nul 2>&1
 
 REM =========================
 REM Run tests
@@ -77,8 +90,13 @@ if exist "%ROOT_DIR%\%TEST_LOG%" (
     echo Warning: %TEST_LOG% was not created.
 )
 
-echo Test exit code: %TEST_EXIT%
-echo Continuing with coverage generation...
+if not "%TEST_EXIT%"=="0" (
+    echo Tests reported %TEST_EXIT% failure^(s^) - see per-suite [FAIL] lines above.
+) else (
+    echo All tests passed.
+)
+
+echo Generating coverage report...
 
 REM =========================
 REM Coverage (gcovr)
@@ -98,6 +116,7 @@ python -m gcovr -j 1 ^
   --filter "%ROOT_FWD%/.*" ^
   --exclude "%ROOT_FWD%/tests/.*" ^
   --exclude "%ROOT_FWD%/build/.*" ^
+  --exclude "%ROOT_FWD%/build-tests/.*" ^
   --exclude "%ROOT_FWD%/extension/.*" ^
   --exclude "%ROOT_FWD%/capnp/.*" ^
   --exclude "%ROOT_FWD%/QtPropertyBrowser/.*" ^
@@ -134,8 +153,17 @@ popd
 REM =========================
 REM Final exit code
 REM =========================
+echo.
+echo Summary: test failures=%TEST_EXIT%, gcovr exit=%GCOVR_EXIT%
+
 if not "%GCOVR_EXIT%"=="0" (
+    echo Error: gcovr failed.
     exit /b %GCOVR_EXIT%
 )
 
-exit /b %TEST_EXIT%
+if not "%TEST_EXIT%"=="0" (
+    echo Error: one or more tests failed.
+    exit /b 1
+)
+
+exit /b 0
