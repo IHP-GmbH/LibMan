@@ -11,6 +11,10 @@ CAPNP_GEN_DIR = $$LIBMAN_ROOT/capnp
 
 INCLUDEPATH += $$CAPNP_GEN_DIR
 INCLUDEPATH += $$CAPNP_ROOT/include
+win32 {
+    # Fallback when install layout differs; headers always live under capnproto/c++/src.
+    INCLUDEPATH += $$CAPNP_REPO_DIR/c++/src
+}
 LIBS += -L$$CAPNP_ROOT/lib
 LIBS += -lcapnp -lkj
 

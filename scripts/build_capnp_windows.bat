@@ -27,7 +27,7 @@ set "CAPNP_CPP_BUILD=!REPO_DIR!/c++/build"
 
 if not exist "!INSTALL_DIR!" mkdir "!INSTALL_DIR!"
 
-if exist "!STAMP_FILE!" if exist "!CAPNP_EXE!" (
+if exist "!STAMP_FILE!" if exist "!CAPNP_EXE!" if exist "!INSTALL_DIR!/include/capnp/message.h" (
     echo Cap'n Proto already installed at !INSTALL_DIR!
     exit /b 0
 )
@@ -62,7 +62,7 @@ if exist "!STATE_FILE!" (
     set /p CURRENT_REV=<"!STATE_FILE!"
 )
 
-if "!CURRENT_REV!"=="!TARGET_REV!" if exist "!STAMP_FILE!" (
+if "!CURRENT_REV!"=="!TARGET_REV!" if exist "!STAMP_FILE!" if exist "!INSTALL_DIR!/include/capnp/message.h" (
     echo Cap'n Proto is already up to date: !TARGET_REV!
     exit /b 0
 )
@@ -73,14 +73,21 @@ if errorlevel 1 exit /b 1
 if not exist "!CAPNP_CPP_BUILD!" mkdir "!CAPNP_CPP_BUILD!"
 cd /d "!CAPNP_CPP_BUILD!"
 
-cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="!INSTALL_DIR!"
+for %%I in ("!INSTALL_DIR!") do set "INSTALL_DIR_NATIVE=%%~fI"
+cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="!INSTALL_DIR_NATIVE!"
 if errorlevel 1 exit /b 1
 
-mingw32-make -j4
+mingw32-make -j4 capnp kj
 if errorlevel 1 exit /b 1
 
-mingw32-make install
+mingw32-make -j4 install
 if errorlevel 1 exit /b 1
+
+if not exist "!INSTALL_DIR!/include/capnp/message.h" (
+    echo ERROR: capnp headers not found under !INSTALL_DIR!/include/capnp after install.
+    echo Check CMAKE_INSTALL_PREFIX and mingw32-make install output.
+    exit /b 1
+)
 
 echo !TARGET_REV!>"!STATE_FILE!"
 echo built>"!STAMP_FILE!"
