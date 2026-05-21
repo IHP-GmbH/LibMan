@@ -77,10 +77,10 @@ for %%I in ("!INSTALL_DIR!") do set "INSTALL_DIR_NATIVE=%%~fI"
 cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="!INSTALL_DIR_NATIVE!"
 if errorlevel 1 exit /b 1
 
-mingw32-make -j4 capnp kj
+mingw32-make -j4
 if errorlevel 1 exit /b 1
 
-mingw32-make -j4 install
+mingw32-make install
 if errorlevel 1 exit /b 1
 
 if not exist "!INSTALL_DIR!/include/capnp/message.h" (

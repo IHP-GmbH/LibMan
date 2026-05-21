@@ -10,6 +10,7 @@ isEmpty(CAPNP_BUILD_TARGET) {
 for(_src, SOURCES) {
     _src_key = $$_src
     contains(_src, $$LIBMAN_ROOT): _src_key = $$relative_path($$LIBMAN_ROOT, $$_src)
+    _src_key = $$replace(_src_key, \\, /)
     _src_esc = $$replace(_src_key, \\., \\.)
     eval($${_src_esc}.depends += $$CAPNP_BUILD_TARGET)
 }

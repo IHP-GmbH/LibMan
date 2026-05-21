@@ -52,7 +52,7 @@ jobs:
           CAPNP_SKIP_CHECK: 1
         run: |
           cd build
-          make -j1 capnpbuild
+          make -j1 ../capnp-install/.built
           make -j"$(nproc)"
 
       - name: Package Linux bundle (tar.gz)
@@ -138,7 +138,7 @@ jobs:
           CAPNP_SKIP_CHECK: 1
         run: |
           cd build-tests
-          make -j1 capnpbuild
+          make -j1 ../capnp-install/.built
           make -j"$(nproc)"
 
       - name: Export Cap'n Proto runtime path
@@ -215,7 +215,7 @@ jobs:
           CAPNP_SKIP_CHECK: 1
         run: |
           cd build
-          mingw32-make -j1 capnpbuild
+          mingw32-make -j1 ../capnp-install/.built
           mingw32-make -j"$(nproc)"
 
       - name: Deploy Qt runtime and resources

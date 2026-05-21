@@ -15,7 +15,7 @@ STATE_FILE="$INSTALL_DIR/.capnp_revision"
 mkdir -p "$(dirname "$REPO_DIR")"
 mkdir -p "$INSTALL_DIR"
 
-if [ -f "$STAMP_FILE" ] && [ -x "$INSTALL_DIR/bin/capnp" ]; then
+if [ -f "$STAMP_FILE" ] && [ -x "$INSTALL_DIR/bin/capnp" ] && [ -f "$INSTALL_DIR/include/capnp/message.h" ]; then
     echo "Cap'n Proto already installed at $INSTALL_DIR"
     exit 0
 fi
@@ -56,7 +56,7 @@ if [ -f "$STATE_FILE" ]; then
     CURRENT_REV="$(cat "$STATE_FILE")"
 fi
 
-if [ "$CURRENT_REV" = "$TARGET_REV" ] && [ -f "$STAMP_FILE" ]; then
+if [ "$CURRENT_REV" = "$TARGET_REV" ] && [ -f "$STAMP_FILE" ] && [ -f "$INSTALL_DIR/include/capnp/message.h" ]; then
     echo "Cap'n Proto is already up to date: $TARGET_REV"
     exit 0
 fi
@@ -72,6 +72,11 @@ else
     make -j"$(nproc)" check
 fi
 make install
+
+if [ ! -f "$INSTALL_DIR/include/capnp/message.h" ]; then
+    echo "ERROR: capnp headers not found under $INSTALL_DIR/include/capnp after install."
+    exit 1
+fi
 
 echo "$TARGET_REV" > "$STATE_FILE"
 touch "$STAMP_FILE"
