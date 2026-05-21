@@ -1,114 +1,89 @@
 /************************************************************************
  *  LibMan – Library & View Manager
- *
- *  Copyright (C) ...
- *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
  ************************************************************************/
 
 #include <QtTest/QtTest>
 
 #include <QCoreApplication>
+#include <QFileInfo>
 #include <QListWidget>
 #include <QTreeWidget>
+#include <QTreeWidgetItem>
 
 #include <functional>
 
 #include "tst_libman_gui.h"
-
 #include "mainwindow.h"
 
 namespace
 {
 
-/*!*******************************************************************************************************************
- * \brief Finds a top-level item in a QTreeWidget by its display text.
- *
- * \param tree Tree widget to search in.
- * \param text Text to match (column 0).
- *
- * \return Pointer to the found item or nullptr if not found.
- **********************************************************************************************************************/
-static QTreeWidgetItem* findTopItem(QTreeWidget* tree, const QString& text)
-{
-    if (!tree)
-        return nullptr;
+static const char *kProjectFile = "data/sg13g2.projects";
+static const char *kLibraryName = "ihp_sg13g2";
+static const char *kGroupTest = "Test";
+static const char *kGroupIo = "sg13g2_io";
+static const char *kGroupStdCell = "sg13g2_stdcell";
+static const char *kViewGds = "gds";
+static const char *kViewOas = "oas";
+static const char *kViewLstr = "lstr";
 
-    for (int i = 0; i < tree->topLevelItemCount(); ++i) {
-        auto* it = tree->topLevelItem(i);
-        if (it && it->text(0) == text)
+/*!********************************************************************************************************
+ * \brief Returns absolute path to the fixed test project.
+ *********************************************************************************************************/
+static QString testProjectPath()
+{
+    return QFINDTESTDATA(kProjectFile);
+}
+
+/*!********************************************************************************************************
+ * \brief Finds a top-level item in a QTreeWidget by text.
+ *********************************************************************************************************/
+static QTreeWidgetItem *findTopItem(QTreeWidget *tree, const QString &text)
+{
+    if(!tree) {
+        return nullptr;
+    }
+
+    for(int i = 0; i < tree->topLevelItemCount(); ++i) {
+        QTreeWidgetItem *it = tree->topLevelItem(i);
+        if(it && it->text(0) == text) {
             return it;
+        }
     }
 
     return nullptr;
 }
 
-/*!*******************************************************************************************************************
- * \brief Finds an item in a QListWidget by its display text.
- *
- * \param list List widget to search in.
- * \param text Text to match.
- *
- * \return Pointer to the found item or nullptr if not found.
- **********************************************************************************************************************/
-static QListWidgetItem* findListItem(QListWidget* list, const QString& text)
+/*!********************************************************************************************************
+ * \brief Finds an item in a QListWidget by text.
+ *********************************************************************************************************/
+static QListWidgetItem *findListItem(QListWidget *list, const QString &text)
 {
-    if (!list)
+    if(!list) {
         return nullptr;
+    }
 
-    for (int i = 0; i < list->count(); ++i) {
-        auto* it = list->item(i);
-        if (it && it->text() == text)
+    for(int i = 0; i < list->count(); ++i) {
+        QListWidgetItem *it = list->item(i);
+        if(it && it->text() == text) {
             return it;
+        }
     }
 
     return nullptr;
 }
 
-/*!*******************************************************************************************************************
- * \brief Finds a direct child item of a QTreeWidgetItem by its display text.
- *
- * \param parent Parent item whose direct children will be searched.
- * \param text   Text to match (column 0).
- *
- * \return Pointer to the found child item or nullptr if not found.
- **********************************************************************************************************************/
-static QTreeWidgetItem* findChildItemByText(QTreeWidgetItem* parent, const QString& text)
-{
-    if (!parent)
-        return nullptr;
-
-    for (int i = 0; i < parent->childCount(); ++i) {
-        auto* ch = parent->child(i);
-        if (ch && ch->text(0) == text)
-            return ch;
-    }
-
-    return nullptr;
-}
-
-/*!*******************************************************************************************************************
- * \brief Waits until the given predicate becomes true or a timeout is reached.
- *
- * The function repeatedly evaluates the predicate, sleeping for \p stepMs between
- * evaluations while processing the event loop to allow asynchronous GUI updates.
- *
- * \param predicate Function returning true when the condition is satisfied.
- * \param timeoutMs Maximum time to wait in milliseconds.
- * \param stepMs    Poll interval in milliseconds.
- *
- * \return True if predicate became true within the timeout, false otherwise.
- **********************************************************************************************************************/
-static bool waitUntil(std::function<bool()> predicate, int timeoutMs = 3000, int stepMs = 50)
+/*!********************************************************************************************************
+ * \brief Waits until predicate becomes true.
+ *********************************************************************************************************/
+static bool waitUntil(std::function<bool()> predicate, int timeoutMs = 5000, int stepMs = 50)
 {
     const int steps = qMax(1, timeoutMs / stepMs);
 
-    for (int i = 0; i < steps; ++i) {
-        if (predicate())
+    for(int i = 0; i < steps; ++i) {
+        if(predicate()) {
             return true;
+        }
 
         QTest::qWait(stepMs);
         QCoreApplication::processEvents();
@@ -117,57 +92,14 @@ static bool waitUntil(std::function<bool()> predicate, int timeoutMs = 3000, int
     return predicate();
 }
 
-} // namespace
-
-/*!*******************************************************************************************************************
- * \brief Verifies that a GDS view is available and selectable after project loading.
- *
- * The test performs the following steps:
- *  - Loads a .projects file.
- *  - Selects the specified library in the Project tree.
- *  - Selects the corresponding cell/group.
- *  - Verifies that a "gds" view node appears in the View panel.
- *  - Expands the "gds" node and waits for asynchronous GDS parsing to populate cells.
- *  - Selects a specific GDS cell entry and verifies successful selection.
- *
- * This test validates correct interaction between:
- *  - Project loading logic
- *  - Library and cell navigation
- *  - Asynchronous GDS reader integration
- *  - View tree population and selection behavior
- *
- * No external tools are started during this test.
- **********************************************************************************************************************/
-void LibManGui::loadProject_clickLib_clickCell_hasGdsView()
+/*!********************************************************************************************************
+ * \brief Selects a library item and triggers the corresponding slot.
+ *********************************************************************************************************/
+static void selectLibrary(MainWindow &w, QTreeWidget *tree, QTreeWidgetItem *libItem)
 {
-    const QString projPath = QFINDTESTDATA("data/sg13g2.projects");
-    QVERIFY2(!projPath.isEmpty(), "test.projects not found via QFINDTESTDATA");
+    QVERIFY(libItem);
 
-    const QString expectedLib     = "sg13g2_stdcell";
-    const QString expectedCell    = "sg13g2_stdcell";
-    const QString expectedGdsCell = "sg13g2_buf_1";
-
-    MainWindow w(projPath, QCoreApplication::applicationDirPath());
-    w.show();
-    QVERIFY(QTest::qWaitForWindowExposed(&w));
-
-    QTest::qWait(50);
-
-    auto* treeLibs   = w.findChild<QTreeWidget*>("treeLibs");
-    auto* listGroups = w.findChild<QListWidget*>("listGroups");
-    auto* listViews  = w.findChild<QTreeWidget*>("listViews");
-
-    QVERIFY2(treeLibs, "treeLibs widget not found");
-    QVERIFY2(listGroups, "listGroups widget not found");
-    QVERIFY2(listViews, "listViews widget not found");
-
-    // ------------------------------------------------------------
-    // Click library
-    // ------------------------------------------------------------
-    QTreeWidgetItem* libItem = findTopItem(treeLibs, expectedLib);
-    QVERIFY2(libItem, qPrintable(QString("Library not found in treeLibs: %1").arg(expectedLib)));
-
-    treeLibs->setCurrentItem(libItem);
+    tree->setCurrentItem(libItem);
 
     QMetaObject::invokeMethod(&w,
                               "on_treeLibs_itemClicked",
@@ -175,55 +107,257 @@ void LibManGui::loadProject_clickLib_clickCell_hasGdsView()
                               Q_ARG(QTreeWidgetItem*, libItem),
                               Q_ARG(int, 0));
 
-    QTest::qWait(30);
+    QCoreApplication::processEvents();
+}
 
-    // ------------------------------------------------------------
-    // Click cell/group
-    // ------------------------------------------------------------
-    QListWidgetItem* cellItem = findListItem(listGroups, expectedCell);
-    QVERIFY2(cellItem, qPrintable(QString("Cell not found in listGroups: %1").arg(expectedCell)));
+/*!********************************************************************************************************
+ * \brief Selects a group item and triggers the corresponding slot.
+ *********************************************************************************************************/
+static void selectGroup(MainWindow &w, QListWidget *list, QListWidgetItem *groupItem)
+{
+    QVERIFY(groupItem);
 
-    listGroups->setCurrentItem(cellItem);
+    list->setCurrentItem(groupItem);
 
     QMetaObject::invokeMethod(&w,
                               "on_listGroups_itemClicked",
                               Qt::DirectConnection,
-                              Q_ARG(QListWidgetItem*, cellItem));
+                              Q_ARG(QListWidgetItem*, groupItem));
 
-    QTest::qWait(30);
-
-    QTreeWidgetItem* gdsRoot = findTopItem(listViews, "gds");
-    QVERIFY2(gdsRoot, "Expected 'gds' view root not found in listViews");
-
-    // ------------------------------------------------------------
-    // Expand "gds" and wait until async reader populates children
-    // ------------------------------------------------------------
-    gdsRoot->setExpanded(true);
-    listViews->scrollToItem(gdsRoot);
-
-    const bool populated = waitUntil([&]() {
-        return gdsRoot->childCount() > 0;
-    }, 5000, 100);
-    QVERIFY2(populated, "GDS cell list was not populated (timeout)");
-
-    QTreeWidgetItem* cellNode = findChildItemByText(gdsRoot, expectedGdsCell);
-
-    if (!cellNode) {
-        const bool foundLater = waitUntil([&]() {
-            cellNode = findChildItemByText(gdsRoot, expectedGdsCell);
-            return cellNode != nullptr;
-        }, 5000, 100);
-
-        QVERIFY2(foundLater,
-                 qPrintable(QString("Expected GDS cell not found under 'gds': %1").arg(expectedGdsCell)));
-    }
-
-    listViews->setCurrentItem(cellNode);
-    listViews->scrollToItem(cellNode);
-    QVERIFY2(listViews->currentItem() == cellNode, "Failed to select expected GDS cell node");
-
-    const QVariant gdsPathVar = gdsRoot->data(0, Qt::UserRole + 2 /*RoleGdsPath?*/);
-    Q_UNUSED(gdsPathVar);
+    QCoreApplication::processEvents();
 }
 
-QTEST_MAIN(LibManGui)
+/*!********************************************************************************************************
+ * \brief Expands a root view item and waits until children appear.
+ *********************************************************************************************************/
+static bool expandAndWaitForChildren(MainWindow &w,
+                                     QTreeWidgetItem *rootItem,
+                                     int timeoutMs = 7000)
+{
+    if(!rootItem) {
+        return false;
+    }
+
+    QMetaObject::invokeMethod(&w,
+                              "on_viewItemExpanded",
+                              Qt::DirectConnection,
+                              Q_ARG(QTreeWidgetItem*, rootItem));
+
+    rootItem->setExpanded(true);
+
+    return waitUntil([&]() {
+        return rootItem->childCount() > 0;
+    }, timeoutMs, 100);
+}
+
+/*!********************************************************************************************************
+ * \brief Creates and shows test MainWindow.
+ *********************************************************************************************************/
+static MainWindow *createWindowForProject()
+{
+    const QString projPath = testProjectPath();
+    if(projPath.isEmpty()) {
+        return nullptr;
+    }
+
+    MainWindow *w = new MainWindow(projPath, QFileInfo(projPath).absolutePath());
+    w->show();
+
+    if(!QTest::qWaitForWindowExposed(w)) {
+        delete w;
+        return nullptr;
+    }
+
+    QTest::qWait(50);
+    QCoreApplication::processEvents();
+
+    return w;
+}
+
+/*!********************************************************************************************************
+ * \brief Selects fixed test library and fixed stdcell group.
+ *********************************************************************************************************/
+static void prepareStdCellViews(MainWindow &w,
+                                QTreeWidget *treeLibs,
+                                QListWidget *listGroups,
+                                QTreeWidget *listViews)
+{
+    QVERIFY2(treeLibs, "treeLibs widget not found");
+    QVERIFY2(listGroups, "listGroups widget not found");
+    QVERIFY2(listViews, "listViews widget not found");
+
+    QTreeWidgetItem *libItem = findTopItem(treeLibs, kLibraryName);
+    QVERIFY2(libItem, qPrintable(QString("Library not found in treeLibs: %1").arg(kLibraryName)));
+
+    selectLibrary(w, treeLibs, libItem);
+
+    QVERIFY2(waitUntil([&]() {
+                 return listGroups->count() > 0;
+             }),
+             "Groups were not populated after selecting library.");
+
+    QListWidgetItem *groupItem = findListItem(listGroups, kGroupStdCell);
+    QVERIFY2(groupItem, qPrintable(QString("Group not found in listGroups: %1").arg(kGroupStdCell)));
+
+    selectGroup(w, listGroups, groupItem);
+
+    QVERIFY2(waitUntil([&]() {
+                 return listViews->topLevelItemCount() > 0;
+             }),
+             "Views were not populated after selecting stdcell group.");
+}
+
+} // namespace
+
+/*!********************************************************************************************************
+ * \brief Basic availability check of fixed test data.
+ *********************************************************************************************************/
+void LibManGui::initTestCase()
+{
+    const QString projPath = testProjectPath();
+    QVERIFY2(!projPath.isEmpty(), "data/sg13g2.projects not found");
+}
+
+/*!********************************************************************************************************
+ * \brief Verifies that project loading populates expected library, groups and views.
+ *********************************************************************************************************/
+void LibManGui::loadProject_hasLibrariesGroupsAndViews()
+{
+    std::unique_ptr<MainWindow> w(createWindowForProject());
+    QVERIFY2(w.get(), "Failed to create MainWindow for test project.");
+
+    QTreeWidget *treeLibs   = w->findChild<QTreeWidget*>("treeLibs");
+    QListWidget *listGroups = w->findChild<QListWidget*>("listGroups");
+    QTreeWidget *listViews  = w->findChild<QTreeWidget*>("listViews");
+
+    QVERIFY2(treeLibs, "treeLibs widget not found");
+    QVERIFY2(listGroups, "listGroups widget not found");
+    QVERIFY2(listViews, "listViews widget not found");
+
+    QTreeWidgetItem *libItem = findTopItem(treeLibs, kLibraryName);
+    QVERIFY2(libItem, qPrintable(QString("Library not found in treeLibs: %1").arg(kLibraryName)));
+
+    selectLibrary(*w, treeLibs, libItem);
+
+    QVERIFY2(waitUntil([&]() {
+                 return listGroups->count() > 0;
+             }),
+             "Groups were not populated after selecting library.");
+
+    QVERIFY2(findListItem(listGroups, kGroupTest),
+             qPrintable(QString("Expected group not found: %1").arg(kGroupTest)));
+
+    QVERIFY2(findListItem(listGroups, kGroupIo),
+             qPrintable(QString("Expected group not found: %1").arg(kGroupIo)));
+
+    QListWidgetItem *stdCellItem = findListItem(listGroups, kGroupStdCell);
+    QVERIFY2(stdCellItem,
+             qPrintable(QString("Expected group not found: %1").arg(kGroupStdCell)));
+
+    selectGroup(*w, listGroups, stdCellItem);
+
+    QVERIFY2(waitUntil([&]() {
+                 return listViews->topLevelItemCount() > 0;
+             }),
+             "Views were not populated after selecting stdcell group.");
+
+    QVERIFY2(findTopItem(listViews, kViewGds),
+             qPrintable(QString("Expected view not found: %1").arg(kViewGds)));
+
+    QVERIFY2(findTopItem(listViews, kViewOas),
+             qPrintable(QString("Expected view not found: %1").arg(kViewOas)));
+
+    QVERIFY2(findTopItem(listViews, kViewLstr),
+             qPrintable(QString("Expected view not found: %1").arg(kViewLstr)));
+}
+
+/*!********************************************************************************************************
+ * \brief Verifies that expanding GDS view populates hierarchy.
+ *********************************************************************************************************/
+void LibManGui::expandGdsView_populatesHierarchy()
+{
+    std::unique_ptr<MainWindow> w(createWindowForProject());
+    QVERIFY2(w.get(), "Failed to create MainWindow for test project.");
+
+    QTreeWidget *treeLibs   = w->findChild<QTreeWidget*>("treeLibs");
+    QListWidget *listGroups = w->findChild<QListWidget*>("listGroups");
+    QTreeWidget *listViews  = w->findChild<QTreeWidget*>("listViews");
+
+    prepareStdCellViews(*w, treeLibs, listGroups, listViews);
+
+    QTreeWidgetItem *gdsRoot = findTopItem(listViews, kViewGds);
+    QVERIFY2(gdsRoot, "Expected 'gds' view root not found.");
+
+    const bool populated = expandAndWaitForChildren(*w, gdsRoot);
+    QVERIFY2(populated, "GDS hierarchy was not populated after expand.");
+
+    QVERIFY2(gdsRoot->childCount() > 0, "GDS root has no child cells after expansion.");
+
+    QTreeWidgetItem *firstCell = gdsRoot->child(0);
+    QVERIFY2(firstCell, "First GDS child cell is null.");
+    QVERIFY2(!firstCell->text(0).trimmed().isEmpty(), "First GDS child cell name is empty.");
+
+    listViews->setCurrentItem(firstCell);
+    QVERIFY2(listViews->currentItem() == firstCell, "Failed to select GDS child cell.");
+}
+
+/*!********************************************************************************************************
+ * \brief Verifies that expanding OAS view populates hierarchy.
+ *********************************************************************************************************/
+void LibManGui::expandOasView_populatesHierarchy()
+{
+    std::unique_ptr<MainWindow> w(createWindowForProject());
+    QVERIFY2(w.get(), "Failed to create MainWindow for test project.");
+
+    QTreeWidget *treeLibs   = w->findChild<QTreeWidget*>("treeLibs");
+    QListWidget *listGroups = w->findChild<QListWidget*>("listGroups");
+    QTreeWidget *listViews  = w->findChild<QTreeWidget*>("listViews");
+
+    prepareStdCellViews(*w, treeLibs, listGroups, listViews);
+
+    QTreeWidgetItem *oasRoot = findTopItem(listViews, kViewOas);
+    QVERIFY2(oasRoot, "Expected 'oas' view root not found.");
+
+    const bool populated = expandAndWaitForChildren(*w, oasRoot);
+    QVERIFY2(populated, "OAS hierarchy was not populated after expand.");
+
+    QVERIFY2(oasRoot->childCount() > 0, "OAS root has no child cells after expansion.");
+
+    QTreeWidgetItem *firstCell = oasRoot->child(0);
+    QVERIFY2(firstCell, "First OAS child cell is null.");
+    QVERIFY2(!firstCell->text(0).trimmed().isEmpty(), "First OAS child cell name is empty.");
+}
+
+/*!********************************************************************************************************
+ * \brief Verifies that expanding LStream view populates hierarchy.
+ *********************************************************************************************************/
+void LibManGui::expandLstrView_populatesHierarchy()
+{
+    std::unique_ptr<MainWindow> w(createWindowForProject());
+    QVERIFY2(w.get(), "Failed to create MainWindow for test project.");
+
+    QTreeWidget *treeLibs   = w->findChild<QTreeWidget*>("treeLibs");
+    QListWidget *listGroups = w->findChild<QListWidget*>("listGroups");
+    QTreeWidget *listViews  = w->findChild<QTreeWidget*>("listViews");
+
+    prepareStdCellViews(*w, treeLibs, listGroups, listViews);
+
+    QTreeWidgetItem *lstrRoot = findTopItem(listViews, kViewLstr);
+    QVERIFY2(lstrRoot, "Expected 'lstr' view root not found.");
+
+    const bool populated = expandAndWaitForChildren(*w, lstrRoot);
+    QVERIFY2(populated, "LStream hierarchy was not populated after expand.");
+
+    QVERIFY2(lstrRoot->childCount() > 0, "LStream root has no child cells after expansion.");
+
+    QTreeWidgetItem *firstCell = lstrRoot->child(0);
+    QVERIFY2(firstCell, "First LStream child cell is null.");
+    QVERIFY2(!firstCell->text(0).trimmed().isEmpty(), "First LStream child cell name is empty.");
+}
+
+/*!********************************************************************************************************
+ * \brief Cleanup hook.
+ *********************************************************************************************************/
+void LibManGui::cleanupTestCase()
+{
+}

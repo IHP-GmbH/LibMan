@@ -1,13 +1,29 @@
 <RCC>
     <qresource prefix="/">
-        <file alias="new">icons/new.png</file>
-        <file alias="open">icons/open.png</file>
-        <file alias="save">icons/save.png</file>
-        <file alias="exit">icons/exit.png</file>
-        <file alias="pdf">icons/pdf.png</file>
         <file alias="logo">icons/logo.png</file>
-        <file alias="documents">icons/documents.png</file>
         <file alias="categories">icons/categories.png</file>
         <file alias="spinner">icons/spinner.gif</file>
+        <file>icons/copy.svg</file>
+        <file>icons/delete.svg</file>
+        <file>icons/git_branch.svg</file>
+        <file>icons/git_commit.svg</file>
+        <file>icons/git_pull.svg</file>
+        <file>icons/git_push.svg</file>
+        <file>icons/layout.svg</file>
+        <file>icons/libman.png</file>
+        <file>icons/paste.svg</file>
+        <file>icons/spice.svg</file>
+        <file>icons/schematic.svg</file>
+        <file>icons/info.svg</file>
+        <file>icons/git_status.svg</file>
+        <file>icons/view.svg</file>
+        <file>icons/category.svg</file>
+        <file>icons/exit.svg</file>
+        <file>icons/reload.svg</file>
+        <file>icons/save.svg</file>
+        <file>icons/pdf.svg</file>
+        <file>icons/show_categories.svg</file>
+        <file>icons/show_documents.svg</file>
+        <file>icons/documents.svg</file>
     </qresource>
 </RCC>

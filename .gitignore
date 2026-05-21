@@ -61,6 +61,8 @@ coverage.*.html
 *.gcno
 *.gcov
 
-# Optional logs
-test_results.txt
+# Test / CI output
+test_results*.txt
+test_output.txt
+coverage_by_file.txt
 gcovr_verbose.txt
