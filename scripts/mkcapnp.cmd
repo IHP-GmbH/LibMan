@@ -1,9 +1,8 @@
 @echo off
-rem Wrapper for mingw32-make: pass only LIBMAN_ROOT (forward slashes). Avoids cmd/bash
-rem mangling capnproto in long command lines (%%c, \c escapes).
+rem Invoked from build/ via: cd .. && cmd /c scripts/mkcapnp.cmd
+rem Filename avoids "\c" in "\capnp..." when mingw32-make runs recipes under bash.
 setlocal EnableExtensions
-set "ROOT=%~1"
-if "%ROOT%"=="" set "ROOT=%~dp0.."
+set "ROOT=%~dp0.."
 set "ROOT=%ROOT:\=/%"
 call "%~dp0build_capnp_windows.bat" ^
   "https://github.com/capnproto/capnproto.git" branch master "" "" ^

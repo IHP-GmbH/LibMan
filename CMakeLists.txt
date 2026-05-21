@@ -66,8 +66,7 @@ if(WIN32)
     add_custom_command(
         OUTPUT "${CAPNP_STAMP}"
         COMMAND cmd /c
-            "${CMAKE_SOURCE_DIR}/scripts/capnpbuild_win.cmd"
-            "${CMAKE_SOURCE_DIR}"
+            "${CMAKE_SOURCE_DIR}/scripts/mkcapnp.cmd"
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         COMMENT "Building Cap'n Proto for Windows"
         VERBATIM
