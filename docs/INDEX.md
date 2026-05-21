@@ -9,7 +9,7 @@ Welcome! This is your central hub for all LibMan documentation. Use the sections
 | Goal | Document |
 |------|----------|
 | **I'm new here** | [Quick Start](getting-started/QUICK_START.md) (5 min) |
-| **I want to build** | [Dependencies First](getting-started/DEPENDENCIES.md) (10 min) |
+| **I want to build** | [Build guide](BUILD.md) · [Dependencies](getting-started/DEPENDENCIES.md) |
 | **Set up VS Code** | [VS Code Setup Guide](setup/VSCODE_SETUP.md) (10 min) |
 | **Need help fast** | [Quick Reference](reference/QUICK_REFERENCE.md) (2 min) |
 | **Customize tasks** | [Advanced Setup](reference/VSCODE_ADVANCED.md) (15 min) |
@@ -25,8 +25,9 @@ Welcome! This is your central hub for all LibMan documentation. Use the sections
 Quick guides to get you up and running:
 
 1. **[Quick Start](getting-started/QUICK_START.md)** - Start here if new
-2. **[Dependencies](getting-started/DEPENDENCIES.md)** - Install required libraries (⚠️ ZLIB needed)
-3. **[Setup Verification](getting-started/SETUP_VERIFICATION.md)** - Verify your setup
+2. **[Build guide](BUILD.md)** - qmake vs CMake, Cap'n Proto, CI, Windows
+3. **[Dependencies](getting-started/DEPENDENCIES.md)** - Install required libraries (⚠️ ZLIB needed)
+4. **[Setup Verification](getting-started/SETUP_VERIFICATION.md)** - Verify your setup
 
 ### ⚙️ Setup & Configuration
 Detailed setup and configuration information:

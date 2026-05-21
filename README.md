@@ -58,16 +58,23 @@ Example of project file:
  - PROJECT specifies name of the library and its location.
 
 ### Building requirements
-- GCC version of 4.8.5 (or later)
-- Qt version of 4.8.6 upwards
-- QtCreator version of 4.0.3 (or later)
-- Doxygen version of 1.8.5 (or later)
+- GCC 8+ / MinGW-w64 (CI uses MinGW 8.1, 64-bit)
+- Qt 5.15.x
+- CMake 3.16+ (VS Code / local) or qmake (CI, Qt Creator)
+- ZLIB (see [Dependencies](docs/getting-started/DEPENDENCIES.md))
+- Git, and on Linux CI: autoconf, automake, libtool
 
-### Building project
+Cap'n Proto and LStream schemas are **not** in the repository; they are cloned and built on first compile. See **[Build guide](docs/BUILD.md)** for full steps (qmake vs CMake, Windows patch script, CI).
+
+### Building project (qmake)
 ```bash
-qmake libman.pro
-make
+mkdir -p build && cd build
+qmake ../libman.pro
+make -j1 ../capnp-install/capnp-built.stamp
+make -j$(nproc)
 ```
+
+On Windows with MinGW, run `scripts\mkcapnp.cmd` from the repo root first, then `bash ../scripts/patch_capnp_makefile.sh` after `qmake` — see [docs/BUILD.md](docs/BUILD.md).
 
 ### Building project with QtCreator
 

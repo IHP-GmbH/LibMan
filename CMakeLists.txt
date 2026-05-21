@@ -75,8 +75,7 @@ if(WIN32)
     add_custom_command(
         OUTPUT "${LSTREAM_STAMP}"
         COMMAND cmd /c
-            "${CMAKE_SOURCE_DIR}/scripts/lstreamschemas_win.cmd"
-            "${CMAKE_SOURCE_DIR}"
+            "${CMAKE_SOURCE_DIR}/scripts/mklstream.cmd"
         DEPENDS "${CAPNP_STAMP}"
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         COMMENT "Updating LStream schemas for Windows"

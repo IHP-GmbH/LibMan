@@ -58,10 +58,10 @@ LibMan/
 ├── 📁 extension/               ← Qt extensions
 ├── 📁 QtPropertyBrowser/       ← Property browser widget
 │
-├── 📁 .deps/                   ← External dependencies
-├── 📁 capnproto/               ← Cap'n Proto source
-├── 📁 capnp-install/           ← Cap'n Proto installation
-├── 📁 capnp/                   ← Generated Cap'n Proto files
+├── 📁 .deps/lstream/           ← LStream schema repo (cloned on first build)
+├── 📁 capnproto/               ← Cap'n Proto sources (cloned; gitignored)
+├── 📁 capnp-install/           ← Cap'n Proto install prefix + capnp-built.stamp
+├── 📁 capnp/                   ← Generated schema C++ (.capnp.cc / .h)
 │
 └── ... other files (coverage.*, scripts, installer, etc.)
 ```
@@ -147,9 +147,11 @@ These folders are hidden from VS Code Explorer:
 | `build/` | Main build artifacts | Large, often regenerated |
 | `tests/build/` | Test build artifacts | Large, often regenerated |
 | `.deps/` | External dependencies | Auto-generated, not needed |
-| `capnproto/` | Cap'n Proto source | Large, auto-built |
-| `capnp-install/` | Cap'n Proto installation | Auto-generated |
-| `lstream/` | LStream library | Auto-generated |
+| `capnproto/` | Cap'n Proto git clone | Gitignored; see [BUILD.md](../BUILD.md) |
+| `capnp-install/` | Cap'n Proto install + stamp | Gitignored |
+| `capnp/` | Generated Cap'n Proto / LStream C++ | Gitignored (sources committed under `capnp/` may exist until regen) |
+| `.deps/lstream/` | LStream schema repository | Gitignored |
+| `lstream/` | LStream C++ integration (project source) | In repo |
 | `coverage.*` | Coverage report files | Generated files |
 
 ---

@@ -45,6 +45,8 @@ choco install zlib
 
 ## 🔨 Step 2: Configure & Build
 
+The first build also clones and compiles **Cap'n Proto** (several minutes). See [Build guide](../BUILD.md) for qmake, Windows, and CI details.
+
 ### Open Terminal:
 ```bash
 cd c:\Users\anton\Documents\LibMan
