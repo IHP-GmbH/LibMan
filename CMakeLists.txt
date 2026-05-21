@@ -66,14 +66,8 @@ if(WIN32)
     add_custom_command(
         OUTPUT "${CAPNP_STAMP}"
         COMMAND cmd /c
-            "${CMAKE_SOURCE_DIR}/scripts/build_capnp_windows.bat"
-            "${CAPNP_GIT_URL}"
-            "${CAPNP_VERSION_MODE}"
-            "${CAPNP_GIT_BRANCH}"
-            "${CAPNP_GIT_TAG}"
-            "${CAPNP_GIT_COMMIT}"
-            "${CAPNP_REPO_DIR}"
-            "${CAPNP_ROOT}"
+            "${CMAKE_SOURCE_DIR}/scripts/capnpbuild_win.cmd"
+            "${CMAKE_SOURCE_DIR}"
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         COMMENT "Building Cap'n Proto for Windows"
         VERBATIM
@@ -82,15 +76,8 @@ if(WIN32)
     add_custom_command(
         OUTPUT "${LSTREAM_STAMP}"
         COMMAND cmd /c
-            "${CMAKE_SOURCE_DIR}/scripts/update_lstream_schemas_windows.bat"
-            "${LSTREAM_GIT_URL}"
-            "${LSTREAM_VERSION_MODE}"
-            "${LSTREAM_GIT_BRANCH}"
-            "${LSTREAM_GIT_TAG}"
-            "${LSTREAM_GIT_COMMIT}"
-            "${LSTREAM_SCHEMA_REPO_DIR}"
-            "${CAPNP_GEN_DIR}"
-            "${CAPNP_ROOT}"
+            "${CMAKE_SOURCE_DIR}/scripts/lstreamschemas_win.cmd"
+            "${CMAKE_SOURCE_DIR}"
         DEPENDS "${CAPNP_STAMP}"
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         COMMENT "Updating LStream schemas for Windows"
