@@ -40,6 +40,8 @@ LSTREAM_SCHEMA_REPO_DIR = $$LIBMAN_ROOT/.deps/lstream
 win32 {
     # mingw32-make on GHA uses sh: backslashes in paths eat letters (\capnp* -> apnp*).
     # Recipe uses only forward slashes; script names avoid \c and \b after a backslash.
+    # After qmake, run scripts/patch_capnp_makefile.sh from build/ so parallel make waits
+    # for capnp-built.stamp (qmake .depends on OBJECTS is ignored by MinGW makefiles).
     CAPNP_BUILD_CMD = cd .. && cmd /c scripts/mkcapnp.cmd
 
     capnp_stamp.target = $$CAPNP_STAMP_REL

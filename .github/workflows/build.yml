@@ -208,6 +208,7 @@ jobs:
           mkdir -p build
           cd build
           qmake CONFIG+=release ../libman.pro
+          bash ../scripts/patch_capnp_makefile.sh
 
       - name: Build (mingw32-make)
         shell: bash
