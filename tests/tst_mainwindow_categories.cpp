@@ -1,4 +1,5 @@
 #include "tst_mainwindow_categories.h"
+#include "test_paths.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -20,16 +21,7 @@
 namespace
 {
 
-static const char *kProjectFile = "data/sg13g2.projects";
 static const char *kLibraryName = "ihp_sg13g2";
-
-/*!********************************************************************************************************
- * \brief Returns absolute path to the original fixed test project.
- *********************************************************************************************************/
-static QString originalProjectPath()
-{
-    return QFINDTESTDATA(kProjectFile);
-}
 
 /*!********************************************************************************************************
  * \brief Waits until predicate becomes true.
@@ -145,7 +137,7 @@ static TempProject createTempProjectCopy()
         return out;
     }
 
-    const QString srcProject = originalProjectPath();
+    const QString srcProject = libmanTestProjectFile();
     if(srcProject.isEmpty()) {
         out.dir.reset();
         return out;
@@ -210,8 +202,8 @@ static void selectLibrary(MainWindow &w, QTreeWidget *tree, const QString &libNa
  *********************************************************************************************************/
 void MainWindowCategoriesTest::initTestCase()
 {
-    const QString projPath = originalProjectPath();
-    QVERIFY2(!projPath.isEmpty(), "data/sg13g2.projects not found");
+    const QString projPath = libmanTestProjectFile();
+    QVERIFY2(!projPath.isEmpty(), "sg13g2.projects not found");
 }
 
 /*!********************************************************************************************************

@@ -51,6 +51,10 @@ TEST_OBJECT_DIR="$(dirname "$FOUND_EXE")"
 # =========================
 # QFINDTESTDATA prefers applicationDirPath()/data. qmake TESTDATA only copies a
 # subset; mirror the full tree so GUI tests find GDS/OAS/LStream fixtures in CI.
+# Prefer the repository test data tree (complete fixtures). QFINDTESTDATA otherwise
+# resolves build-tests/data, which may only contain the subset listed in tests.pro TESTDATA.
+export LIBMAN_TEST_DATA_DIR="$TESTDATA_SRC"
+
 sync_test_fixtures() {
     if [[ ! -d "$TESTDATA_SRC" ]]; then
         echo "Warning: test data source not found: $TESTDATA_SRC"

@@ -44,6 +44,7 @@ for %%d in ("%FOUND_EXE%\..") do (
 )
 
 set TESTDATA_SRC=%ROOT_DIR%\tests\data
+set LIBMAN_TEST_DATA_DIR=%TESTDATA_SRC%
 
 REM =========================
 REM Sync fixtures next to the test binary

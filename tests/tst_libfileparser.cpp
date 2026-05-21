@@ -9,6 +9,7 @@
 #include <QVariant>
 
 #include "libfileparser.h"
+#include "test_paths.h"
 
 namespace
 {
@@ -389,6 +390,22 @@ void LibFileParserTest::parseFile_replicateFalse_parses()
     QCOMPARE(parser.data().definitions.size(), 1);
     QVERIFY(parser.data().definitions.first().hasReplicate);
     QVERIFY(!parser.data().definitions.first().replicate);
+}
+
+void LibFileParserTest::parseFile_sg13g2_projects_fixture_pathsExist()
+{
+    const QString projPath = libmanTestProjectFile();
+    QVERIFY2(!projPath.isEmpty(), "sg13g2.projects fixture not found");
+
+    LibFileParser parser;
+    QVERIFY2(parser.parseFile(projPath), qPrintable(parser.errorString()));
+    QVERIFY2(!parser.data().definitions.isEmpty(), "expected define() entries in sg13g2.projects");
+
+    for(const LibDefinition &def : parser.data().definitions) {
+        QVERIFY2(QFileInfo::exists(def.path),
+                 qPrintable(QStringLiteral("missing view file for library '%1': %2")
+                                .arg(def.name, def.path)));
+    }
 }
 
 void LibFileParserTest::parseFile_includeWrongArgCount_returnsError()

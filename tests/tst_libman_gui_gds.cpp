@@ -13,12 +13,12 @@
 #include <functional>
 
 #include "tst_libman_gui.h"
+#include "test_paths.h"
 #include "mainwindow.h"
 
 namespace
 {
 
-static const char *kProjectFile = "data/sg13g2.projects";
 static const char *kLibraryName = "ihp_sg13g2";
 static const char *kGroupTest = "Test";
 static const char *kGroupIo = "sg13g2_io";
@@ -30,11 +30,6 @@ static const char *kViewLstr = "lstr";
 /*!********************************************************************************************************
  * \brief Returns absolute path to the fixed test project.
  *********************************************************************************************************/
-static QString testProjectPath()
-{
-    return QFINDTESTDATA(kProjectFile);
-}
-
 /*!********************************************************************************************************
  * \brief Finds a top-level item in a QTreeWidget by text.
  *********************************************************************************************************/
@@ -155,7 +150,7 @@ static bool expandAndWaitForChildren(MainWindow &w,
  *********************************************************************************************************/
 static MainWindow *createWindowForProject()
 {
-    const QString projPath = testProjectPath();
+    const QString projPath = libmanTestProjectFile();
     if(projPath.isEmpty()) {
         return nullptr;
     }
@@ -214,8 +209,8 @@ static void prepareStdCellViews(MainWindow &w,
  *********************************************************************************************************/
 void LibManGui::initTestCase()
 {
-    const QString projPath = testProjectPath();
-    QVERIFY2(!projPath.isEmpty(), "data/sg13g2.projects not found");
+    const QString projPath = libmanTestProjectFile();
+    QVERIFY2(!projPath.isEmpty(), "sg13g2.projects not found");
 }
 
 /*!********************************************************************************************************

@@ -26,6 +26,7 @@ private slots:
     void parseFile_trailingTokensAfterStatement_returnsError();
     void parseFile_technologyNonString_returnsError();
     void parseFile_replicateFalse_parses();
+    void parseFile_sg13g2_projects_fixture_pathsExist();
     void parseFile_includeWrongArgCount_returnsError();
 };
 

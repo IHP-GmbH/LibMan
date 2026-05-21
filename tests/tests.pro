@@ -116,7 +116,8 @@ HEADERS += \
     tst_oas_writer.h \
     tst_toolmanager.h \
     tst_coverage_expansion.h \
-    tst_coverage_80.h
+    tst_coverage_80.h \
+    test_paths.h
 
 FORMS += \
     $$PWD/../src/mainwindow.ui \

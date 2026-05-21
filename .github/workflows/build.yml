@@ -152,6 +152,7 @@ jobs:
       - name: Run tests and generate coverage
         env:
           QT_QPA_PLATFORM: offscreen
+          LIBMAN_TEST_DATA_DIR: ${{ github.workspace }}/tests/data
         run: |
           xvfb-run -a ./scripts/run_tests.sh
 

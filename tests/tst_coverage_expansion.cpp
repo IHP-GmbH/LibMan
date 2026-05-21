@@ -1,4 +1,5 @@
 #include "tst_coverage_expansion.h"
+#include "test_paths.h"
 
 #include "mainwindow_test_hooks.h"
 
@@ -31,14 +32,8 @@
 namespace
 {
 
-static const char *kProjectFile = "data/sg13g2.projects";
 static const char *kLibraryName = "ihp_sg13g2";
 static const char *kGroupTest    = "Test";
-
-static QString originalProjectPath()
-{
-    return QFINDTESTDATA(kProjectFile);
-}
 
 static bool waitUntil(std::function<bool()> predicate, int timeoutMs = 8000, int stepMs = 50)
 {
@@ -153,7 +148,7 @@ static TempProject createTempProjectCopy()
         return out;
     }
 
-    const QString srcProject = originalProjectPath();
+    const QString srcProject = libmanTestProjectFile();
     if(srcProject.isEmpty()) {
         out.dir.reset();
         return out;
@@ -240,19 +235,20 @@ static void prepareLibraryAndGroup(MainWindow &w,
 
 static QString fixtureSiblingPath(const QString &projPath, const char *relativeUnderData)
 {
-    return QFileInfo(projPath).absolutePath() + "/" + relativeUnderData;
+    Q_UNUSED(projPath);
+    return libmanTestDataFile(QString::fromUtf8(relativeUnderData));
 }
 
 } // namespace
 
 void FormatReadersCoverageTest::initTestCase()
 {
-    QVERIFY2(!originalProjectPath().isEmpty(), "data/sg13g2.projects not found");
+    QVERIFY2(!libmanTestProjectFile().isEmpty(), "sg13g2.projects not found");
 }
 
 void FormatReadersCoverageTest::gdsReader_readHierarchy_fixtureFile()
 {
-    const QString gdsPath = fixtureSiblingPath(originalProjectPath(), "sg13g2_stdcell/Test/Test.gds");
+    const QString gdsPath = fixtureSiblingPath(QString(), "sg13g2_stdcell/Test/Test.gds");
     QVERIFY2(QFileInfo::exists(gdsPath), qPrintable(QString("Missing fixture: %1").arg(gdsPath)));
 
     GdsReader reader(gdsPath);
@@ -263,7 +259,7 @@ void FormatReadersCoverageTest::gdsReader_readHierarchy_fixtureFile()
 
 void FormatReadersCoverageTest::oasReader_readHierarchy_fixtureFile()
 {
-    const QString oasPath = fixtureSiblingPath(originalProjectPath(), "sg13g2_stdcell/Test/Test.oas");
+    const QString oasPath = fixtureSiblingPath(QString(), "sg13g2_stdcell/Test/Test.oas");
     QVERIFY2(QFileInfo::exists(oasPath), qPrintable(QString("Missing fixture: %1").arg(oasPath)));
 
     oasReader reader(oasPath);
@@ -274,7 +270,7 @@ void FormatReadersCoverageTest::oasReader_readHierarchy_fixtureFile()
 
 void FormatReadersCoverageTest::lstreamReader_read_fixtureFile()
 {
-    const QString lstrPath = fixtureSiblingPath(originalProjectPath(), "sg13g2_stdcell/Test/Test.lstr");
+    const QString lstrPath = fixtureSiblingPath(QString(), "sg13g2_stdcell/Test/Test.lstr");
     QVERIFY2(QFileInfo::exists(lstrPath), qPrintable(QString("Missing fixture: %1").arg(lstrPath)));
 
     const LStreamCellReader::Result r = LStreamCellReader::read(lstrPath);
@@ -285,7 +281,7 @@ void FormatReadersCoverageTest::lstreamReader_read_fixtureFile()
 
 void MainWindowCoverageExpansionTest::initTestCase()
 {
-    QVERIFY2(!originalProjectPath().isEmpty(), "data/sg13g2.projects not found");
+    QVERIFY2(!libmanTestProjectFile().isEmpty(), "sg13g2.projects not found");
 }
 
 void MainWindowCoverageExpansionTest::hooks_removeDirAndCopyDir()
@@ -526,7 +522,7 @@ void MainWindowCoverageExpansionTest::mainWindow_save_supportedViews_session_cat
 
 void MainWindowSlotSmokeTest::initTestCase()
 {
-    QVERIFY2(!originalProjectPath().isEmpty(), "data/sg13g2.projects not found");
+    QVERIFY2(!libmanTestProjectFile().isEmpty(), "sg13g2.projects not found");
 }
 
 void MainWindowSlotSmokeTest::invokeSafeSlots_withPartialSelection()

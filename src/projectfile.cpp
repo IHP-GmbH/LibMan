@@ -1,4 +1,5 @@
 #include <QMenu>
+#include <QDir>
 #include <QFile>
 #include <QProcess>
 #include <QVariant>
@@ -92,7 +93,7 @@ void MainWindow::loadProjectFile(const QString &fileName)
     for(const LibDefinition& def : data.definitions) {
 
         const QString libName = def.name.trimmed();
-        const QString libPath = expandShellVariables(def.path.trimmed());
+        const QString libPath = expandShellVariables(QDir::fromNativeSeparators(def.path.trimmed()));
 
         if(libName.isEmpty()) {
             error(QString("Skipping library with empty name from '%1'.").arg(def.sourceFile));

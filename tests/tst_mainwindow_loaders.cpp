@@ -1,4 +1,5 @@
 #include "tst_mainwindow_loaders.h"
+#include "test_paths.h"
 
 #include <QCoreApplication>
 #include <QFileInfo>
@@ -16,7 +17,6 @@
 namespace
 {
 
-static const char *kProjectFile   = "data/sg13g2.projects";
 static const char *kLibraryName   = "ihp_sg13g2";
 static const char *kGroupStdCell  = "sg13g2_stdcell";
 static const char *kGroupIo       = "sg13g2_io";
@@ -27,11 +27,6 @@ static const char *kViewLstr      = "lstr";
 /*!********************************************************************************************************
  * \brief Returns absolute path to the original fixed test project.
  *********************************************************************************************************/
-static QString originalProjectPath()
-{
-    return QFINDTESTDATA(kProjectFile);
-}
-
 /*!********************************************************************************************************
  * \brief Waits until predicate becomes true.
  *********************************************************************************************************/
@@ -145,7 +140,7 @@ static TempProject createTempProjectCopy()
         return out;
     }
 
-    const QString srcProject = originalProjectPath();
+    const QString srcProject = libmanTestProjectFile();
     if(srcProject.isEmpty()) {
         out.dir.reset();
         return out;
@@ -227,8 +222,8 @@ static void selectGroup(MainWindow &w, QListWidget *list, const QString &groupNa
  *********************************************************************************************************/
 void MainWindowLoadersTest::initTestCase()
 {
-    const QString projPath = originalProjectPath();
-    QVERIFY2(!projPath.isEmpty(), "data/sg13g2.projects not found");
+    const QString projPath = libmanTestProjectFile();
+    QVERIFY2(!projPath.isEmpty(), "sg13g2.projects not found");
 }
 
 /*!********************************************************************************************************

@@ -1,4 +1,5 @@
 #include "tst_coverage_80.h"
+#include "test_paths.h"
 
 #include "mainwindow_test_hooks.h"
 
@@ -30,14 +31,8 @@
 namespace
 {
 
-static const char *kProjectFile = "data/sg13g2.projects";
 static const char *kLibraryName = "ihp_sg13g2";
 static const char *kGroupTest    = "Test";
-
-static QString originalProjectPath()
-{
-    return QFINDTESTDATA(kProjectFile);
-}
 
 static bool waitUntil(std::function<bool()> predicate, int timeoutMs = 15000, int stepMs = 50)
 {
@@ -135,7 +130,7 @@ static TempProject createTempProjectCopy()
         return out;
     }
 
-    const QString srcProject = originalProjectPath();
+    const QString srcProject = libmanTestProjectFile();
     if(srcProject.isEmpty()) {
         out.dir.reset();
         return out;
@@ -259,7 +254,7 @@ static void armAutoCloseDialogs(int totalMs = 2500)
 
 void Coverage80MainWindowDeepTest::initTestCase()
 {
-    QVERIFY2(!originalProjectPath().isEmpty(), "fixture projects file missing");
+    QVERIFY2(!libmanTestProjectFile().isEmpty(), "fixture projects file missing");
 }
 
 void Coverage80MainWindowDeepTest::expandOasAndLstrRoots_populateHierarchy()
@@ -398,7 +393,7 @@ void Coverage80MainWindowDeepTest::nullItemSlots_noCrash()
 
 void Coverage80LStreamReaderTest::initTestCase()
 {
-    QVERIFY2(!originalProjectPath().isEmpty(), "fixture");
+    QVERIFY2(!libmanTestProjectFile().isEmpty(), "fixture");
 }
 
 void Coverage80LStreamReaderTest::read_missingFile_reportsError()
@@ -470,13 +465,12 @@ void Coverage80LStreamReaderTest::read_truncatedPayload_reportsCapnpError()
 
 void Coverage80GdsExtraTest::initTestCase()
 {
-    QVERIFY2(!originalProjectPath().isEmpty(), "fixture");
+    QVERIFY2(!libmanTestProjectFile().isEmpty(), "fixture");
 }
 
 void Coverage80GdsExtraTest::readHierarchy_secondStdcellGds_fixture()
 {
-    const QString gdsPath = QFileInfo(originalProjectPath()).absolutePath()
-                            + "/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.gds";
+    const QString gdsPath = libmanTestDataFile(QStringLiteral("sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.gds"));
     QVERIFY2(QFileInfo::exists(gdsPath), qPrintable(gdsPath));
 
     GdsReader reader(gdsPath);
