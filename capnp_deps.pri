@@ -32,28 +32,34 @@ LSTREAM_GIT_COMMIT =
 LSTREAM_SCHEMA_REPO_DIR = $$LIBMAN_ROOT/.deps/lstream
 
 win32 {
-    CAPNP_BUILD_CMD = cmd /c \"$$shell_path($$LIBMAN_ROOT/scripts/build_capnp_windows.bat)\"
-    CAPNP_BUILD_CMD += \"$$CAPNP_GIT_URL\"
+    # mingw32-make recipes run under sh on CI; backslashes before "c" are eaten (\capnproto -> apnproto).
+    defineReplace(shArg) {
+        A = $$shell_path($$1)
+        return($$replace(A, \\, /))
+    }
+
+    CAPNP_BUILD_CMD = cmd /c \"$$shArg($$LIBMAN_ROOT/scripts/build_capnp_windows.bat)\"
+    CAPNP_BUILD_CMD += \"$$replace(CAPNP_GIT_URL, %, %%)\"
     CAPNP_BUILD_CMD += \"$$CAPNP_VERSION_MODE\"
     CAPNP_BUILD_CMD += \"$$CAPNP_GIT_BRANCH\"
     CAPNP_BUILD_CMD += \"$$CAPNP_GIT_TAG\"
     CAPNP_BUILD_CMD += \"$$CAPNP_GIT_COMMIT\"
-    CAPNP_BUILD_CMD += \"$$shell_path($$CAPNP_REPO_DIR)\"
-    CAPNP_BUILD_CMD += \"$$shell_path($$CAPNP_ROOT)\"
+    CAPNP_BUILD_CMD += \"$$shArg($$CAPNP_REPO_DIR)\"
+    CAPNP_BUILD_CMD += \"$$shArg($$CAPNP_ROOT)\"
 
     capnpbuild.target = capnpbuild
     capnpbuild.commands = $$CAPNP_BUILD_CMD
     QMAKE_EXTRA_TARGETS += capnpbuild
 
-    LSTREAM_BUILD_CMD = cmd /c \"$$shell_path($$LIBMAN_ROOT/scripts/update_lstream_schemas_windows.bat)\"
-    LSTREAM_BUILD_CMD += \"$$LSTREAM_GIT_URL\"
+    LSTREAM_BUILD_CMD = cmd /c \"$$shArg($$LIBMAN_ROOT/scripts/update_lstream_schemas_windows.bat)\"
+    LSTREAM_BUILD_CMD += \"$$replace(LSTREAM_GIT_URL, %, %%)\"
     LSTREAM_BUILD_CMD += \"$$LSTREAM_VERSION_MODE\"
     LSTREAM_BUILD_CMD += \"$$LSTREAM_GIT_BRANCH\"
     LSTREAM_BUILD_CMD += \"$$LSTREAM_GIT_TAG\"
     LSTREAM_BUILD_CMD += \"$$LSTREAM_GIT_COMMIT\"
-    LSTREAM_BUILD_CMD += \"$$shell_path($$LSTREAM_SCHEMA_REPO_DIR)\"
-    LSTREAM_BUILD_CMD += \"$$shell_path($$CAPNP_GEN_DIR)\"
-    LSTREAM_BUILD_CMD += \"$$shell_path($$CAPNP_ROOT)\"
+    LSTREAM_BUILD_CMD += \"$$shArg($$LSTREAM_SCHEMA_REPO_DIR)\"
+    LSTREAM_BUILD_CMD += \"$$shArg($$CAPNP_GEN_DIR)\"
+    LSTREAM_BUILD_CMD += \"$$shArg($$CAPNP_ROOT)\"
 
     lstreamschemas.target = $$LSTREAM_STAMP
     lstreamschemas.commands = $$LSTREAM_BUILD_CMD

@@ -12,8 +12,8 @@ set CAPNP_ROOT=%~8
 
 set STAMP_FILE=%OUT_DIR%\.schemas_built
 set STATE_FILE=%OUT_DIR%\.lstream_revision
-set CAPNP_EXE=%CAPNP_ROOT%\bin\capnp.exe
-set CAPNPC_CXX=%CAPNP_ROOT%\bin\capnpc-c++.exe
+set "CAPNP_EXE=%CAPNP_ROOT%\bin\capnp.exe"
+set "CAPNPC_CXX=%CAPNP_ROOT%\bin\capnpc-c++.exe"
 
 if "%GIT_URL%"=="" (
     echo ERROR: GIT_URL is empty

@@ -14,7 +14,10 @@ set STATE_FILE=%INSTALL_DIR%\.capnp_revision
 
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 
-if exist "%STAMP_FILE%" if exist "%INSTALL_DIR%\bin\capnp.exe" (
+set "CAPNP_EXE=%INSTALL_DIR%\bin\capnp.exe"
+set "CAPNP_CPP_BUILD=%REPO_DIR%\c++\build"
+
+if exist "%STAMP_FILE%" if exist "%CAPNP_EXE%" (
     echo Cap'n Proto already installed at %INSTALL_DIR%
     exit /b 0
 )
@@ -57,8 +60,8 @@ if "%CURRENT_REV%"=="%TARGET_REV%" if exist "%STAMP_FILE%" (
 git reset --hard %TARGET_REV%
 if errorlevel 1 exit /b 1
 
-if not exist "%REPO_DIR%\c++\build" mkdir "%REPO_DIR%\c++\build"
-cd /d "%REPO_DIR%\c++\build"
+if not exist "%CAPNP_CPP_BUILD%" mkdir "%CAPNP_CPP_BUILD%"
+cd /d "%CAPNP_CPP_BUILD%"
 
 cmake .. -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="%INSTALL_DIR%"
 if errorlevel 1 exit /b 1
