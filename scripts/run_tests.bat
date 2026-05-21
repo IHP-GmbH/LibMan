@@ -13,25 +13,23 @@ REM =========================
 REM Resolve paths
 REM =========================
 for %%I in ("%~dp0..") do set ROOT_DIR=%%~fI
-set BUILD_DIR=%ROOT_DIR%\build
-set TEST_BUILD_DIR=%ROOT_DIR%\tests\build
+if not defined BUILD_DIR set BUILD_DIR=%ROOT_DIR%\build
+if not defined TEST_BUILD_DIR set TEST_BUILD_DIR=%ROOT_DIR%\build-tests
+set LEGACY_TEST_BUILD_DIR=%ROOT_DIR%\tests\build
 set TEST_OBJECT_DIR=
-set ROOT_FWD=%ROOT_DIR:\=/%
+set ROOT_FWD=%ROOT_DIR:\=/=%
 
 REM =========================
 REM Find test executable
 REM =========================
-for /r "%BUILD_DIR%" %%f in (%BIN_NAME%) do (
-    if exist "%%f" (
-        set FOUND_EXE=%%f
-        goto :found
-    )
-)
-
-for /r "%TEST_BUILD_DIR%" %%f in (%BIN_NAME%) do (
-    if exist "%%f" (
-        set FOUND_EXE=%%f
-        goto :found
+for %%d in ("%TEST_BUILD_DIR%" "%BUILD_DIR%" "%LEGACY_TEST_BUILD_DIR%") do (
+    if exist %%d (
+        for /r "%%~d" %%f in (%BIN_NAME%) do (
+            if exist "%%f" (
+                set FOUND_EXE=%%f
+                goto :found
+            )
+        )
     )
 )
 

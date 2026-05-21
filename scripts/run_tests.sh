@@ -14,8 +14,9 @@ FOUND_EXE=""
 # Resolve paths
 # =========================
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-BUILD_DIR="$ROOT_DIR/build"
-TEST_BUILD_DIR="$ROOT_DIR/tests/build"
+BUILD_DIR="${BUILD_DIR:-$ROOT_DIR/build}"
+TEST_BUILD_DIR="${TEST_BUILD_DIR:-$ROOT_DIR/build-tests}"
+LEGACY_TEST_BUILD_DIR="$ROOT_DIR/tests/build"
 TEST_OBJECT_DIR=""
 ROOT_FWD="$ROOT_DIR"
 
@@ -30,11 +31,12 @@ find_exe() {
     fi
 }
 
-find_exe "$BUILD_DIR"
-
-if [[ -z "$FOUND_EXE" ]]; then
-    find_exe "$TEST_BUILD_DIR"
-fi
+for search_dir in "$TEST_BUILD_DIR" "$BUILD_DIR" "$LEGACY_TEST_BUILD_DIR"; do
+    if [[ -n "$FOUND_EXE" ]]; then
+        break
+    fi
+    find_exe "$search_dir"
+done
 
 if [[ -z "$FOUND_EXE" ]]; then
     echo "Error: $BIN_NAME not found."
@@ -94,6 +96,7 @@ python -m gcovr -j 1 \
   --filter "$ROOT_FWD/.*" \
   --exclude "$ROOT_FWD/tests/.*" \
   --exclude "$ROOT_FWD/build/.*" \
+  --exclude "$ROOT_FWD/build-tests/.*" \
   --exclude "$ROOT_FWD/extension/.*" \
   --exclude "$ROOT_FWD/capnp/.*" \
   --exclude "$ROOT_FWD/QtPropertyBrowser/.*" \
