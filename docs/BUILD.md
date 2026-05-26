@@ -71,6 +71,16 @@ make -j"$(nproc)"
 
 Linux CI runs tests via `scripts/run_tests.sh` with `LIBMAN_TEST_DATA_DIR` pointing at `tests/data`.
 
+### Qt Creator
+
+1. Open **`tests/tests.pro`** as a separate project (not only `libman.pro`).
+2. **Run qmake**, then **Build** (creates `tst_libman_gui.exe` under your shadow build dir, often `build-tests/Desktop_Qt_*-Debug/debug/` or `build/Desktop_Qt_*-Debug/debug/`).
+3. Run tests via **Projects → Run** using `scripts/run_tests.bat`, or from a terminal:
+   ```cmd
+   scripts\run_tests.bat path\to\shadow-build\debug
+   ```
+   Pass the directory that contains `tst_libman_gui.exe` if auto-detection fails.
+
 ---
 
 ## CMake build (VS Code / local)

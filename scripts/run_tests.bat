@@ -9,6 +9,19 @@ set TEST_LOG=test_results.txt
 set BIN_NAME=tst_libman_gui.exe
 set FOUND_EXE=
 
+REM Optional: run_tests.bat [path\to\build\dir] or set TEST_BUILD_DIR / BUILD_DIR
+if not "%~1"=="" (
+    if exist "%~1\%BIN_NAME%" (
+        set FOUND_EXE=%~1\%BIN_NAME%
+        goto :found
+    )
+    if exist "%~1" (
+        set TEST_BUILD_DIR=%~1
+    ) else (
+        set TEST_BUILD_DIR=%~1
+    )
+)
+
 REM =========================
 REM Resolve paths
 REM =========================
@@ -22,26 +35,53 @@ set ROOT_FWD=%ROOT_DIR:\=/=%
 REM =========================
 REM Find test executable
 REM =========================
-for %%d in ("%TEST_BUILD_DIR%" "%BUILD_DIR%" "%LEGACY_TEST_BUILD_DIR%") do (
-    if exist %%d (
-        for /r "%%~d" %%f in (%BIN_NAME%) do (
-            if exist "%%f" (
-                set FOUND_EXE=%%f
-                goto :found
-            )
-        )
+if not "%FOUND_EXE%"=="" goto :found
+
+call :find_in_dir "%TEST_BUILD_DIR%"
+if not "%FOUND_EXE%"=="" goto :found
+call :find_in_dir "%BUILD_DIR%"
+if not "%FOUND_EXE%"=="" goto :found
+call :find_in_dir "%LEGACY_TEST_BUILD_DIR%"
+if not "%FOUND_EXE%"=="" goto :found
+
+REM Qt Creator shadow builds: build/Desktop_Qt_*-Debug/debug/tst_libman_gui.exe
+for /d %%d in ("%BUILD_DIR%\*" "%TEST_BUILD_DIR%\*") do (
+    call :find_in_dir "%%~d"
+    if not "!FOUND_EXE!"=="" goto :found
+)
+
+REM Last resort: search repo (skip heavy dependency trees)
+for /f "delims=" %%f in ('dir /s /b "%ROOT_DIR%\%BIN_NAME%" 2^>nul') do (
+    echo %%f | findstr /i /c:"\capnproto\" /c:"\capnp-install\" /c:"\.deps\" /c:"\capnproto\" >nul
+    if errorlevel 1 (
+        set FOUND_EXE=%%f
+        goto :found
     )
 )
 
 :found
 if "%FOUND_EXE%"=="" (
     echo Error: %BIN_NAME% not found.
+    echo.
+    echo Searched under:
+    echo   %TEST_BUILD_DIR%
+    echo   %BUILD_DIR%  (including Qt Creator shadow subfolders)
+    echo   %LEGACY_TEST_BUILD_DIR%
+    echo.
+    echo Build tests first:
+    echo   Qt Creator: open tests/tests.pro, Run qmake, then Build Project
+    echo   VS Code:    Ctrl+Shift+B - "Tests: Build Tests"
+    echo   CLI:        mkdir build-tests ^& cd build-tests ^& qmake ../tests/tests.pro ^& mingw32-make
+    echo.
+    echo Or pass the build directory:  scripts\run_tests.bat path\to\dir\with\%BIN_NAME%
     exit /b 1
 )
 
 for %%d in ("%FOUND_EXE%\..") do (
     set TEST_OBJECT_DIR=%%~fd
 )
+
+echo Using test binary: %FOUND_EXE%
 
 set TESTDATA_SRC=%ROOT_DIR%\tests\data
 set LIBMAN_TEST_DATA_DIR=%TESTDATA_SRC%
@@ -107,9 +147,6 @@ pushd "%ROOT_DIR%"
 echo Using object directory: "%TEST_OBJECT_DIR%"
 echo Using source root: "%ROOT_FWD%"
 
-REM Line-coverage scope (reported total): exclude TUs that are dominated by modal UI,
-REM external tools, or binary protocol state space. All are still built and exercised
-REM by tests; they are simply omitted from this aggregate line-percentage.
 python -m gcovr -j 1 ^
   -r "%ROOT_FWD%" ^
   --object-directory "%TEST_OBJECT_DIR%" ^
@@ -139,9 +176,6 @@ python -m gcovr -j 1 ^
 
 set GCOVR_EXIT=%ERRORLEVEL%
 
-REM =========================
-REM Open report
-REM =========================
 if exist "%REPORT_NAME%" (
     start "" "%REPORT_NAME%"
     del /s /q "%ROOT_DIR%\*.gcov" > nul 2>&1
@@ -151,9 +185,6 @@ if exist "%REPORT_NAME%" (
 
 popd
 
-REM =========================
-REM Final exit code
-REM =========================
 echo.
 echo Summary: test failures=%TEST_EXIT%, gcovr exit=%GCOVR_EXIT%
 
@@ -167,4 +198,16 @@ if not "%TEST_EXIT%"=="0" (
     exit /b 1
 )
 
+exit /b 0
+
+REM =========================
+:find_in_dir
+set "_SEARCH_DIR=%~1"
+if not exist "%_SEARCH_DIR%" exit /b 0
+for /r "%_SEARCH_DIR%" %%f in (%BIN_NAME%) do (
+    if exist "%%f" (
+        set FOUND_EXE=%%f
+        exit /b 0
+    )
+)
 exit /b 0
