@@ -15,7 +15,7 @@ if [[ ! -f "$MK" ]]; then
 fi
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-STAMP_FILE="$ROOT/capnp-install/capnp-built.stamp"
+STAMP_FILE="$ROOT/capnp-install/capnp_install_stamp"
 BUILD_DIR="$(pwd)"
 
 if command -v python3 >/dev/null 2>&1; then
@@ -23,7 +23,7 @@ if command -v python3 >/dev/null 2>&1; then
 elif command -v python >/dev/null 2>&1; then
     STAMP="$(python -c "import os.path; print(os.path.relpath(r'$STAMP_FILE', r'$BUILD_DIR').replace(os.sep, '/'))")"
 else
-    STAMP="../capnp-install/capnp-built.stamp"
+    STAMP="../capnp-install/capnp_install_stamp"
 fi
 
 objects="$(

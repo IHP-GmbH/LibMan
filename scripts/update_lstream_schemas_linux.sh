@@ -10,7 +10,7 @@ REPO_DIR="$6"
 OUT_DIR="$7"
 CAPNP_ROOT="$8"
 
-STAMP_FILE="$OUT_DIR/.schemas_built"
+STAMP_FILE="$OUT_DIR/schemas_built_stamp"
 STATE_FILE="$OUT_DIR/.lstream_revision"
 CAPNP_EXE="$CAPNP_ROOT/bin/capnp"
 

@@ -60,7 +60,7 @@ LibMan/
 │
 ├── 📁 .deps/lstream/           ← LStream schema repo (cloned on first build)
 ├── 📁 capnproto/               ← Cap'n Proto sources (cloned; gitignored)
-├── 📁 capnp-install/           ← Cap'n Proto install prefix + capnp-built.stamp
+├── 📁 capnp-install/           ← Cap'n Proto install prefix + capnp_install_stamp
 ├── 📁 capnp/                   ← Generated schema C++ (.capnp.cc / .h)
 │
 └── ... other files (coverage.*, scripts, installer, etc.)

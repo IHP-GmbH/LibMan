@@ -18,16 +18,17 @@ win32 {
 LIBS += -L$$CAPNP_ROOT/lib
 LIBS += -lcapnp -lkj
 
-CAPNP_STAMP = $$CAPNP_ROOT/capnp-built.stamp
-LSTREAM_STAMP = $$CAPNP_GEN_DIR/.schemas_built
+# Underscore names only: qmake treats "capnp-built.stamp" as subtraction and ".schemas_built" as a scope.
+CAPNP_STAMP = $$shell_path($$CAPNP_ROOT/capnp_install_stamp)
+LSTREAM_STAMP = $$shell_path($$CAPNP_GEN_DIR/schemas_built_stamp)
 
-# Stamp paths relative to the build dir (supports build/ and Qt Creator shadow builds).
+# Stamp paths relative to the build dir (flat build/ or Qt Creator shadow builds).
 !isEmpty(OUT_PWD) {
-    CAPNP_STAMP_REL = $$relative_path($$OUT_PWD, $$CAPNP_STAMP)
-    LSTREAM_STAMP_REL = $$relative_path($$OUT_PWD, $$LSTREAM_STAMP)
+    CAPNP_STAMP_REL = $$relative_path($$shell_path($$OUT_PWD), $$CAPNP_STAMP)
+    LSTREAM_STAMP_REL = $$relative_path($$shell_path($$OUT_PWD), $$LSTREAM_STAMP)
 } else {
-    CAPNP_STAMP_REL = ../capnp-install/capnp-built.stamp
-    LSTREAM_STAMP_REL = ../capnp/.schemas_built
+    CAPNP_STAMP_REL = ../capnp-install/capnp_install_stamp
+    LSTREAM_STAMP_REL = ../capnp/schemas_built_stamp
 }
 CAPNP_STAMP_REL_ESC = $$replace(CAPNP_STAMP_REL, \\., \\.)
 LSTREAM_STAMP_REL_ESC = $$replace(LSTREAM_STAMP_REL, \\., \\.)
@@ -47,7 +48,6 @@ LSTREAM_SCHEMA_REPO_DIR = $$LIBMAN_ROOT/.deps/lstream
 
 win32 {
     # Absolute script path (no cd ..): works for build/ and Qt Creator shadow build dirs.
-    # Forward slashes only in the recipe (mingw32-make under sh eats \\c in \\capnp...).
     _mkcapnp = $$replace($$shell_path($$LIBMAN_ROOT/scripts/mkcapnp.cmd), \\, /)
     _mklstream = $$replace($$shell_path($$LIBMAN_ROOT/scripts/mklstream.cmd), \\, /)
     CAPNP_BUILD_CMD = cmd /c \"$$_mkcapnp\"
@@ -63,7 +63,7 @@ win32 {
     QMAKE_EXTRA_TARGETS += lstreamschemas
 
     PRE_TARGETDEPS += $$CAPNP_STAMP_REL
-    !exists($$CAPNP_GEN_DIR/.schemas_built) {
+    !exists($$CAPNP_GEN_DIR/schemas_built_stamp) {
         PRE_TARGETDEPS += $$LSTREAM_STAMP_REL
     }
 } else {
@@ -96,7 +96,7 @@ win32 {
     QMAKE_EXTRA_TARGETS += lstreamschemas
 
     PRE_TARGETDEPS += $$CAPNP_STAMP_REL
-    !exists($$CAPNP_GEN_DIR/.schemas_built) {
+    !exists($$CAPNP_GEN_DIR/schemas_built_stamp) {
         PRE_TARGETDEPS += $$LSTREAM_STAMP_REL
     }
 }

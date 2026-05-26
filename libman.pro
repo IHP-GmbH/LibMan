@@ -97,7 +97,8 @@ RESOURCES += icons.qrc
 # -----------------------------
 # Cap'n Proto (clone + build on first make via capnp_deps.pri)
 # -----------------------------
-LIBMAN_ROOT = $$PWD
+# Repo root (not the shadow-build cwd); required for Qt Creator build trees.
+LIBMAN_ROOT = $$_PRO_FILE_PWD_
 include(capnp_deps.pri)
 
 # Generated Cap'n Proto files

@@ -22,7 +22,7 @@ set "REPO_DIR=!REPO_DIR:\=/!"
 set "OUT_DIR=!OUT_DIR:\=/!"
 set "CAPNP_ROOT=!CAPNP_ROOT:\=/!"
 
-set "STAMP_FILE=!OUT_DIR!/.schemas_built"
+set "STAMP_FILE=!OUT_DIR!/schemas_built_stamp"
 set "STATE_FILE=!OUT_DIR!/.lstream_revision"
 set "CAPNP_EXE=!CAPNP_ROOT!/bin/capnp.exe"
 set "CAPNPC_CXX=!CAPNP_ROOT!/bin/capnpc-c++.exe"

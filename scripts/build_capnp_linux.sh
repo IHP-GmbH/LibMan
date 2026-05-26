@@ -9,7 +9,7 @@ GIT_COMMIT="$5"
 REPO_DIR="$6"
 INSTALL_DIR="$7"
 
-STAMP_FILE="$INSTALL_DIR/capnp-built.stamp"
+STAMP_FILE="$INSTALL_DIR/capnp_install_stamp"
 STATE_FILE="$INSTALL_DIR/.capnp_revision"
 
 mkdir -p "$(dirname "$REPO_DIR")"

@@ -142,7 +142,7 @@ TESTDATA += \
     $$PWD/data/sg13g2_stdcell/lstr/sg13g2_stdcell.lstr
 
 # Cap'n Proto (same clone-on-make flow as libman.pro)
-LIBMAN_ROOT = $$PWD/..
+LIBMAN_ROOT = $$_PRO_FILE_PWD_/..
 include($$LIBMAN_ROOT/capnp_deps.pri)
 
 CAPNP_GEN_DIR = $$LIBMAN_ROOT/capnp

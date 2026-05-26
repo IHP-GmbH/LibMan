@@ -52,7 +52,7 @@ jobs:
           CAPNP_SKIP_CHECK: 1
         run: |
           cd build
-          make -j1 ../capnp-install/capnp-built.stamp
+          make -j1 ../capnp-install/capnp_install_stamp
           make -j"$(nproc)"
 
       - name: Package Linux bundle (tar.gz)
@@ -138,7 +138,7 @@ jobs:
           CAPNP_SKIP_CHECK: 1
         run: |
           cd build-tests
-          make -j1 ../capnp-install/capnp-built.stamp
+          make -j1 ../capnp-install/capnp_install_stamp
           make -j"$(nproc)"
 
       - name: Export Cap'n Proto runtime path
