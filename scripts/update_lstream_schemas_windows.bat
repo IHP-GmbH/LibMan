@@ -95,20 +95,50 @@ if errorlevel 1 exit /b 1
 
 if not exist "!OUT_DIR!" mkdir "!OUT_DIR!"
 
-copy /Y "!REPO_DIR!/capnp/*.capnp" "!OUT_DIR!/"
-if errorlevel 1 exit /b 1
+rem Remove stale outputs (match linux script).
+del /Q "!OUT_DIR!/*.capnp" 2>nul
+del /Q "!OUT_DIR!/*.capnp.h" 2>nul
+del /Q "!OUT_DIR!/*.capnp.c++" 2>nul
+del /Q "!OUT_DIR!/*.capnp.cc" 2>nul
 
-cd /d "!OUT_DIR!"
+rem Copy with pushd + relative wildcards only (avoid \c in \capnp when paths go through make/sh).
+if not exist "!REPO_DIR!/capnp" (
+    echo ERROR: schema directory not found: !REPO_DIR!/capnp
+    exit /b 1
+)
+pushd "!REPO_DIR!/capnp"
+if errorlevel 1 (
+    echo ERROR: cannot enter !REPO_DIR!/capnp
+    exit /b 1
+)
+copy /Y *.capnp "!OUT_DIR!/" >nul
+set "COPY_ERR=!errorlevel!"
+popd
+if not "!COPY_ERR!"=="0" (
+    echo ERROR: failed to copy .capnp schemas into !OUT_DIR!
+    exit /b 1
+)
+
+pushd "!OUT_DIR!"
+if errorlevel 1 (
+    echo ERROR: cannot enter !OUT_DIR!
+    exit /b 1
+)
 
 for %%f in (*.capnp) do (
     echo Generating %%f
-    "!CAPNP_EXE!" compile -I . -o c++ "%%f"
-    if errorlevel 1 exit /b 1
+    "!CAPNP_EXE!" compile -I "!OUT_DIR!" -o c++ "%%f"
+    if errorlevel 1 (
+        popd
+        exit /b 1
+    )
 )
 
 for %%f in (*.capnp.c++) do (
-    if exist "%%~ff" ren "%%~ff" "%%~nf.cc"
+    if exist "%%f" ren "%%f" "%%~nf.cc"
 )
+
+popd
 
 echo !TARGET_REV!>"!STATE_FILE!"
 echo built>"!STAMP_FILE!"
