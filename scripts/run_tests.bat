@@ -96,6 +96,10 @@ REM =========================
 echo Cleaning old coverage data in "%TEST_OBJECT_DIR%"...
 del /s /q "%TEST_OBJECT_DIR%\*.gcda" > nul 2>&1
 del /s /q "%TEST_OBJECT_DIR%\*.gcov" > nul 2>&1
+if exist "%TEST_OBJECT_DIR%\CMakeFiles" (
+    echo Removing stale CMake coverage artifacts...
+    rmdir /s /q "%TEST_OBJECT_DIR%\CMakeFiles" > nul 2>&1
+)
 
 REM =========================
 REM Run tests
@@ -145,6 +149,7 @@ echo Using source root: "%ROOT_FWD%"
 python -m gcovr -j 1 ^
   -r "%ROOT_FWD%" ^
   --object-directory "%TEST_OBJECT_DIR%" ^
+  --merge-mode-functions=merge-use-line-min ^
   --gcov-ignore-errors=all ^
   --filter "%ROOT_FWD%/.*" ^
   --exclude "%ROOT_FWD%/tests/.*" ^

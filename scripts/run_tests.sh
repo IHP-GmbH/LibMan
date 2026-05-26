@@ -74,6 +74,10 @@ sync_test_fixtures
 # =========================
 echo "Cleaning old coverage data in \"$TEST_OBJECT_DIR\"..."
 find "$TEST_OBJECT_DIR" -type f \( -name "*.gcda" -o -name "*.gcov" \) -delete 2>/dev/null
+if [[ -d "$TEST_OBJECT_DIR/CMakeFiles" ]]; then
+    echo "Removing stale CMake coverage artifacts..."
+    rm -rf "$TEST_OBJECT_DIR/CMakeFiles"
+fi
 
 # =========================
 # Run tests
@@ -121,6 +125,7 @@ echo "Using source root: \"$ROOT_FWD\""
 python -m gcovr -j 1 \
   -r "$ROOT_FWD" \
   --object-directory "$TEST_OBJECT_DIR" \
+  --merge-mode-functions=merge-use-line-min \
   --gcov-ignore-errors=all \
   --filter "$ROOT_FWD/.*" \
   --exclude "$ROOT_FWD/tests/.*" \
