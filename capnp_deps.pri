@@ -19,10 +19,18 @@ LIBS += -L$$CAPNP_ROOT/lib
 LIBS += -lcapnp -lkj
 
 CAPNP_STAMP = $$CAPNP_ROOT/capnp-built.stamp
-# From build/: real file target (qmake cannot emit rules for ../capnp-install/.built).
-CAPNP_STAMP_REL = ../capnp-install/capnp-built.stamp
-CAPNP_STAMP_REL_ESC = ../capnp-install/capnp-built\\.stamp
 LSTREAM_STAMP = $$CAPNP_GEN_DIR/.schemas_built
+
+# Stamp paths relative to the build dir (supports build/ and Qt Creator shadow builds).
+!isEmpty(OUT_PWD) {
+    CAPNP_STAMP_REL = $$relative_path($$OUT_PWD, $$CAPNP_STAMP)
+    LSTREAM_STAMP_REL = $$relative_path($$OUT_PWD, $$LSTREAM_STAMP)
+} else {
+    CAPNP_STAMP_REL = ../capnp-install/capnp-built.stamp
+    LSTREAM_STAMP_REL = ../capnp/.schemas_built
+}
+CAPNP_STAMP_REL_ESC = $$replace(CAPNP_STAMP_REL, \\., \\.)
+LSTREAM_STAMP_REL_ESC = $$replace(LSTREAM_STAMP_REL, \\., \\.)
 
 CAPNP_GIT_URL = https://github.com/capnproto/capnproto.git
 CAPNP_VERSION_MODE = branch
@@ -38,26 +46,25 @@ LSTREAM_GIT_COMMIT =
 LSTREAM_SCHEMA_REPO_DIR = $$LIBMAN_ROOT/.deps/lstream
 
 win32 {
-    # mingw32-make on GHA uses sh: backslashes in paths eat letters (\capnp* -> apnp*).
-    # Recipe uses only forward slashes; script names avoid \c and \b after a backslash.
-    # After qmake, run scripts/patch_capnp_makefile.sh from build/ so parallel make waits
-    # for capnp-built.stamp (qmake .depends on OBJECTS is ignored by MinGW makefiles).
-    CAPNP_BUILD_CMD = cd .. && cmd /c scripts/mkcapnp.cmd
+    # Absolute script path (no cd ..): works for build/ and Qt Creator shadow build dirs.
+    # Forward slashes only in the recipe (mingw32-make under sh eats \\c in \\capnp...).
+    _mkcapnp = $$replace($$shell_path($$LIBMAN_ROOT/scripts/mkcapnp.cmd), \\, /)
+    _mklstream = $$replace($$shell_path($$LIBMAN_ROOT/scripts/mklstream.cmd), \\, /)
+    CAPNP_BUILD_CMD = cmd /c \"$$_mkcapnp\"
+    LSTREAM_BUILD_CMD = cmd /c \"$$_mklstream\"
 
     capnp_stamp.target = $$CAPNP_STAMP_REL
     capnp_stamp.commands = $$CAPNP_BUILD_CMD
     QMAKE_EXTRA_TARGETS += capnp_stamp
 
-    LSTREAM_BUILD_CMD = cd .. && cmd /c scripts/mklstream.cmd
-
-    lstreamschemas.target = $$LSTREAM_STAMP
+    lstreamschemas.target = $$LSTREAM_STAMP_REL
     lstreamschemas.commands = $$LSTREAM_BUILD_CMD
     lstreamschemas.depends = $$CAPNP_STAMP_REL
     QMAKE_EXTRA_TARGETS += lstreamschemas
 
     PRE_TARGETDEPS += $$CAPNP_STAMP_REL
     !exists($$CAPNP_GEN_DIR/.schemas_built) {
-        PRE_TARGETDEPS += $$LSTREAM_STAMP
+        PRE_TARGETDEPS += $$LSTREAM_STAMP_REL
     }
 } else {
     CAPNP_BUILD_CMD = bash $$shell_path($$LIBMAN_ROOT/scripts/build_capnp_linux.sh)
@@ -83,13 +90,13 @@ win32 {
     LSTREAM_BUILD_CMD += \"$$CAPNP_GEN_DIR\"
     LSTREAM_BUILD_CMD += \"$$CAPNP_ROOT\"
 
-    lstreamschemas.target = $$LSTREAM_STAMP
+    lstreamschemas.target = $$LSTREAM_STAMP_REL
     lstreamschemas.commands = $$LSTREAM_BUILD_CMD
     lstreamschemas.depends = $$CAPNP_STAMP_REL
     QMAKE_EXTRA_TARGETS += lstreamschemas
 
     PRE_TARGETDEPS += $$CAPNP_STAMP_REL
     !exists($$CAPNP_GEN_DIR/.schemas_built) {
-        PRE_TARGETDEPS += $$LSTREAM_STAMP
+        PRE_TARGETDEPS += $$LSTREAM_STAMP_REL
     }
 }

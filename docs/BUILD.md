@@ -41,6 +41,8 @@ make -j"$(nproc)"                             # application (parallel)
 
 ### Windows (MinGW)
 
+**Qt Creator** uses a shadow build directory such as `build/Desktop_Qt_5_15_2_MinGW_64_bit-Debug/`. The qmake rules use absolute paths to `scripts/mkcapnp.cmd` and compute stamp paths relative to that directory automatically. Re-run **qmake** after pulling changes if Cap'n Proto recipes fail.
+
 From the repository root, install Cap'n Proto **before** the parallel app build (CI does this explicitly):
 
 ```cmd
