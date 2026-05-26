@@ -35,8 +35,9 @@ Set `CAPNP_SKIP_CHECK=1` to skip Cap'n Proto's test suite during install (CI use
 ```bash
 mkdir -p build && cd build
 qmake ../libman.pro
-make -j1 capnp_install   # Cap'n Proto first (serial)
-make -j"$(nproc)"                             # application (parallel)
+make -j1 capnp_install      # Cap'n Proto first (serial)
+make -j1 lstream_schemas    # LStream .capnp → C++ (serial)
+make -j"$(nproc)"           # application (parallel)
 ```
 
 ### Windows (MinGW)
@@ -66,6 +67,7 @@ mingw32-make -j"$(nproc)"
 mkdir -p build-tests && cd build-tests
 qmake CONFIG+=debug CONFIG+=coverage ../tests/tests.pro
 make -j1 capnp_install
+make -j1 lstream_schemas
 make -j"$(nproc)"
 ```
 

@@ -5,6 +5,10 @@ isEmpty(CAPNP_BUILD_PHONY) {
     error("capnp_deps_finalize.pri: include capnp_deps.pri before this file")
 }
 
+isEmpty(LSTREAM_BUILD_PHONY) {
+    error("capnp_deps_finalize.pri: LSTREAM_BUILD_PHONY must be set by capnp_deps.pri")
+}
+
 # PRE_TARGETDEPS does not block parallel compilation of .cpp files.
 # Dots in names like cell.capnp.cc must be escaped for qmake's depends syntax.
 for(_src, SOURCES) {
@@ -13,6 +17,9 @@ for(_src, SOURCES) {
     _src_key = $$replace(_src_key, \\, /)
     _src_esc = $$replace(_src_key, \\., \\.)
     eval($${_src_esc}.depends += $$CAPNP_BUILD_PHONY)
+    contains(_src_key, /capnp/.*capnp\\.cc) {
+        eval($${_src_esc}.depends += $$LSTREAM_BUILD_PHONY)
+    }
 }
 
 # GNU make on Windows often ignores source-level .depends; tie each object to the phony target.
@@ -20,4 +27,7 @@ for(_obj, OBJECTS) {
     _obj_key = $$replace(_obj, \\, /)
     _obj_esc = $$replace(_obj_key, \\., \\.)
     eval($${_obj_esc}.depends += $$CAPNP_BUILD_PHONY)
+    contains(_obj_key, /capnp/.*capnp\\.o) {
+        eval($${_obj_esc}.depends += $$LSTREAM_BUILD_PHONY)
+    }
 }

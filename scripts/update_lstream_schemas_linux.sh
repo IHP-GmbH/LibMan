@@ -13,6 +13,7 @@ CAPNP_ROOT="$8"
 STAMP_FILE="$OUT_DIR/schemas_built_stamp"
 STATE_FILE="$OUT_DIR/.lstream_revision"
 CAPNP_EXE="$CAPNP_ROOT/bin/capnp"
+CAPNPC_CXX="$CAPNP_ROOT/bin/capnpc-c++"
 
 if [ -z "$GIT_URL" ] || [ -z "$REPO_DIR" ] || [ -z "$OUT_DIR" ] || [ -z "$CAPNP_ROOT" ]; then
     echo "ERROR: missing required arguments"
@@ -23,6 +24,13 @@ if [ ! -x "$CAPNP_EXE" ]; then
     echo "ERROR: capnp executable not found: $CAPNP_EXE"
     exit 1
 fi
+
+if [ ! -x "$CAPNPC_CXX" ]; then
+    echo "ERROR: capnpc-c++ executable not found: $CAPNPC_CXX"
+    exit 1
+fi
+
+export PATH="$CAPNP_ROOT/bin:$PATH"
 
 if [ -f "$STAMP_FILE" ] && [ -f "$OUT_DIR/cell.capnp.cc" ]; then
     echo "LStream schemas already present at $OUT_DIR"
@@ -74,16 +82,24 @@ git reset --hard "$TARGET_REV"
 mkdir -p "$OUT_DIR"
 rm -f "$OUT_DIR"/*.capnp "$OUT_DIR"/*.capnp.h "$OUT_DIR"/*.capnp.c++ "$OUT_DIR"/*.capnp.cc
 
+if [ ! -d "$REPO_DIR/capnp" ]; then
+    echo "ERROR: schema directory not found: $REPO_DIR/capnp"
+    exit 1
+fi
+
 cp "$REPO_DIR"/capnp/*.capnp "$OUT_DIR"/
 
-for f in "$OUT_DIR"/*.capnp; do
-    "$CAPNP_EXE" compile -I "$OUT_DIR" -o c++ "$f"
+pushd "$OUT_DIR" >/dev/null
+for f in *.capnp; do
+    echo "Generating $f"
+    "$CAPNP_EXE" compile -I . -o c++ "$f"
 done
 
-for f in "$OUT_DIR"/*.capnp.c++; do
+for f in *.capnp.c++; do
     [ -e "$f" ] || continue
     mv "$f" "${f%.c++}.cc"
 done
+popd >/dev/null
 
 echo "$TARGET_REV" > "$STATE_FILE"
 touch "$STAMP_FILE"

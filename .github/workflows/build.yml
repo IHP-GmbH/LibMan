@@ -53,6 +53,7 @@ jobs:
         run: |
           cd build
           make -j1 capnp_install
+          make -j1 lstream_schemas
           make -j"$(nproc)"
 
       - name: Package Linux bundle (tar.gz)
@@ -139,6 +140,7 @@ jobs:
         run: |
           cd build-tests
           make -j1 capnp_install
+          make -j1 lstream_schemas
           make -j"$(nproc)"
 
       - name: Export Cap'n Proto runtime path
