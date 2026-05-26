@@ -8,19 +8,7 @@ set REPORT_NAME=coverage.html
 set TEST_LOG=test_results.txt
 set BIN_NAME=tst_libman_gui.exe
 set FOUND_EXE=
-
-REM Optional: run_tests.bat [path\to\build\dir] or set TEST_BUILD_DIR / BUILD_DIR
-if not "%~1"=="" (
-    if exist "%~1\%BIN_NAME%" (
-        set FOUND_EXE=%~1\%BIN_NAME%
-        goto :found
-    )
-    if exist "%~1" (
-        set TEST_BUILD_DIR=%~1
-    ) else (
-        set TEST_BUILD_DIR=%~1
-    )
-)
+set ARG_BUILD_DIR=
 
 REM =========================
 REM Resolve paths
@@ -29,52 +17,37 @@ for %%I in ("%~dp0..") do set ROOT_DIR=%%~fI
 if not defined BUILD_DIR set BUILD_DIR=%ROOT_DIR%\build
 if not defined TEST_BUILD_DIR set TEST_BUILD_DIR=%ROOT_DIR%\build-tests
 set LEGACY_TEST_BUILD_DIR=%ROOT_DIR%\tests\build
+
+REM Optional: run_tests.bat [path\to\build\dir] or set TEST_BUILD_DIR / BUILD_DIR
+if not "%~1"=="" for %%I in ("%~1") do set "ARG_BUILD_DIR=%%~fI"
+if defined ARG_BUILD_DIR (
+    set "TEST_BUILD_DIR=!ARG_BUILD_DIR!"
+    call :search_build_dir "!ARG_BUILD_DIR!"
+    if not "!FOUND_EXE!"=="" goto :found
+)
 set TEST_OBJECT_DIR=
-set ROOT_FWD=%ROOT_DIR:\=/=%
+set "ROOT_FWD=!ROOT_DIR:\=/!"
 
 REM =========================
 REM Find test executable
 REM =========================
 if not "!FOUND_EXE!"=="" goto :found
 
-REM Common qmake output layouts (Qt Creator often uses tests\build\debug\).
-call :try_exe "%LEGACY_TEST_BUILD_DIR%\debug\%BIN_NAME%"
+REM Common qmake output layouts (Qt Creator shadow subfolders before stale flat copies).
+call :search_build_dir "%LEGACY_TEST_BUILD_DIR%"
 if not "!FOUND_EXE!"=="" goto :found
-call :try_exe "%LEGACY_TEST_BUILD_DIR%\release\%BIN_NAME%"
-if not "!FOUND_EXE!"=="" goto :found
-call :try_exe "%LEGACY_TEST_BUILD_DIR%\%BIN_NAME%"
-if not "!FOUND_EXE!"=="" goto :found
-call :try_exe "%TEST_BUILD_DIR%\debug\%BIN_NAME%"
-if not "!FOUND_EXE!"=="" goto :found
-call :try_exe "%TEST_BUILD_DIR%\release\%BIN_NAME%"
-if not "!FOUND_EXE!"=="" goto :found
-call :try_exe "%BUILD_DIR%\debug\%BIN_NAME%"
-if not "!FOUND_EXE!"=="" goto :found
-call :try_exe "%BUILD_DIR%\release\%BIN_NAME%"
-if not "!FOUND_EXE!"=="" goto :found
-
-call :find_in_dir "%TEST_BUILD_DIR%"
-if not "!FOUND_EXE!"=="" goto :found
-call :find_in_dir "%BUILD_DIR%"
-if not "!FOUND_EXE!"=="" goto :found
-call :find_in_dir "%LEGACY_TEST_BUILD_DIR%"
-if not "!FOUND_EXE!"=="" goto :found
-
-REM Qt Creator shadow builds: build/Desktop_Qt_*-Debug/debug/tst_libman_gui.exe
-for /d %%d in ("%BUILD_DIR%\*" "%TEST_BUILD_DIR%\*" "%LEGACY_TEST_BUILD_DIR%\*") do (
-    call :find_in_dir "%%~d"
-    if not "!FOUND_EXE!"=="" goto :found
-    call :try_exe "%%~d\debug\%BIN_NAME%"
-    if not "!FOUND_EXE!"=="" goto :found
-    call :try_exe "%%~d\release\%BIN_NAME%"
+if not "%TEST_BUILD_DIR%"=="%LEGACY_TEST_BUILD_DIR%" (
+    call :search_build_dir "%TEST_BUILD_DIR%"
     if not "!FOUND_EXE!"=="" goto :found
 )
+call :search_build_dir "%BUILD_DIR%"
+if not "!FOUND_EXE!"=="" goto :found
 
 REM Last resort: search repo (skip heavy dependency trees)
 for /f "delims=" %%f in ('dir /s /b "%ROOT_DIR%\%BIN_NAME%" 2^>nul') do (
     echo %%f | findstr /i /c:"\capnproto\" /c:"\capnp-install\" /c:"\.deps\" /c:"\capnproto\" >nul
     if errorlevel 1 (
-        set FOUND_EXE=%%f
+        set "FOUND_EXE=%%f"
         goto :found
     )
 )
@@ -85,7 +58,7 @@ if "!FOUND_EXE!"=="" (
     echo.
     echo Searched under:
     echo   %TEST_BUILD_DIR%
-    echo   %BUILD_DIR%  (including Qt Creator shadow subfolders)
+    echo   %BUILD_DIR% and Qt Creator shadow subfolders under build/
     echo   %LEGACY_TEST_BUILD_DIR%
     echo.
     echo Build tests first:
@@ -127,11 +100,13 @@ del /s /q "%TEST_OBJECT_DIR%\*.gcov" > nul 2>&1
 REM =========================
 REM Run tests
 REM =========================
+call :prepend_qt_to_path
+
 echo Running: "%FOUND_EXE%"
 
-if exist "%ROOT_DIR%\%TEST_LOG%" del /q "%ROOT_DIR%\%TEST_LOG%" > nul 2>&1
+if exist "%TEST_OBJECT_DIR%\%TEST_LOG%" del /q "%TEST_OBJECT_DIR%\%TEST_LOG%" > nul 2>&1
 
-pushd "%ROOT_DIR%"
+pushd "%TEST_OBJECT_DIR%"
 call "%FOUND_EXE%"
 set TEST_EXIT=%ERRORLEVEL%
 popd
@@ -139,12 +114,12 @@ popd
 REM =========================
 REM Show results
 REM =========================
-if exist "%ROOT_DIR%\%TEST_LOG%" (
+if exist "%TEST_OBJECT_DIR%\%TEST_LOG%" (
     echo.
     echo ===================================
     echo TEST RESULTS
     echo ===================================
-    type "%ROOT_DIR%\%TEST_LOG%"
+    type "%TEST_OBJECT_DIR%\%TEST_LOG%"
     echo ===================================
     echo.
 ) else (
@@ -221,6 +196,38 @@ if not "%TEST_EXIT%"=="0" (
 exit /b 0
 
 REM =========================
+:prepend_qt_to_path
+if defined QTDIR if exist "!QTDIR!\bin" set "PATH=!QTDIR!\bin;!PATH!"
+for /f "delims=" %%q in ('where qmake 2^>nul') do (
+    for %%I in ("%%~dpq.") do set "PATH=%%~fI\bin;!PATH!"
+    goto :prepend_qt_done
+)
+:prepend_qt_done
+for /f "delims=" %%g in ('where g++ 2^>nul') do (
+    for %%I in ("%%~dpg.") do set "PATH=%%~fI;!PATH!"
+    goto :prepend_mingw_done
+)
+:prepend_mingw_done
+exit /b 0
+
+REM =========================
+:search_build_dir
+set "_SEARCH_ROOT=%~1"
+if not exist "%_SEARCH_ROOT%" exit /b 0
+for /d %%d in ("%_SEARCH_ROOT%\Desktop_*") do (
+    call :try_exe "%%~d\debug\%BIN_NAME%"
+    if not "!FOUND_EXE!"=="" exit /b 0
+    call :try_exe "%%~d\release\%BIN_NAME%"
+    if not "!FOUND_EXE!"=="" exit /b 0
+)
+call :try_exe "%_SEARCH_ROOT%\debug\%BIN_NAME%"
+if not "!FOUND_EXE!"=="" exit /b 0
+call :try_exe "%_SEARCH_ROOT%\release\%BIN_NAME%"
+if not "!FOUND_EXE!"=="" exit /b 0
+call :try_exe "%_SEARCH_ROOT%\%BIN_NAME%"
+exit /b 0
+
+REM =========================
 :try_exe
 if exist "%~1" set "FOUND_EXE=%~1"
 exit /b 0
@@ -231,7 +238,7 @@ set "_SEARCH_DIR=%~1"
 if not exist "%_SEARCH_DIR%" exit /b 0
 for /r "%_SEARCH_DIR%" %%f in (%BIN_NAME%) do (
     if exist "%%f" (
-        set FOUND_EXE=%%f
+        set "FOUND_EXE=%%f"
         exit /b 0
     )
 )

@@ -2,6 +2,40 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Windows: Stop LibMan",
+      "type": "shell",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "taskkill /IM libman.exe /F >nul 2>&1 || exit /b 0"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Windows: Stop Tests",
+      "type": "shell",
+      "command": "cmd",
+      "args": [
+        "/c",
+        "taskkill /IM tst_libman_gui.exe /F >nul 2>&1 || exit /b 0"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      }
+    },
+    {
       "label": "CMake: Clean Build Folder",
       "type": "shell",
       "command": "cmd",
@@ -99,6 +133,7 @@
         "cwd": "${workspaceFolder}"
       },
       "dependsOn": [
+        "Windows: Stop LibMan",
         "CMake: Configure Debug"
       ],
       "group": {
@@ -126,6 +161,7 @@
         "cwd": "${workspaceFolder}"
       },
       "dependsOn": [
+        "Windows: Stop LibMan",
         "CMake: Configure Release"
       ],
       "group": {
@@ -193,6 +229,7 @@
         }
       },
       "dependsOn": [
+        "Windows: Stop LibMan",
         "CMake: Configure Debug"
       ],
       "group": {
@@ -218,6 +255,7 @@
         }
       },
       "dependsOn": [
+        "Windows: Stop LibMan",
         "CMake: Configure Release"
       ],
       "group": {
@@ -289,6 +327,13 @@
       }
     },
     {
+      "label": "Tests: Build Tests",
+      "dependsOn": [
+        "Tests: Build Coverage"
+      ],
+      "problemMatcher": []
+    },
+    {
       "label": "Tests: Build Coverage",
       "type": "shell",
       "command": "cmake",
@@ -301,6 +346,7 @@
         "cwd": "${workspaceFolder}/tests"
       },
       "dependsOn": [
+        "Windows: Stop Tests",
         "Tests: Configure Coverage"
       ],
       "group": {
@@ -321,7 +367,7 @@
       "command": "cmd",
       "args": [
         "/c",
-        "\"${workspaceFolder}\\scripts\\run_tests.bat\""
+        "\"${workspaceFolder}\\scripts\\run_tests.bat\" \"${workspaceFolder}\\tests\\build\""
       ],
       "options": {
         "cwd": "${workspaceFolder}",
