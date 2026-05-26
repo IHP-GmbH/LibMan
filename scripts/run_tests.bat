@@ -35,18 +35,38 @@ set ROOT_FWD=%ROOT_DIR:\=/=%
 REM =========================
 REM Find test executable
 REM =========================
-if not "%FOUND_EXE%"=="" goto :found
+if not "!FOUND_EXE!"=="" goto :found
+
+REM Common qmake output layouts (Qt Creator often uses tests\build\debug\).
+call :try_exe "%LEGACY_TEST_BUILD_DIR%\debug\%BIN_NAME%"
+if not "!FOUND_EXE!"=="" goto :found
+call :try_exe "%LEGACY_TEST_BUILD_DIR%\release\%BIN_NAME%"
+if not "!FOUND_EXE!"=="" goto :found
+call :try_exe "%LEGACY_TEST_BUILD_DIR%\%BIN_NAME%"
+if not "!FOUND_EXE!"=="" goto :found
+call :try_exe "%TEST_BUILD_DIR%\debug\%BIN_NAME%"
+if not "!FOUND_EXE!"=="" goto :found
+call :try_exe "%TEST_BUILD_DIR%\release\%BIN_NAME%"
+if not "!FOUND_EXE!"=="" goto :found
+call :try_exe "%BUILD_DIR%\debug\%BIN_NAME%"
+if not "!FOUND_EXE!"=="" goto :found
+call :try_exe "%BUILD_DIR%\release\%BIN_NAME%"
+if not "!FOUND_EXE!"=="" goto :found
 
 call :find_in_dir "%TEST_BUILD_DIR%"
-if not "%FOUND_EXE%"=="" goto :found
+if not "!FOUND_EXE!"=="" goto :found
 call :find_in_dir "%BUILD_DIR%"
-if not "%FOUND_EXE%"=="" goto :found
+if not "!FOUND_EXE!"=="" goto :found
 call :find_in_dir "%LEGACY_TEST_BUILD_DIR%"
-if not "%FOUND_EXE%"=="" goto :found
+if not "!FOUND_EXE!"=="" goto :found
 
 REM Qt Creator shadow builds: build/Desktop_Qt_*-Debug/debug/tst_libman_gui.exe
-for /d %%d in ("%BUILD_DIR%\*" "%TEST_BUILD_DIR%\*") do (
+for /d %%d in ("%BUILD_DIR%\*" "%TEST_BUILD_DIR%\*" "%LEGACY_TEST_BUILD_DIR%\*") do (
     call :find_in_dir "%%~d"
+    if not "!FOUND_EXE!"=="" goto :found
+    call :try_exe "%%~d\debug\%BIN_NAME%"
+    if not "!FOUND_EXE!"=="" goto :found
+    call :try_exe "%%~d\release\%BIN_NAME%"
     if not "!FOUND_EXE!"=="" goto :found
 )
 
@@ -60,7 +80,7 @@ for /f "delims=" %%f in ('dir /s /b "%ROOT_DIR%\%BIN_NAME%" 2^>nul') do (
 )
 
 :found
-if "%FOUND_EXE%"=="" (
+if "!FOUND_EXE!"=="" (
     echo Error: %BIN_NAME% not found.
     echo.
     echo Searched under:
@@ -198,6 +218,11 @@ if not "%TEST_EXIT%"=="0" (
     exit /b 1
 )
 
+exit /b 0
+
+REM =========================
+:try_exe
+if exist "%~1" set "FOUND_EXE=%~1"
 exit /b 0
 
 REM =========================
