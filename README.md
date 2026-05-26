@@ -70,7 +70,7 @@ Cap'n Proto and LStream schemas are **not** in the repository; they are cloned a
 ```bash
 mkdir -p build && cd build
 qmake ../libman.pro
-make -j1 ../capnp-install/capnp_install_stamp
+make -j1 capnp_install
 make -j$(nproc)
 ```
 

@@ -35,7 +35,7 @@ Set `CAPNP_SKIP_CHECK=1` to skip Cap'n Proto's test suite during install (CI use
 ```bash
 mkdir -p build && cd build
 qmake ../libman.pro
-make -j1 ../capnp-install/capnp_install_stamp   # Cap'n Proto first (serial)
+make -j1 capnp_install   # Cap'n Proto first (serial)
 make -j"$(nproc)"                             # application (parallel)
 ```
 
@@ -65,7 +65,7 @@ mingw32-make -j"$(nproc)"
 ```bash
 mkdir -p build-tests && cd build-tests
 qmake CONFIG+=debug CONFIG+=coverage ../tests/tests.pro
-make -j1 ../capnp-install/capnp_install_stamp
+make -j1 capnp_install
 make -j"$(nproc)"
 ```
 
@@ -90,7 +90,7 @@ See [Quick Start](getting-started/QUICK_START.md) and [Dependencies](getting-sta
 
 | Job | Build system | Cap'n Proto |
 |-----|--------------|-------------|
-| `build-linux` | qmake + make | `make -j1 ../capnp-install/capnp_install_stamp` then parallel make |
+| `build-linux` | qmake + make | `make -j1 capnp_install` then parallel make |
 | `build-windows` | qmake + mingw32-make | `mkcapnp.cmd` before qmake; `patch_capnp_makefile.sh` after qmake |
 | `tests-linux` | qmake tests + `run_tests.sh` | Same stamp step in `build-tests/` |
 
@@ -116,7 +116,7 @@ See [Quick Start](getting-started/QUICK_START.md) and [Dependencies](getting-sta
   Cap'n Proto was not installed before compiling. Run `scripts\mkcapnp.cmd`, or use the two-step make + `patch_capnp_makefile.sh` flow above.
 
 - **qmake warnings about `../../build/Desktop_Qt_*` or circular dependencies**  
-  Re-run qmake after upgrading; stamp files must use underscore names (`capnp_install_stamp`) because qmake parses `capnp-built` as subtraction.
+  Run qmake again after upgrading; Cap'n Proto must use the phony target `capnp_install`, not a path-based make target (conflicts with Qt Creator `DESTDIR`).
 
 - **First build is slow**  
   Normal: cloning and compiling Cap'n Proto takes several minutes.
