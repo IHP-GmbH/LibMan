@@ -53,6 +53,8 @@ fi
 if [[ -n "${LD_LIBRARY_PATH:-}" ]]; then
     DEPLOY_LDPATH="${DEPLOY_LDPATH}:${LD_LIBRARY_PATH}"
 fi
+# linuxdeployqt runs ldd on Qt plugins (libqxcb.so); need host libs visible during packaging.
+DEPLOY_LDPATH="${DEPLOY_LDPATH}:/usr/lib64:/lib64"
 export LD_LIBRARY_PATH="$DEPLOY_LDPATH"
 
 if command -v patchelf >/dev/null 2>&1; then

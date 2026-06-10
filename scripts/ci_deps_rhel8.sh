@@ -15,9 +15,11 @@ dnf install -y \
     mesa-libGL-devel zlib-devel libdrm-devel \
     dbus-libs fontconfig-devel freetype-devel \
     libxcb libxcb-devel libX11-devel libXext-devel libXfixes-devel \
-    xcb-util xcb-util-devel xcb-util-image-devel xcb-util-keysyms-devel \
-    xcb-util-renderutil-devel xcb-util-wm-devel \
-    libxkbcommon libxkbcommon-devel \
+    xcb-util xcb-util-devel xcb-util-image xcb-util-image-devel \
+    xcb-util-keysyms xcb-util-keysyms-devel \
+    xcb-util-renderutil xcb-util-renderutil-devel \
+    xcb-util-wm xcb-util-wm-devel \
+    libxkbcommon libxkbcommon-devel libxkbcommon-x11 \
     openssl-devel glib2-devel libicu-devel nss-devel \
     libXi-devel libXrender-devel \
     xorg-x11-fonts-Type1
