@@ -10,7 +10,7 @@ dnf config-manager --set-enabled crb 2>/dev/null || true
 
 dnf install -y \
     gcc gcc-c++ make git autoconf automake libtool pkgconfig \
-    python3 python3-pip p7zip p7zip-plugins \
+    python39 python39-pip p7zip p7zip-plugins \
     curl tar gzip which file patch patchelf \
     mesa-libGL-devel zlib-devel libdrm-devel \
     dbus-libs fontconfig-devel freetype-devel \

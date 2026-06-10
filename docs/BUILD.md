@@ -132,6 +132,7 @@ Qt, Cap'n Proto, and other runtime libraries are bundled via `linuxdeployqt` + `
 | `scripts/update_lstream_schemas_linux.sh` | Linux LStream schema update |
 | `scripts/patch_capnp_makefile.sh` | Post-qmake Makefile patch (Windows only) |
 | `scripts/ci_deps_rhel8.sh` | DNF packages for Rocky/RHEL 8 CI image |
+| `scripts/ci_install_qt_rhel8.sh` | Qt 5.15 via aqtinstall + Python 3.9 on EL8 |
 | `scripts/package_linux_bundle.sh` | Portable tar.gz (Qt + capnp + `libman-run.sh`) |
 | `capnp_deps.pri` / `capnp_deps_finalize.pri` | qmake Cap'n Proto + schema rules |
 

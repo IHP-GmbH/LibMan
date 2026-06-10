@@ -110,14 +110,7 @@ jobs:
         run: bash scripts/ci_deps_rhel8.sh
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: '5.15.2'
-          host: 'linux'
-          target: 'desktop'
-          arch: 'gcc_64'
-          install-deps: false
-          setup-python: false
+        run: bash scripts/ci_install_qt_rhel8.sh
 
       - name: Configure (qmake)
         run: |
