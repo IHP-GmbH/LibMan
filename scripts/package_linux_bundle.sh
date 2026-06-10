@@ -36,6 +36,29 @@ BIN="$(find_binary)" || {
 cp "$BIN" "$STAGE/libman"
 chmod +x "$STAGE/libman"
 
+CAPNP_LIB="$ROOT/capnp-install/lib"
+mkdir -p "$STAGE/lib"
+if [[ -d "$CAPNP_LIB" ]]; then
+    cp -a "$CAPNP_LIB"/lib*.so* "$STAGE/lib/" 2>/dev/null || true
+fi
+
+if [[ -n "${QT_ROOT_DIR:-}" && -d "${QT_ROOT_DIR}/bin" ]]; then
+    export PATH="${QT_ROOT_DIR}/bin:${PATH}"
+fi
+
+DEPLOY_LDPATH="$STAGE/lib"
+if [[ -n "${QT_ROOT_DIR:-}" && -d "${QT_ROOT_DIR}/lib" ]]; then
+    DEPLOY_LDPATH="${DEPLOY_LDPATH}:${QT_ROOT_DIR}/lib"
+fi
+if [[ -n "${LD_LIBRARY_PATH:-}" ]]; then
+    DEPLOY_LDPATH="${DEPLOY_LDPATH}:${LD_LIBRARY_PATH}"
+fi
+export LD_LIBRARY_PATH="$DEPLOY_LDPATH"
+
+if command -v patchelf >/dev/null 2>&1; then
+    patchelf --set-rpath '$ORIGIN/lib' "$STAGE/libman" || true
+fi
+
 if command -v linuxdeployqt >/dev/null 2>&1; then
     linuxdeployqt "$STAGE/libman" -bundle-non-qt-libs -always-overwrite
 else
