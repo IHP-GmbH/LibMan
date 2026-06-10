@@ -90,6 +90,66 @@ jobs:
 
 
   # ============================================================
+  # RHEL 8 compatible build (Rocky Linux 8 container, glibc 2.28)
+  # ============================================================
+
+  build-rhel8:
+    name: Build RHEL 8 bundle
+    runs-on: ubuntu-latest
+    container:
+      image: rockylinux:8
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Install build dependencies
+        run: bash scripts/ci_deps_rhel8.sh
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          host: 'linux'
+          target: 'desktop'
+          arch: 'gcc_64'
+          install-deps: 'nosudo'
+
+      - name: Configure (qmake)
+        run: |
+          mkdir -p build
+          cd build
+          qmake CONFIG+=release ../libman.pro
+
+      - name: Build
+        env:
+          CAPNP_SKIP_CHECK: 1
+        run: |
+          cd build
+          make -j1 capnp_install
+          make -j1 lstream_schemas
+          make -j"$(nproc)"
+
+      - name: Install linuxdeployqt
+        run: bash scripts/ci_install_linuxdeployqt.sh
+
+      - name: Package RHEL 8 bundle
+        run: |
+          chmod +x scripts/package_linux_bundle.sh
+          bash scripts/package_linux_bundle.sh build libman-rhel8.tar.gz "RHEL 8.10 compatible"
+
+      - name: Upload RHEL 8 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libman-rhel8
+          path: libman-rhel8.tar.gz
+          if-no-files-found: error
+
+
+  # ============================================================
   # Linux tests + Code Coverage
   # ============================================================
 

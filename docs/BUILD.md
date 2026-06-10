@@ -102,9 +102,22 @@ See [Quick Start](getting-started/QUICK_START.md) and [Dependencies](getting-sta
 
 | Job | Build system | Cap'n Proto |
 |-----|--------------|-------------|
-| `build-linux` | qmake + make | `make -j1 capnp_install` then parallel make |
+| `build-linux` | qmake + make (Ubuntu) | `make -j1 capnp_install` then parallel make |
+| `build-rhel8` | qmake + make (Rocky Linux 8 container) | Same; artifact `libman-rhel8.tar.gz` for RHEL 8.10 |
 | `build-windows` | qmake + mingw32-make | `mkcapnp.cmd` before qmake; `patch_capnp_makefile.sh` after qmake |
 | `tests-linux` | qmake tests + `run_tests.sh` | Same stamp step in `build-tests/` |
+
+### RHEL 8 artifact (`build-rhel8`)
+
+CI builds inside a **Rocky Linux 8** container (glibc 2.28, ABI-compatible with **RHEL 8.10**). The uploaded artifact `libman-rhel8.tar.gz` contains a portable bundle:
+
+```bash
+tar -xzf libman-rhel8.tar.gz
+cd dist-bundle
+./libman-run.sh
+```
+
+Qt, Cap'n Proto, and other runtime libraries are bundled via `linuxdeployqt` + `scripts/package_linux_bundle.sh`. Download from the GitHub Actions run → **Artifacts** → `libman-rhel8`.
 
 ---
 
@@ -118,6 +131,8 @@ See [Quick Start](getting-started/QUICK_START.md) and [Dependencies](getting-sta
 | `scripts/mklstream.cmd` | Windows LStream schema update |
 | `scripts/update_lstream_schemas_linux.sh` | Linux LStream schema update |
 | `scripts/patch_capnp_makefile.sh` | Post-qmake Makefile patch (Windows only) |
+| `scripts/ci_deps_rhel8.sh` | DNF packages for Rocky/RHEL 8 CI image |
+| `scripts/package_linux_bundle.sh` | Portable tar.gz (Qt + capnp + `libman-run.sh`) |
 | `capnp_deps.pri` / `capnp_deps_finalize.pri` | qmake Cap'n Proto + schema rules |
 
 ---
