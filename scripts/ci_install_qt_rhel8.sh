@@ -18,8 +18,7 @@ else
 
     mkdir -p "$QT_INSTALL_ROOT"
     python3.9 -m aqt install-qt linux desktop "$QT_VERSION" gcc_64 \
-        --outputdir "$QT_INSTALL_ROOT" \
-        --base "$QT_INSTALL_ROOT"
+        -O "$QT_INSTALL_ROOT"
 
     if [[ ! -x "${QT_PATH}/bin/qmake" ]]; then
         echo "ERROR: qmake not found after aqt install (expected ${QT_PATH}/bin/qmake)"
