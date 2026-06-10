@@ -10,12 +10,14 @@ dnf config-manager --set-enabled crb 2>/dev/null || true
 
 dnf install -y \
     gcc gcc-c++ make git autoconf automake libtool pkgconfig \
-    python3 python3-pip \
+    python3 python3-pip p7zip p7zip-plugins \
     curl tar gzip which file patch patchelf \
-    mesa-libGL-devel zlib-devel \
+    mesa-libGL-devel zlib-devel libdrm-devel \
     dbus-libs fontconfig-devel freetype-devel \
-    libxcb libxcb-devel libX11-devel \
+    libxcb libxcb-devel libX11-devel libXext-devel libXfixes-devel \
+    xcb-util xcb-util-devel xcb-util-image-devel xcb-util-keysyms-devel \
+    xcb-util-renderutil-devel xcb-util-wm-devel \
     libxkbcommon libxkbcommon-devel \
-    openssl-devel glib2-devel \
+    openssl-devel glib2-devel libicu-devel nss-devel \
     libXi-devel libXrender-devel \
     xorg-x11-fonts-Type1

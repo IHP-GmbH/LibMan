@@ -116,7 +116,8 @@ jobs:
           host: 'linux'
           target: 'desktop'
           arch: 'gcc_64'
-          install-deps: 'nosudo'
+          install-deps: false
+          setup-python: false
 
       - name: Configure (qmake)
         run: |
