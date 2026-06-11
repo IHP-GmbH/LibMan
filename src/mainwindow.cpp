@@ -1836,7 +1836,7 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
         // Root item: "gds" or "oas"
         if(type == ItemViewGds || type == ItemViewOas || type == ItemViewLStream) {
 
-            const bool serverWasRunning = (m_klayoutProc && m_klayoutProc->state() != QProcess::NotRunning);
+            const bool serverWasRunning = isKLayoutServerRunning();
 
             if(serverWasRunning) {
                 const QString groupName = getCurrentGroupName();
@@ -1906,25 +1906,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event)
         if(event->type() == QEvent::Drop) {
             handleViewFileDrop(static_cast<QDropEvent*>(event));
             return true;
-        }
-    }
-
-    if(obj == m_ui->listViews->viewport() &&
-        event->type() == QEvent::MouseButtonDblClick) {
-
-        QMouseEvent *me = static_cast<QMouseEvent*>(event);
-        const QModelIndex idx = m_ui->listViews->indexAt(me->pos());
-        if(idx.isValid()) {
-
-            auto *item = static_cast<QTreeWidgetItem*>(idx.internalPointer());
-            if(item) {
-                const int type = item->data(0, RoleType).toInt();
-
-                if (type == ItemViewGds || type == ItemViewOas || type == ItemCell) {
-                    on_listViews_itemDoubleClicked(item, 0);
-                    return true;
-                }
-            }
         }
     }
 

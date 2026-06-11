@@ -10,6 +10,91 @@
 #include <QStandardPaths>
 #include <QTemporaryFile>
 #include <QTextStream>
+#include <QThread>
+
+#ifdef Q_OS_UNIX
+#include <signal.h>
+#endif
+
+#ifdef Q_OS_WIN
+#include <windows.h>
+#endif
+
+namespace {
+
+QString resolveToolProgram(const QString &tool)
+{
+    const QFileInfo fi(tool);
+    if(fi.isAbsolute() && fi.exists()) {
+        return fi.absoluteFilePath();
+    }
+
+    const QString found = QStandardPaths::findExecutable(tool);
+    if(!found.isEmpty()) {
+        return found;
+    }
+
+    return tool;
+}
+
+bool isProcessAlive(qint64 pid)
+{
+    if(pid <= 0) {
+        return false;
+    }
+
+#ifdef Q_OS_UNIX
+    return kill(static_cast<pid_t>(pid), 0) == 0;
+#elif defined(Q_OS_WIN)
+    HANDLE handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, static_cast<DWORD>(pid));
+    if(!handle) {
+        return false;
+    }
+
+    DWORD exitCode = 0;
+    const bool alive =
+        GetExitCodeProcess(handle, &exitCode) != 0 &&
+        exitCode == STILL_ACTIVE;
+    CloseHandle(handle);
+    return alive;
+#else
+    Q_UNUSED(pid);
+    return false;
+#endif
+}
+
+void augmentKLayoutEnvironment(QProcessEnvironment &env,
+                               const QString &toolProgram,
+                               const QString &projectFile)
+{
+    const QFileInfo toolFi(toolProgram);
+    if(toolFi.exists()) {
+#ifdef Q_OS_UNIX
+        const QString toolDir = toolFi.absolutePath();
+        const QString ldPath = env.value(QStringLiteral("LD_LIBRARY_PATH"));
+        env.insert(QStringLiteral("LD_LIBRARY_PATH"),
+                   ldPath.isEmpty() ? toolDir : toolDir + QLatin1Char(':') + ldPath);
+#endif
+    }
+
+    if(!projectFile.isEmpty()) {
+        const QFileInfo projFi(projectFile);
+        if(projFi.exists() && projFi.isFile()) {
+            env.insert(QStringLiteral("KLAYOUT_LIB"),
+                       QDir::toNativeSeparators(projFi.absoluteFilePath()));
+        }
+    }
+}
+
+} // namespace
+
+/*!*******************************************************************************************************************
+ * \brief Returns true when the detached KLayout server process is still running.
+ **********************************************************************************************************************/
+bool MainWindow::isKLayoutServerRunning() const
+{
+    return isProcessAlive(m_klayoutServerPid);
+}
 
 /*!*******************************************************************************************************************
  * \brief Sends an "open GDS" request to a running KLayout server instance.
@@ -74,14 +159,11 @@ bool MainWindow::ensureKLayoutServerRunning(const QString &tool)
         return false;
     }
 
-    if (m_klayoutProc && m_klayoutProc->state() != QProcess::NotRunning) {
+    if(isKLayoutServerRunning()) {
         return true;
     }
 
-    if (m_klayoutProc) {
-        m_klayoutProc->deleteLater();
-        m_klayoutProc = nullptr;
-    }
+    m_klayoutServerPid = 0;
 
     if (m_klayoutCmdFile.isEmpty()) {
         const QString base =
@@ -111,27 +193,17 @@ bool MainWindow::ensureKLayoutServerRunning(const QString &tool)
         }
     }
 
-    m_klayoutProc = new QProcess(this);
-
-    connect(m_klayoutProc,
-            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            this,
-            [this](int, QProcess::ExitStatus)
-            {
-                if (m_klayoutProc) {
-                    m_klayoutProc->deleteLater();
-                    m_klayoutProc = nullptr;
-                }
-            });
-
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    env.insert("KLAYOUT_LIB", QDir::toNativeSeparators(QFileInfo(m_currentProjFile).absoluteFilePath()));
-    m_klayoutProc->setProcessEnvironment(env);
+    const QString program = resolveToolProgram(tool);
+    const QFileInfo programFi(program);
+    if(!programFi.exists()) {
+        error(QString("KLayout executable not found: %1").arg(tool), false);
+        return false;
+    }
 
     QStringList args;
-    args << "-rr" << m_klayoutServerScript;
+    args << QStringLiteral("-rr") << m_klayoutServerScript;
 
-    QString cmdLine = tool;
+    QString cmdLine = program;
     for (const QString &arg : args) {
         if (arg.contains(QLatin1Char(' '))) {
             cmdLine += QLatin1String(" \"") + arg + QLatin1Char('"');
@@ -140,10 +212,32 @@ bool MainWindow::ensureKLayoutServerRunning(const QString &tool)
         }
     }
 
-    m_klayoutProc->start(tool, args);
-    if (!m_klayoutProc->waitForStarted(3000)) {
-        m_klayoutProc->deleteLater();
-        m_klayoutProc = nullptr;
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    augmentKLayoutEnvironment(env, program, m_currentProjFile);
+
+    QProcess launcher;
+    launcher.setProgram(program);
+    launcher.setArguments(args);
+    launcher.setProcessEnvironment(env);
+    launcher.setWorkingDirectory(programFi.absolutePath());
+
+    qint64 pid = 0;
+    const bool started = launcher.startDetached(&pid);
+    if(!started || pid <= 0) {
+        error(QString("Failed to start KLayout server: %1").arg(cmdLine), false);
+        return false;
+    }
+
+    m_klayoutServerPid = pid;
+
+#ifdef Q_OS_UNIX
+    // Give the GUI process time to load plugins before the first open command.
+    QThread::msleep(500);
+#endif
+
+    if(!isKLayoutServerRunning()) {
+        m_klayoutServerPid = 0;
+        error(QString("KLayout server exited immediately: %1").arg(cmdLine), false);
         return false;
     }
 

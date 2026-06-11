@@ -374,6 +374,7 @@ private:
     QMap<QString, QString>              getCurrentLibraries() const;
 
     bool                                ensureKLayoutServerRunning(const QString &tool);
+    bool                                isKLayoutServerRunning() const;
     bool                                sendKLayoutOpenRequest(const QString &gdsPath, const QString &cellName);
     QString                             createKLayoutServerScript(const QString &cmdFile) const;
     bool                                sendKLayoutSelectRequest(const QString &gdsPath, const QString &cellName);
@@ -402,7 +403,7 @@ private:
     QStringList                         m_copyData;                        /*!< Copy buffer: [name, path, ...] depending on COPY_STATE. */
     COPY_STATE                          m_currentCopyState     = NONE;     /*!< Current copy state (project/group/view). */
 
-    QProcess                           *m_klayoutProc          = nullptr;  /*!< Running KLayout process instance (optional). */
+    qint64                              m_klayoutServerPid      = 0;       /*!< PID of detached KLayout server process. */
     QString                             m_klayoutCmdFile;                  /*!< Path to KLayout JSON command file. */
     QString                             m_klayoutServerScript;             /*!< Path to generated KLayout server script. */
 
