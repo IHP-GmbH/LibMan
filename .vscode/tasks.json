@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Windows: Stop LibMan",
+      "label": "_stopLibMan",
       "type": "shell",
       "command": "cmd",
       "args": [
@@ -16,10 +16,11 @@
       "presentation": {
         "reveal": "silent",
         "panel": "shared"
-      }
+      },
+      "hide": true
     },
     {
-      "label": "Windows: Stop Tests",
+      "label": "_stopTests",
       "type": "shell",
       "command": "cmd",
       "args": [
@@ -33,29 +34,11 @@
       "presentation": {
         "reveal": "silent",
         "panel": "shared"
-      }
-    },
-    {
-      "label": "CMake: Clean Build Folder",
-      "type": "shell",
-      "command": "cmd",
-      "args": [
-        "/c",
-        "if exist build rmdir /s /q build"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
       },
-      "problemMatcher": [],
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
+      "hide": true
     },
     {
-      "label": "CMake: Configure Debug",
+      "label": "_configureLibMan",
       "type": "shell",
       "command": "cmake",
       "args": [
@@ -75,222 +58,15 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "group": {
-        "kind": "build",
-        "isDefault": false
-      },
       "problemMatcher": "$cmake",
       "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
+        "reveal": "silent",
         "panel": "shared"
-      }
+      },
+      "hide": true
     },
     {
-      "label": "CMake: Configure Release",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "-S",
-        ".",
-        "-B",
-        "build",
-        "-G",
-        "MinGW Makefiles",
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_C_COMPILER=C:/Qt/Tools/mingw810_64/bin/gcc.exe",
-        "-DCMAKE_CXX_COMPILER=C:/Qt/Tools/mingw810_64/bin/g++.exe",
-        "-DCMAKE_MAKE_PROGRAM=C:/Qt/Tools/mingw810_64/bin/mingw32-make.exe",
-        "-DCMAKE_PREFIX_PATH=C:/Qt/5.15.2/mingw81_64",
-        "-DQt5_DIR=C:/Qt/5.15.2/mingw81_64/lib/cmake/Qt5"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "group": {
-        "kind": "build",
-        "isDefault": false
-      },
-      "problemMatcher": "$cmake",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Compilation & Running LibMan: Build Debug",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--build",
-        "build",
-        "-j4"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "dependsOn": [
-        "Windows: Stop LibMan",
-        "CMake: Configure Debug"
-      ],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "problemMatcher": "$gcc",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Compilation & Running LibMan: Build Release",
-      "type": "shell",
-      "command": "cmake",
-      "args": [
-        "--build",
-        "build",
-        "-j4"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "dependsOn": [
-        "Windows: Stop LibMan",
-        "CMake: Configure Release"
-      ],
-      "group": {
-        "kind": "build",
-        "isDefault": false
-      },
-      "problemMatcher": "$gcc",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Compilation & Running LibMan: Run Debug",
-      "type": "shell",
-      "command": "${workspaceFolder}/build/libman.exe",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "PATH": "C:/Qt/5.15.2/mingw81_64/bin;C:/Qt/Tools/mingw810_64/bin;${env:PATH}"
-        }
-      },
-      "group": {
-        "kind": "test",
-        "isDefault": false
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Compilation & Running LibMan: Run Release",
-      "type": "shell",
-      "command": "${workspaceFolder}/build/libman.exe",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "PATH": "C:/Qt/5.15.2/mingw81_64/bin;C:/Qt/Tools/mingw810_64/bin;${env:PATH}"
-        }
-      },
-      "group": {
-        "kind": "test",
-        "isDefault": false
-      },
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Compilation & Running LibMan: Build & Run Debug",
-      "type": "shell",
-      "command": "cmake --build build -j4 && ${workspaceFolder}/build/libman.exe",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "PATH": "C:/Qt/5.15.2/mingw81_64/bin;C:/Qt/Tools/mingw810_64/bin;${env:PATH}"
-        }
-      },
-      "dependsOn": [
-        "Windows: Stop LibMan",
-        "CMake: Configure Debug"
-      ],
-      "group": {
-        "kind": "test",
-        "isDefault": false
-      },
-      "problemMatcher": "$gcc",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Compilation & Running LibMan: Build & Run Release",
-      "type": "shell",
-      "command": "cmake --build build -j4 && ${workspaceFolder}/build/libman.exe",
-      "options": {
-        "cwd": "${workspaceFolder}",
-        "env": {
-          "PATH": "C:/Qt/5.15.2/mingw81_64/bin;C:/Qt/Tools/mingw810_64/bin;${env:PATH}"
-        }
-      },
-      "dependsOn": [
-        "Windows: Stop LibMan",
-        "CMake: Configure Release"
-      ],
-      "group": {
-        "kind": "test",
-        "isDefault": false
-      },
-      "problemMatcher": "$gcc",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Tests: Clean Build Folder",
-      "type": "shell",
-      "command": "cmd",
-      "args": [
-        "/c",
-        "if exist build rmdir /s /q build"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}/tests"
-      },
-      "problemMatcher": [],
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Tests: Configure Coverage",
+      "label": "_configureTestsCoverage",
       "type": "shell",
       "command": "cmake",
       "args": [
@@ -311,14 +87,34 @@
       "options": {
         "cwd": "${workspaceFolder}/tests"
       },
+      "problemMatcher": "$cmake",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "hide": true
+    },
+    {
+      "label": "Build LibMan",
+      "type": "shell",
+      "command": "cmake",
+      "args": [
+        "--build",
+        "build",
+        "-j4"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
       "dependsOn": [
-        "Tests: Clean Build Folder"
+        "_stopLibMan",
+        "_configureLibMan"
       ],
       "group": {
         "kind": "build",
-        "isDefault": false
+        "isDefault": true
       },
-      "problemMatcher": "$cmake",
+      "problemMatcher": "$gcc",
       "presentation": {
         "echo": true,
         "reveal": "always",
@@ -327,14 +123,29 @@
       }
     },
     {
-      "label": "Tests: Build Tests",
-      "dependsOn": [
-        "Tests: Build Coverage"
-      ],
-      "problemMatcher": []
+      "label": "Run LibMan",
+      "type": "shell",
+      "command": "${workspaceFolder}/build/libman.exe",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "PATH": "C:/Qt/5.15.2/mingw81_64/bin;C:/Qt/Tools/mingw810_64/bin;${env:PATH}"
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
     },
     {
-      "label": "Tests: Build Coverage",
+      "label": "Build Tests",
       "type": "shell",
       "command": "cmake",
       "args": [
@@ -346,8 +157,8 @@
         "cwd": "${workspaceFolder}/tests"
       },
       "dependsOn": [
-        "Windows: Stop Tests",
-        "Tests: Configure Coverage"
+        "_stopTests",
+        "_configureTestsCoverage"
       ],
       "group": {
         "kind": "build",
@@ -362,12 +173,12 @@
       }
     },
     {
-      "label": "Tests: Run Coverage Script",
+      "label": "Run Tests",
       "type": "shell",
       "command": "cmd",
       "args": [
         "/c",
-        "\"${workspaceFolder}\\scripts\\run_tests.bat\" \"${workspaceFolder}\\tests\\build\""
+        "\"${workspaceFolder}\\scripts\\build_and_run_tests.bat\""
       ],
       "options": {
         "cwd": "${workspaceFolder}",
@@ -375,11 +186,8 @@
           "PATH": "C:/Qt/5.15.2/mingw81_64/bin;C:/Qt/Tools/mingw810_64/bin;${env:PATH}"
         }
       },
-      "dependsOn": [
-        "Tests: Build Coverage"
-      ],
       "group": {
-        "kind": "test",
+        "kind": "build",
         "isDefault": false
       },
       "problemMatcher": [],
@@ -387,25 +195,6 @@
         "echo": true,
         "reveal": "always",
         "focus": false,
-        "panel": "shared"
-      }
-    },
-    {
-      "label": "Tests: Run With Coverage",
-      "dependsOrder": "sequence",
-      "dependsOn": [
-        "Tests: Clean Build Folder",
-        "Tests: Configure Coverage",
-        "Tests: Build Coverage",
-        "Tests: Run Coverage Script"
-      ],
-      "problemMatcher": [],
-      "group": {
-        "kind": "test",
-        "isDefault": true
-      },
-      "presentation": {
-        "reveal": "always",
         "panel": "shared"
       }
     }

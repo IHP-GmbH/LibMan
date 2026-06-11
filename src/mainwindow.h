@@ -6,6 +6,9 @@
 
 #include <QProcess>
 #include <QMainWindow>
+
+class QMimeData;
+class QDropEvent;
 #include <QHash>
 #include <QTimer>
 #include <memory>
@@ -305,6 +308,14 @@ private:
     void                                loadViews(const QString &libPath, const QString &groupName);
 
     void                                clearLibrarySelectionDependentViews();
+    void                                updateLibraryActionStates();
+    void                                setupDragAndDrop();
+
+    QStringList                         collectSupportedViewSuffixes() const;
+    bool                                isSupportedViewDrop(const QMimeData *mimeData) const;
+    bool                                importCellViewFile(const QString &libName, const QString &srcFilePath);
+    void                                handleViewFileDrop(QDropEvent *event);
+    void                                setLibraryRootDirectory(const QString &libName, const QString &dirPath);
 
     void                                hideTreeItem(QTreeWidget *, const QString &filter);
     void                                hideListItem(QListWidget *, const QString &filter);

@@ -71,6 +71,20 @@ public:
         return w->getLibraryPath(libName);
     }
 
+    static void setLibraryRootDirectory(MainWindow *w,
+                                      const QString &libName,
+                                      const QString &dirPath)
+    {
+        w->setLibraryRootDirectory(libName, dirPath);
+    }
+
+    static bool importCellViewFile(MainWindow *w,
+                                   const QString &libName,
+                                   const QString &srcFilePath)
+    {
+        return w->importCellViewFile(libName, srcFilePath);
+    }
+
     static void loadDocuments(MainWindow *w, const QString &libPath)
     {
         w->loadDocuments(libPath);

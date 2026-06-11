@@ -54,7 +54,7 @@ coverage.css
 coverage.js
 
 # Per-file html reports
-coverage.*.html
+coverage*.html
 
 # Raw coverage data
 *.gcda
@@ -66,3 +66,8 @@ test_results*.txt
 test_output.txt
 coverage_by_file.txt
 gcovr_verbose.txt
+
+# Coverage output variants (for example coverage_test.css / coverage_test.js)
+coverage*.css
+coverage*.js
+coverage*.txt

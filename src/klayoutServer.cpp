@@ -131,12 +131,23 @@ bool MainWindow::ensureKLayoutServerRunning(const QString &tool)
     QStringList args;
     args << "-rr" << m_klayoutServerScript;
 
+    QString cmdLine = tool;
+    for (const QString &arg : args) {
+        if (arg.contains(QLatin1Char(' '))) {
+            cmdLine += QLatin1String(" \"") + arg + QLatin1Char('"');
+        } else {
+            cmdLine += QLatin1Char(' ') + arg;
+        }
+    }
+
     m_klayoutProc->start(tool, args);
     if (!m_klayoutProc->waitForStarted(3000)) {
         m_klayoutProc->deleteLater();
         m_klayoutProc = nullptr;
         return false;
     }
+
+    info(QString("Starting KLayout server: %1").arg(cmdLine), false);
 
     return true;
 }

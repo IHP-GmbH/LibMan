@@ -14,6 +14,9 @@
 #include <QTemporaryFile>
 #include <QGuiApplication>
 #include <QFileSystemWatcher>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QMimeData>
 
 #include <QListWidgetItem>
 
@@ -81,6 +84,8 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     connect(m_ui->treeLibs, SIGNAL(itemSelectionChanged()), this, SLOT(on_treeLibs_itemSelectionChanged()));
 
     m_ui->listViews->viewport()->installEventFilter(this);
+
+    setupDragAndDrop();
 
     setWindowTitle(getLibManTitle());
 
@@ -429,12 +434,22 @@ void MainWindow::loadRecentProject()
  **********************************************************************************************************************/
 void MainWindow::setRecentProject(const QString &fileName)
 {
+    if(fileName.isEmpty()) {
+        return;
+    }
+
+    const QString absFileName = QFileInfo(fileName).absoluteFilePath();
+
     QSettings settings(getSettingsHeaderName());
     settings.beginGroup("RecentProjects");
 
     QStringList files = settings.value("RecentProjList").toStringList();
-    files.removeAll(fileName);
-    files.prepend(fileName);
+    for(int i = files.size() - 1; i >= 0; --i) {
+        if(QFileInfo(files[i]).absoluteFilePath() == absFileName) {
+            files.removeAt(i);
+        }
+    }
+    files.prepend(absFileName);
     while (files.size() > PROJ_MAX_COUNT) {
         files.removeLast();
     }
@@ -455,21 +470,21 @@ void MainWindow::updateRecentProjectActions()
     QStringList files = settings.value("RecentProjList").toStringList();
     settings.endGroup();
 
-    int numRecentFiles = qMin(files.size(), (int) PROJ_MAX_COUNT);
-
-    for (int i = 0; i < numRecentFiles; ++i) {
-        QString fileName = files[i];
-        if(!QFileInfo(fileName).exists()) {
+    int slot = 0;
+    for(int i = 0; i < files.size() && slot < PROJ_MAX_COUNT; ++i) {
+        const QString absFileName = QFileInfo(files[i]).absoluteFilePath();
+        if(!QFileInfo(absFileName).exists()) {
             continue;
         }
 
-        QString text = tr("&%1 %2").arg(i + 1).arg(files[i]);
-        m_recentProjects[i]->setText(text);
-        m_recentProjects[i]->setData(files[i]);
-        m_recentProjects[i]->setVisible(true);
+        const QString text = tr("&%1 %2").arg(slot + 1).arg(absFileName);
+        m_recentProjects[slot]->setText(text);
+        m_recentProjects[slot]->setData(absFileName);
+        m_recentProjects[slot]->setVisible(true);
+        ++slot;
     }
 
-    for (int j = numRecentFiles; j < PROJ_MAX_COUNT; ++j) {
+    for(int j = slot; j < PROJ_MAX_COUNT; ++j) {
         m_recentProjects[j]->setVisible(false);
     }
 }
@@ -479,10 +494,20 @@ void MainWindow::updateRecentProjectActions()
  **********************************************************************************************************************/
 QString MainWindow::getCurrentWorkingDir() const
 {
-    if(m_ui->actionRecent1 && !m_ui->actionRecent1->text().isEmpty()) {
-        QString workDir = QFileInfo(m_ui->actionRecent1->text()).absolutePath();
-        if(QFileInfo(workDir).exists()) {
-            return workDir;
+    if(!m_currentProjFile.isEmpty()) {
+        const QString projDir = QFileInfo(m_currentProjFile).absolutePath();
+        if(QFileInfo(projDir).exists()) {
+            return projDir;
+        }
+    }
+
+    if(m_ui->actionRecent1 && m_ui->actionRecent1->isVisible()) {
+        const QString recentFile = m_ui->actionRecent1->data().toString();
+        if(!recentFile.isEmpty()) {
+            const QString workDir = QFileInfo(recentFile).absolutePath();
+            if(QFileInfo(workDir).exists()) {
+                return workDir;
+            }
         }
     }
 
@@ -495,6 +520,10 @@ QString MainWindow::getCurrentWorkingDir() const
  **********************************************************************************************************************/
 QString MainWindow::getLibraryPath(const QString &libName) const
 {
+    if(libName.isEmpty()) {
+        return QString();
+    }
+
     const QMap<QString, PropertyItem*> propItems = m_properties->getMap();
     const QString prefix = getLibraryKeyPrefix() + libName + "/";
 
@@ -516,13 +545,35 @@ QString MainWindow::getLibraryPath(const QString &libName) const
 
         QDir viewDir = fi.dir();
         if(!viewDir.cdUp()) {
-            return QString();
+            continue;
         }
 
         return QDir::toNativeSeparators(viewDir.absolutePath());
     }
 
+    const QString rootKey = getLibraryKeyPrefix() + libName;
+    if(m_properties->exists(rootKey)) {
+        const QString rootPath = m_properties->get<QString>(rootKey).trimmed();
+        QFileInfo rootInfo(rootPath);
+        if(rootInfo.exists() && rootInfo.isDir()) {
+            return QDir::toNativeSeparators(rootInfo.absoluteFilePath());
+        }
+    }
+
     return QString();
+}
+
+/*!*******************************************************************************************************************
+ * \brief Stores the root directory for a library created without layout files.
+ **********************************************************************************************************************/
+void MainWindow::setLibraryRootDirectory(const QString &libName, const QString &dirPath)
+{
+    if(libName.isEmpty() || dirPath.isEmpty()) {
+        return;
+    }
+
+    const QString key = getLibraryKeyPrefix() + libName;
+    m_properties->set(key, QDir::toNativeSeparators(dirPath));
 }
 
 /*!*******************************************************************************************************************
@@ -749,7 +800,7 @@ QString MainWindow::getCurrentLibraryName() const
         return projName;
     }
 
-    if(projId->text(0).isEmpty()) {
+    if(projId->text(0).isEmpty() || projId->childCount() > 0) {
         return projName;
     }
 
@@ -1098,9 +1149,37 @@ void MainWindow::clearLibrarySelectionDependentViews()
     m_ui->listDocumentation->clear();
     m_ui->listCategories->clear();
 
-    m_ui->actionGroup->setEnabled(false);
-    m_ui->actionUnion->setEnabled(false);
-    m_ui->actionCategory->setEnabled(false);
+    updateLibraryActionStates();
+}
+
+/*!*******************************************************************************************************************
+ * \brief Enables toolbar actions based on the current library/cell selection.
+ **********************************************************************************************************************/
+void MainWindow::updateLibraryActionStates()
+{
+    const QString libName = getCurrentLibraryName();
+    const bool hasLibrary = !libName.isEmpty();
+    const QString libRoot = hasLibrary ? getLibraryPath(libName) : QString();
+    const bool hasLibraryRoot = !libRoot.isEmpty() && QFileInfo(libRoot).exists();
+    const bool hasCell = !getCurrentGroupName().isEmpty();
+
+    m_ui->actionGroup->setEnabled(hasLibrary);
+    m_ui->actionUnion->setEnabled(hasLibrary && hasLibraryRoot && hasCell);
+    m_ui->actionCategory->setEnabled(hasLibrary && hasLibraryRoot);
+}
+
+/*!*******************************************************************************************************************
+ * \brief Enables drag-and-drop of supported layout files onto library and cell panes.
+ **********************************************************************************************************************/
+void MainWindow::setupDragAndDrop()
+{
+    m_ui->treeLibs->setAcceptDrops(true);
+    m_ui->treeLibs->viewport()->setAcceptDrops(true);
+    m_ui->listGroups->setAcceptDrops(true);
+    m_ui->listGroups->viewport()->setAcceptDrops(true);
+
+    m_ui->treeLibs->viewport()->installEventFilter(this);
+    m_ui->listGroups->viewport()->installEventFilter(this);
 }
 
 /*!*******************************************************************************************************************
@@ -1128,6 +1207,8 @@ void MainWindow::on_treeLibs_itemSelectionChanged()
         clearLibrarySelectionDependentViews();
         return;
     }
+
+    updateLibraryActionStates();
 }
 
 /*!*******************************************************************************************************************
@@ -1334,9 +1415,7 @@ void MainWindow::on_treeLibs_itemClicked(QTreeWidgetItem *item, int)
     loadDocuments(libPath);
     loadCategories(libPath);
 
-    m_ui->actionGroup->setEnabled(false);
-    m_ui->actionUnion->setEnabled(false);
-    m_ui->actionCategory->setEnabled(false);
+    updateLibraryActionStates();
 }
 
 /*!*******************************************************************************************************************
@@ -1369,7 +1448,7 @@ void MainWindow::on_listGroups_itemClicked(QListWidgetItem *item)
 
     loadViews(libItem->text(0), item->text());
 
-    m_ui->actionUnion->setEnabled(false);
+    updateLibraryActionStates();
 }
 
 /*!*******************************************************************************************************************
@@ -1801,6 +1880,28 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
  **********************************************************************************************************************/
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
+    const bool isDropTarget =
+        obj == m_ui->treeLibs->viewport() ||
+        obj == m_ui->listGroups->viewport();
+
+    if(isDropTarget) {
+        if(event->type() == QEvent::DragEnter || event->type() == QEvent::DragMove) {
+            auto *dragEvent = static_cast<QDragEnterEvent*>(event);
+            if(isSupportedViewDrop(dragEvent->mimeData())) {
+                dragEvent->acceptProposedAction();
+            }
+            else {
+                dragEvent->ignore();
+            }
+            return true;
+        }
+
+        if(event->type() == QEvent::Drop) {
+            handleViewFileDrop(static_cast<QDropEvent*>(event));
+            return true;
+        }
+    }
+
     if(obj == m_ui->listViews->viewport() &&
         event->type() == QEvent::MouseButtonDblClick) {
 
@@ -2736,27 +2837,11 @@ QMap<QString, QStringList> MainWindow::getSupportedViewsByTool() const
  *
  * The cell name is derived from the selected file base name.
  **********************************************************************************************************************/
-void MainWindow::addExistingCell()
+QStringList MainWindow::collectSupportedViewSuffixes() const
 {
-    const QString libName = getCurrentLibraryName();
-    if(libName.isEmpty()) {
-        return;
-    }
-
-    const QString libRoot = getLibraryPath(libName);
-    if(libRoot.isEmpty()) {
-        error(QString("Failed to determine root path for library '%1'.").arg(libName), false);
-        return;
-    }
-
-    const QMap<QString, QStringList> supportedViewsByTool = getSupportedViewsByTool();
-    if(supportedViewsByTool.isEmpty()) {
-        error("No supported views configured.", false);
-        return;
-    }
-
-    qDebug()<<1;
     QStringList allViews;
+    const QMap<QString, QStringList> supportedViewsByTool = getSupportedViewsByTool();
+
     for(auto it = supportedViewsByTool.constBegin(); it != supportedViewsByTool.constEnd(); ++it) {
         for(const QString &view : it.value()) {
             if(!allViews.contains(view)) {
@@ -2764,76 +2849,106 @@ void MainWindow::addExistingCell()
             }
         }
     }
+
     allViews.sort();
+    return allViews;
+}
 
-    if(allViews.isEmpty()) {
-        error("No supported view suffixes found.", false);
-        return;
+/*!*********************************************************************************************************************
+ * \brief Returns true if the drag-and-drop payload contains supported layout view files.
+ **********************************************************************************************************************/
+bool MainWindow::isSupportedViewDrop(const QMimeData *mimeData) const
+{
+    if(!mimeData || !mimeData->hasUrls()) {
+        return false;
     }
 
-    QStringList filters;
-
-    QStringList allPatterns;
-    for(const QString &view : allViews) {
-        allPatterns << QString("*.%1").arg(view);
-    }
-    filters << tr("Supported Views (%1)").arg(allPatterns.join(" "));
-
-    for(const QString &view : allViews) {
-        filters << QString("%1 (*.%2)").arg(view.toUpper(), view);
+    const QStringList supportedViews = collectSupportedViewSuffixes();
+    if(supportedViews.isEmpty()) {
+        return false;
     }
 
-    filters << tr("All Files (*.*)");
+    for(const QUrl &url : mimeData->urls()) {
+        const QString localPath = url.toLocalFile();
+        if(localPath.isEmpty()) {
+            continue;
+        }
 
-    qDebug()<<filters;
+        const QString viewName = QFileInfo(localPath).suffix().trimmed().toLower();
+        if(supportedViews.contains(viewName)) {
+            return true;
+        }
+    }
 
-    const QString srcFilePath = QFileDialog::getOpenFileName(this,
-                                                             tr("Add Existing Cell"),
-                                                             QString(),
-                                                             filters.join(";;"));
-    if(srcFilePath.isEmpty()) {
-        return;
+    return false;
+}
+
+/*!*********************************************************************************************************************
+ * \brief Imports an existing layout file into the given library as a new cell/view pair.
+ **********************************************************************************************************************/
+bool MainWindow::importCellViewFile(const QString &libName, const QString &srcFilePath)
+{
+    if(libName.isEmpty() || srcFilePath.isEmpty()) {
+        return false;
     }
 
     QFileInfo srcFi(srcFilePath);
     if(!srcFi.exists() || !srcFi.isFile()) {
         error(QString("Selected file does not exist: %1").arg(srcFilePath), false);
-        return;
+        return false;
+    }
+
+    QString libRoot = getLibraryPath(libName);
+    if(libRoot.isEmpty()) {
+        if(!m_currentProjFile.isEmpty()) {
+            libRoot = QFileInfo(m_currentProjFile).absoluteDir().absolutePath();
+            setLibraryRootDirectory(libName, libRoot);
+        }
+        else {
+            error(QString("Failed to determine root path for library '%1'.").arg(libName), false);
+            return false;
+        }
+    }
+
+    const QStringList allViews = collectSupportedViewSuffixes();
+    if(allViews.isEmpty()) {
+        error("No supported view suffixes found.", false);
+        return false;
     }
 
     const QString groupName = srcFi.completeBaseName().trimmed();
     if(groupName.isEmpty()) {
         error(QString("Failed to determine cell name from '%1'.").arg(srcFilePath), false);
-        return;
+        return false;
     }
 
     const QString viewName = srcFi.suffix().trimmed().toLower();
     if(viewName.isEmpty()) {
         error(QString("Failed to determine view type from '%1'.").arg(srcFilePath), false);
-        return;
+        return false;
     }
 
     if(!allViews.contains(viewName)) {
         error(QString("View '%1' is not supported.").arg(viewName), false);
-        return;
+        return false;
     }
 
     const QString cellDirPath = QDir::toNativeSeparators(libRoot + "/" + groupName);
     QDir dir;
     if(!dir.mkpath(cellDirPath)) {
         error(QString("Failed to create cell directory '%1'.").arg(cellDirPath), false);
-        return;
+        return false;
     }
 
     const QString dstFilePath = QDir::toNativeSeparators(cellDirPath + "/" + groupName + "." + viewName);
     if(QFileInfo(dstFilePath).exists()) {
         error(QString("Cell view already exists: %1").arg(dstFilePath), false);
-        return;
+        return false;
     }
 
     if(!QFile::copy(srcFilePath, dstFilePath)) {
         error(QString("Failed to copy '%1' to '%2'.").arg(srcFilePath, dstFilePath), false);
-        return;
+        return false;
     }
 
     const QString key = getLibraryKeyPrefix() + libName + "/" + groupName + "/" + viewName;
@@ -2847,9 +2962,94 @@ void MainWindow::addExistingCell()
         on_listGroups_itemClicked(items.first());
     }
 
-    saveProjectFile(m_currentProjFile);
+    updateLibraryActionStates();
+
+    if(!m_currentProjFile.isEmpty()) {
+        saveProjectFile(m_currentProjFile);
+    }
+    else {
+        setStateChanged();
+    }
 
     info(QString("Added existing cell '%1' to library '%2'.")
              .arg(groupName)
              .arg(libName), false);
+
+    return true;
+}
+
+/*!*********************************************************************************************************************
+ * \brief Handles drag-and-drop of supported layout files onto library or cell panes.
+ **********************************************************************************************************************/
+void MainWindow::handleViewFileDrop(QDropEvent *event)
+{
+    if(!event || !event->mimeData()) {
+        return;
+    }
+
+    const QString libName = getCurrentLibraryName();
+    if(libName.isEmpty()) {
+        error(tr("Select a library before dropping layout files."), false);
+        event->ignore();
+        return;
+    }
+
+    bool imported = false;
+    for(const QUrl &url : event->mimeData()->urls()) {
+        const QString localPath = url.toLocalFile();
+        if(localPath.isEmpty()) {
+            continue;
+        }
+
+        if(importCellViewFile(libName, localPath)) {
+            imported = true;
+        }
+    }
+
+    if(imported) {
+        event->acceptProposedAction();
+    }
+    else {
+        event->ignore();
+    }
+}
+
+/*!*********************************************************************************************************************
+ * \brief Opens a file dialog and imports an existing layout file into the selected library.
+ **********************************************************************************************************************/
+void MainWindow::addExistingCell()
+{
+    const QString libName = getCurrentLibraryName();
+    if(libName.isEmpty()) {
+        return;
+    }
+
+    const QStringList allViews = collectSupportedViewSuffixes();
+    if(allViews.isEmpty()) {
+        error("No supported views configured.", false);
+        return;
+    }
+
+    QStringList filters;
+    QStringList allPatterns;
+    for(const QString &view : allViews) {
+        allPatterns << QString("*.%1").arg(view);
+    }
+    filters << tr("Supported Views (%1)").arg(allPatterns.join(" "));
+
+    for(const QString &view : allViews) {
+        filters << QString("%1 (*.%2)").arg(view.toUpper(), view);
+    }
+
+    filters << tr("All Files (*.*)");
+
+    const QString srcFilePath = QFileDialog::getOpenFileName(this,
+                                                             tr("Add Existing Cell"),
+                                                             QString(),
+                                                             filters.join(";;"));
+    if(srcFilePath.isEmpty()) {
+        return;
+    }
+
+    importCellViewFile(libName, srcFilePath);
 }

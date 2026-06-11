@@ -23,8 +23,13 @@
  **********************************************************************************************************************/
 void MainWindow::showGroupMenu(const QPoint &pos)
 {
-    const QString libPath = getCurrentLibraryPath();
-    if(!QFileInfo(libPath).exists()) {
+    const QString libName = getCurrentLibraryName();
+    if(libName.isEmpty()) {
+        return;
+    }
+
+    const QString libPath = getLibraryPath(libName);
+    if(libPath.isEmpty() || !QFileInfo(libPath).exists()) {
         return;
     }
 
@@ -164,6 +169,7 @@ void MainWindow::addNewGroup()
     m_ui->listGroups->sortItems();
     m_ui->listViews->clear();
     groupId->setSelected(true);
+    updateLibraryActionStates();
 }
 
 /*!*********************************************************************************************************************

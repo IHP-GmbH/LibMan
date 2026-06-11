@@ -606,8 +606,10 @@ void MainWindow::addNewProject()
             item->setText(0, libName);
             m_ui->treeLibs->addTopLevelItem(item);
 
-            QString key = getLibraryKeyPrefix() + libName;
-            m_properties->set(key, projName);
+            setLibraryRootDirectory(libName, projName);
+
+            m_ui->treeLibs->setCurrentItem(item);
+            on_treeLibs_itemClicked(item, 0);
 
             setStateChanged();
         }

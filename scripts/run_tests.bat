@@ -63,7 +63,7 @@ if "!FOUND_EXE!"=="" (
     echo.
     echo Build tests first:
     echo   Qt Creator: open tests/tests.pro, Run qmake, then Build Project
-    echo   VS Code:    Ctrl+Shift+B - "Tests: Build Tests"
+    echo   VS Code:    Run Task - "Run Tests" (build + coverage) or "Build Tests"
     echo   CLI:        mkdir build-tests ^& cd build-tests ^& qmake ../tests/tests.pro ^& mingw32-make
     echo.
     echo Or pass the build directory:  scripts\run_tests.bat path\to\dir\with\%BIN_NAME%

@@ -13,6 +13,7 @@
 #include <memory>
 
 #include "mainwindow.h"
+#include "mainwindow_test_hooks.h"
 
 namespace
 {
@@ -557,4 +558,33 @@ void MainWindowLoadersTest::emptyLibrarySelection_clearsDependentViews()
     QCOMPARE(txtCatSearch->text(), QString());
     QCOMPARE(txtCellSearch->text(), QString());
     QCOMPARE(txtViewSearch->text(), QString());
+}
+
+/*!********************************************************************************************************
+ * \brief Verifies that a library root registered without views can import layout files.
+ *********************************************************************************************************/
+void MainWindowLoadersTest::emptyLibraryRoot_allowsImportingLayoutFile()
+{
+    const QString srcGds = libmanTestDataFile(QStringLiteral("sg13g2_stdcell/Test/Test.gds"));
+    if(srcGds.isEmpty() || !QFileInfo::exists(srcGds)) {
+        QSKIP("Test.gds fixture not available");
+    }
+
+    QTemporaryDir tempRoot;
+    QVERIFY(tempRoot.isValid());
+
+    const QString libDir = tempRoot.path() + "/mylib";
+    QVERIFY(QDir().mkpath(libDir));
+
+    MainWindow w(QString(), tempRoot.path());
+
+    MainWindowTestHooks::setLibraryRootDirectory(&w, "mylib", libDir);
+
+    const QString resolvedRoot = MainWindowTestHooks::getLibraryPath(&w, "mylib");
+    QCOMPARE(resolvedRoot, QDir::toNativeSeparators(QFileInfo(libDir).absoluteFilePath()));
+
+    QVERIFY(MainWindowTestHooks::importCellViewFile(&w, "mylib", srcGds));
+
+    const QString viewPath = MainWindowTestHooks::getViewPath(&w, "mylib", "Test", "gds");
+    QVERIFY(QFileInfo(viewPath).exists());
 }

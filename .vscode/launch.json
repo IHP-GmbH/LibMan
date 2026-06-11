@@ -27,7 +27,7 @@
           "ignoreFailures": true
         }
       ],
-      "preLaunchTask": "Compilation & Running LibMan: Build Debug",
+      "preLaunchTask": "Build LibMan",
       "sourceLanguages": [
         "cpp"
       ]
@@ -56,7 +56,7 @@
           "ignoreFailures": true
         }
       ],
-      "preLaunchTask": "Tests: Build Coverage",
+      "preLaunchTask": "Build Tests",
       "sourceLanguages": [
         "cpp"
       ]

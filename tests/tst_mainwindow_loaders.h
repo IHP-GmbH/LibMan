@@ -16,6 +16,7 @@ private slots:
     void cellSearch_hidesNonMatchingGroups();
     void viewSearch_hidesNonMatchingViews();
     void emptyLibrarySelection_clearsDependentViews();
+    void emptyLibraryRoot_allowsImportingLayoutFile();
 };
 
 #endif // TST_MAINWINDOW_LOADERS_H
