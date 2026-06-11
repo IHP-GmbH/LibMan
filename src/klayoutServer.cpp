@@ -1,6 +1,7 @@
 #include "src/mainwindow.h"
 
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -105,11 +106,9 @@ QStringList discoverQtPluginDirs(const QString &toolDir)
     return dirs;
 }
 
-QString shellSingleQuote(const QString &value)
+QString klayoutAliveFilePath(const QString &cmdFile)
 {
-    QString quoted = value;
-    quoted.replace(QLatin1Char('\''), QStringLiteral("'\\''"));
-    return QLatin1Char('\'') + quoted + QLatin1Char('\'');
+    return cmdFile + QStringLiteral(".alive");
 }
 
 QProcessEnvironment buildKLayoutLaunchEnvironment(const QProcessEnvironment &parent,
@@ -185,77 +184,34 @@ bool launchKLayoutDetached(const QString &program,
         *pid = 0;
     }
 
-#ifdef Q_OS_UNIX
     const QFileInfo programFi(program);
-    const QString toolDir = programFi.absolutePath();
-
-    QStringList shellLines;
-    shellLines << QStringLiteral("unset QT_PLUGIN_PATH");
-    shellLines << QStringLiteral("unset QT_QPA_PLATFORM_PLUGIN_PATH");
-    shellLines << QStringLiteral("unset QT_QPA_PLATFORM");
-    shellLines << QStringLiteral("unset QT_DEBUG_PLUGINS");
-    shellLines << QStringLiteral("unset LD_LIBRARY_PATH");
-
-    const QStringList libDirs = discoverKLayoutLibraryDirs(toolDir);
-    if(!libDirs.isEmpty()) {
-        shellLines << QStringLiteral("export LD_LIBRARY_PATH=")
-                          + shellSingleQuote(libDirs.join(QLatin1Char(':')));
-    }
-
-    const QStringList pluginDirs = discoverQtPluginDirs(toolDir);
-    if(!pluginDirs.isEmpty()) {
-        shellLines << QStringLiteral("export QT_PLUGIN_PATH=")
-                          + shellSingleQuote(pluginDirs.join(QLatin1Char(':')));
-    }
-
-    const QStringList envKeys = env.keys();
-    for(const QString &key : envKeys) {
-        if(key.startsWith(QLatin1String("LD_LIBRARY_PATH")) ||
-           key.startsWith(QLatin1String("QT_"))) {
-            continue;
-        }
-        shellLines << QStringLiteral("export ")
-                          + key
-                          + QLatin1Char('=')
-                          + shellSingleQuote(env.value(key));
-    }
-
-    shellLines << QStringLiteral("cd ")
-                      + shellSingleQuote(toolDir);
-
-    QString execLine = QStringLiteral("exec ")
-                       + shellSingleQuote(program);
-    for(const QString &arg : args) {
-        execLine += QLatin1Char(' ');
-        execLine += shellSingleQuote(arg);
-    }
-    shellLines << execLine;
-
-    QProcess launcher;
-    launcher.setProgram(QStringLiteral("/bin/bash"));
-    launcher.setArguments(QStringList()
-                          << QStringLiteral("-c")
-                          << shellLines.join(QLatin1Char('\n')));
-    QProcessEnvironment bashEnv;
-    for(const QString &key : envKeys) {
-        if(key.startsWith(QLatin1String("LD_LIBRARY_PATH")) ||
-           key.startsWith(QLatin1String("QT_"))) {
-            continue;
-        }
-        bashEnv.insert(key, env.value(key));
-    }
-    launcher.setProcessEnvironment(bashEnv);
-    launcher.setWorkingDirectory(toolDir);
-
-    return launcher.startDetached(pid);
-#else
     QProcess launcher;
     launcher.setProgram(program);
     launcher.setArguments(args);
     launcher.setProcessEnvironment(env);
-    launcher.setWorkingDirectory(QFileInfo(program).absolutePath());
+    launcher.setWorkingDirectory(programFi.absolutePath());
     return launcher.startDetached(pid);
-#endif
+}
+
+bool isKLayoutAliveFileFresh(const QString &aliveFile, int maxAgeMs = 2000)
+{
+    const QFileInfo fi(aliveFile);
+    if(!fi.exists()) {
+        return false;
+    }
+
+    const qint64 ageMs = fi.lastModified().msecsTo(QDateTime::currentDateTime());
+    return ageMs >= 0 && ageMs <= maxAgeMs;
+}
+
+qint64 readKLayoutAlivePid(const QString &aliveFile)
+{
+    QFile file(aliveFile);
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return 0;
+    }
+
+    return QString::fromUtf8(file.readAll()).trimmed().toLongLong();
 }
 
 } // namespace
@@ -265,6 +221,17 @@ bool launchKLayoutDetached(const QString &program,
  **********************************************************************************************************************/
 bool MainWindow::isKLayoutServerRunning() const
 {
+    if(!m_klayoutCmdFile.isEmpty()) {
+        const QString aliveFile = klayoutAliveFilePath(m_klayoutCmdFile);
+        const qint64 alivePid = readKLayoutAlivePid(aliveFile);
+        if(isProcessAlive(alivePid)) {
+            return true;
+        }
+        if(isKLayoutAliveFileFresh(aliveFile)) {
+            return true;
+        }
+    }
+
     return isProcessAlive(m_klayoutServerPid);
 }
 
@@ -332,6 +299,13 @@ bool MainWindow::ensureKLayoutServerRunning(const QString &tool)
     }
 
     if(isKLayoutServerRunning()) {
+        if(!m_klayoutCmdFile.isEmpty()) {
+            const qint64 alivePid =
+                readKLayoutAlivePid(klayoutAliveFilePath(m_klayoutCmdFile));
+            if(isProcessAlive(alivePid)) {
+                m_klayoutServerPid = alivePid;
+            }
+        }
         return true;
     }
 
@@ -352,17 +326,17 @@ bool MainWindow::ensureKLayoutServerRunning(const QString &tool)
             f.close();
         }
     }
+    QFile::remove(klayoutAliveFilePath(m_klayoutCmdFile));
 
-    if (m_klayoutServerScript.isEmpty() ||
-        !QFileInfo(m_klayoutServerScript).exists()) {
+    if(!m_klayoutServerScript.isEmpty()) {
+        QFile::remove(m_klayoutServerScript);
+        m_klayoutServerScript.clear();
+    }
 
-        m_klayoutServerScript =
-            createKLayoutServerScript(m_klayoutCmdFile);
-
-        if (m_klayoutServerScript.isEmpty() ||
-            !QFileInfo(m_klayoutServerScript).exists()) {
-            return false;
-        }
+    m_klayoutServerScript = createKLayoutServerScript(m_klayoutCmdFile);
+    if(m_klayoutServerScript.isEmpty() ||
+       !QFileInfo(m_klayoutServerScript).exists()) {
+        return false;
     }
 
     const QString program = resolveToolProgram(tool);
@@ -398,10 +372,13 @@ bool MainWindow::ensureKLayoutServerRunning(const QString &tool)
 
     m_klayoutServerPid = pid;
 
-#ifdef Q_OS_UNIX
-    // Give the GUI process time to load plugins before the first open command.
-    QThread::msleep(500);
-#endif
+    const qint64 startupDeadlineMs = QDateTime::currentMSecsSinceEpoch() + 8000;
+    while(QDateTime::currentMSecsSinceEpoch() < startupDeadlineMs) {
+        if(isKLayoutServerRunning()) {
+            break;
+        }
+        QThread::msleep(100);
+    }
 
     if(!isKLayoutServerRunning()) {
         m_klayoutServerPid = 0;
@@ -523,6 +500,14 @@ import os
 import json
 
 CMD_FILE = )" << pyRaw(cmdFile) << R"(
+ALIVE_FILE = CMD_FILE + ".alive"
+
+def _touch_alive():
+    try:
+        with open(ALIVE_FILE, "w", encoding="utf-8") as f:
+            f.write(str(os.getpid()))
+    except Exception:
+        pass
 
 _app = pya.Application.instance()
 _mw  = _app.main_window() if _app is not None else None
@@ -652,6 +637,7 @@ def _handle(cmd):
     _schedule_zoom_fit()
 
 def _poll():
+    _touch_alive()
     if not os.path.exists(CMD_FILE):
         return
     try:
@@ -668,6 +654,7 @@ def _poll():
             pass
 
 if _mw is not None:
+    _touch_alive()
     _t = pya.QTimer(_mw)
     _t.timeout(_poll)
     _t.start(250)
