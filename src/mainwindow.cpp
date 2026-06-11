@@ -320,6 +320,13 @@ void MainWindow::loadSettings()
             }
         }
     }
+    else {
+        m_properties->set("ToolList", "Schematic,Layout");
+        m_properties->set("Schematic", "nedit");
+        m_properties->set("SchematicViews", "cdl,spice");
+        m_properties->set("Layout", "klayout");
+        m_properties->set("LayoutViews", "gds,oas,lstr");
+    }
 
     m_properties->set("PdfReader", pdfReader);
 
@@ -2847,6 +2854,13 @@ QStringList MainWindow::collectSupportedViewSuffixes() const
             if(!allViews.contains(view)) {
                 allViews << view;
             }
+        }
+    }
+
+    if(allViews.isEmpty()) {
+        allViews = getValidViewList();
+        if(!allViews.contains(QStringLiteral("lstr"))) {
+            allViews << QStringLiteral("lstr");
         }
     }
 
