@@ -63,51 +63,12 @@ bool isProcessAlive(qint64 pid)
 #endif
 }
 
-QStringList existingPathEntries(const QString &value)
-{
-    QStringList entries;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
-    const QStringList parts = value.split(QLatin1Char(':'), Qt::SkipEmptyParts);
-#else
-    const QStringList parts = value.split(QLatin1Char(':'), QString::SkipEmptyParts);
-#endif
-    for(const QString &part : parts) {
-        const QString normalized = QFileInfo(part).absoluteFilePath();
-        if(!normalized.isEmpty() && !entries.contains(normalized)) {
-            entries << normalized;
-        }
-    }
-    return entries;
-}
-
-void prependPathEnvironment(QProcessEnvironment &env,
-                            const QString &key,
-                            const QStringList &paths)
-{
-    QStringList merged;
-    for(const QString &path : paths) {
-        const QFileInfo fi(path);
-        if(!fi.exists()) {
-            continue;
-        }
-
-        const QString normalized = fi.absoluteFilePath();
-        if(!merged.contains(normalized)) {
-            merged << normalized;
-        }
-    }
-
-    merged << existingPathEntries(env.value(key));
-    env.insert(key, merged.join(QLatin1Char(':')));
-}
-
 QStringList discoverKLayoutLibraryDirs(const QString &toolDir)
 {
     QStringList dirs;
     const QStringList candidates = {
         toolDir + QStringLiteral("/lib"),
         toolDir + QStringLiteral("/lib64"),
-        toolDir,
     };
 
     for(const QString &candidate : candidates) {
@@ -144,23 +105,65 @@ QStringList discoverQtPluginDirs(const QString &toolDir)
     return dirs;
 }
 
-void augmentKLayoutEnvironment(QProcessEnvironment &env,
-                               const QString &toolProgram,
-                               const QString &projectFile)
+QString shellSingleQuote(const QString &value)
 {
+    QString quoted = value;
+    quoted.replace(QLatin1Char('\''), QStringLiteral("'\\''"));
+    return QLatin1Char('\'') + quoted + QLatin1Char('\'');
+}
+
+QProcessEnvironment buildKLayoutLaunchEnvironment(const QProcessEnvironment &parent,
+                                                    const QString &toolProgram,
+                                                    const QString &projectFile)
+{
+    QProcessEnvironment env;
+
+    static const char *kPassthrough[] = {
+        "DISPLAY",
+        "XAUTHORITY",
+        "XDG_RUNTIME_DIR",
+        "WAYLAND_DISPLAY",
+        "DBUS_SESSION_BUS_ADDRESS",
+        "HOME",
+        "USER",
+        "LOGNAME",
+        "LANG",
+        "LC_ALL",
+        "LC_CTYPE",
+        "SHELL",
+        "TMPDIR",
+        "TMP",
+        "TEMP",
+        "SSH_AUTH_SOCK",
+        "SESSION_MANAGER",
+        "DESKTOP_SESSION",
+        "XDG_SESSION_TYPE",
+        "XDG_CURRENT_DESKTOP",
+        nullptr
+    };
+
+    for(int i = 0; kPassthrough[i] != nullptr; ++i) {
+        const QString key = QString::fromLatin1(kPassthrough[i]);
+        if(parent.contains(key)) {
+            env.insert(key, parent.value(key));
+        }
+    }
+
+#ifdef Q_OS_UNIX
     const QFileInfo toolFi(toolProgram);
     if(toolFi.exists()) {
-#ifdef Q_OS_UNIX
         const QString toolDir = toolFi.absolutePath();
-        prependPathEnvironment(env, QStringLiteral("LD_LIBRARY_PATH"),
-                               discoverKLayoutLibraryDirs(toolDir));
+        const QStringList libDirs = discoverKLayoutLibraryDirs(toolDir);
+        if(!libDirs.isEmpty()) {
+            env.insert(QStringLiteral("LD_LIBRARY_PATH"), libDirs.join(QLatin1Char(':')));
+        }
 
         const QStringList pluginDirs = discoverQtPluginDirs(toolDir);
         if(!pluginDirs.isEmpty()) {
-            prependPathEnvironment(env, QStringLiteral("QT_PLUGIN_PATH"), pluginDirs);
+            env.insert(QStringLiteral("QT_PLUGIN_PATH"), pluginDirs.join(QLatin1Char(':')));
         }
-#endif
     }
+#endif
 
     if(!projectFile.isEmpty()) {
         const QFileInfo projFi(projectFile);
@@ -169,6 +172,90 @@ void augmentKLayoutEnvironment(QProcessEnvironment &env,
                        QDir::toNativeSeparators(projFi.absoluteFilePath()));
         }
     }
+
+    return env;
+}
+
+bool launchKLayoutDetached(const QString &program,
+                           const QStringList &args,
+                           const QProcessEnvironment &env,
+                           qint64 *pid)
+{
+    if(pid) {
+        *pid = 0;
+    }
+
+#ifdef Q_OS_UNIX
+    const QFileInfo programFi(program);
+    const QString toolDir = programFi.absolutePath();
+
+    QStringList shellLines;
+    shellLines << QStringLiteral("unset QT_PLUGIN_PATH");
+    shellLines << QStringLiteral("unset QT_QPA_PLATFORM_PLUGIN_PATH");
+    shellLines << QStringLiteral("unset QT_QPA_PLATFORM");
+    shellLines << QStringLiteral("unset QT_DEBUG_PLUGINS");
+    shellLines << QStringLiteral("unset LD_LIBRARY_PATH");
+
+    const QStringList libDirs = discoverKLayoutLibraryDirs(toolDir);
+    if(!libDirs.isEmpty()) {
+        shellLines << QStringLiteral("export LD_LIBRARY_PATH=")
+                          + shellSingleQuote(libDirs.join(QLatin1Char(':')));
+    }
+
+    const QStringList pluginDirs = discoverQtPluginDirs(toolDir);
+    if(!pluginDirs.isEmpty()) {
+        shellLines << QStringLiteral("export QT_PLUGIN_PATH=")
+                          + shellSingleQuote(pluginDirs.join(QLatin1Char(':')));
+    }
+
+    const QStringList envKeys = env.keys();
+    for(const QString &key : envKeys) {
+        if(key.startsWith(QLatin1String("LD_LIBRARY_PATH")) ||
+           key.startsWith(QLatin1String("QT_"))) {
+            continue;
+        }
+        shellLines << QStringLiteral("export ")
+                          + key
+                          + QLatin1Char('=')
+                          + shellSingleQuote(env.value(key));
+    }
+
+    shellLines << QStringLiteral("cd ")
+                      + shellSingleQuote(toolDir);
+
+    QString execLine = QStringLiteral("exec ")
+                       + shellSingleQuote(program);
+    for(const QString &arg : args) {
+        execLine += QLatin1Char(' ');
+        execLine += shellSingleQuote(arg);
+    }
+    shellLines << execLine;
+
+    QProcess launcher;
+    launcher.setProgram(QStringLiteral("/bin/bash"));
+    launcher.setArguments(QStringList()
+                          << QStringLiteral("-c")
+                          << shellLines.join(QLatin1Char('\n')));
+    QProcessEnvironment bashEnv;
+    for(const QString &key : envKeys) {
+        if(key.startsWith(QLatin1String("LD_LIBRARY_PATH")) ||
+           key.startsWith(QLatin1String("QT_"))) {
+            continue;
+        }
+        bashEnv.insert(key, env.value(key));
+    }
+    launcher.setProcessEnvironment(bashEnv);
+    launcher.setWorkingDirectory(toolDir);
+
+    return launcher.startDetached(pid);
+#else
+    QProcess launcher;
+    launcher.setProgram(program);
+    launcher.setArguments(args);
+    launcher.setProcessEnvironment(env);
+    launcher.setWorkingDirectory(QFileInfo(program).absolutePath());
+    return launcher.startDetached(pid);
+#endif
 }
 
 } // namespace
@@ -297,17 +384,13 @@ bool MainWindow::ensureKLayoutServerRunning(const QString &tool)
         }
     }
 
-    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-    augmentKLayoutEnvironment(env, program, m_currentProjFile);
-
-    QProcess launcher;
-    launcher.setProgram(program);
-    launcher.setArguments(args);
-    launcher.setProcessEnvironment(env);
-    launcher.setWorkingDirectory(programFi.absolutePath());
+    const QProcessEnvironment env =
+        buildKLayoutLaunchEnvironment(QProcessEnvironment::systemEnvironment(),
+                                      program,
+                                      m_currentProjFile);
 
     qint64 pid = 0;
-    const bool started = launcher.startDetached(&pid);
+    const bool started = launchKLayoutDetached(program, args, env, &pid);
     if(!started || pid <= 0) {
         error(QString("Failed to start KLayout server: %1").arg(cmdLine), false);
         return false;
