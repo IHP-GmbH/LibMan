@@ -63,6 +63,87 @@ bool isProcessAlive(qint64 pid)
 #endif
 }
 
+QStringList existingPathEntries(const QString &value)
+{
+    QStringList entries;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    const QStringList parts = value.split(QLatin1Char(':'), Qt::SkipEmptyParts);
+#else
+    const QStringList parts = value.split(QLatin1Char(':'), QString::SkipEmptyParts);
+#endif
+    for(const QString &part : parts) {
+        const QString normalized = QFileInfo(part).absoluteFilePath();
+        if(!normalized.isEmpty() && !entries.contains(normalized)) {
+            entries << normalized;
+        }
+    }
+    return entries;
+}
+
+void prependPathEnvironment(QProcessEnvironment &env,
+                            const QString &key,
+                            const QStringList &paths)
+{
+    QStringList merged;
+    for(const QString &path : paths) {
+        const QFileInfo fi(path);
+        if(!fi.exists()) {
+            continue;
+        }
+
+        const QString normalized = fi.absoluteFilePath();
+        if(!merged.contains(normalized)) {
+            merged << normalized;
+        }
+    }
+
+    merged << existingPathEntries(env.value(key));
+    env.insert(key, merged.join(QLatin1Char(':')));
+}
+
+QStringList discoverKLayoutLibraryDirs(const QString &toolDir)
+{
+    QStringList dirs;
+    const QStringList candidates = {
+        toolDir + QStringLiteral("/lib"),
+        toolDir + QStringLiteral("/lib64"),
+        toolDir,
+    };
+
+    for(const QString &candidate : candidates) {
+        if(QDir(candidate).exists()) {
+            const QString normalized = QFileInfo(candidate).absoluteFilePath();
+            if(!dirs.contains(normalized)) {
+                dirs << normalized;
+            }
+        }
+    }
+
+    return dirs;
+}
+
+QStringList discoverQtPluginDirs(const QString &toolDir)
+{
+    QStringList dirs;
+    const QStringList candidates = {
+        toolDir + QStringLiteral("/lib/qt/plugins"),
+        toolDir + QStringLiteral("/lib64/qt/plugins"),
+        toolDir + QStringLiteral("/plugins"),
+        toolDir + QStringLiteral("/qt/plugins"),
+    };
+
+    for(const QString &candidate : candidates) {
+        if(QDir(candidate).exists()) {
+            const QString normalized = QFileInfo(candidate).absoluteFilePath();
+            if(!dirs.contains(normalized)) {
+                dirs << normalized;
+            }
+        }
+    }
+
+    return dirs;
+}
+
 void augmentKLayoutEnvironment(QProcessEnvironment &env,
                                const QString &toolProgram,
                                const QString &projectFile)
@@ -71,9 +152,13 @@ void augmentKLayoutEnvironment(QProcessEnvironment &env,
     if(toolFi.exists()) {
 #ifdef Q_OS_UNIX
         const QString toolDir = toolFi.absolutePath();
-        const QString ldPath = env.value(QStringLiteral("LD_LIBRARY_PATH"));
-        env.insert(QStringLiteral("LD_LIBRARY_PATH"),
-                   ldPath.isEmpty() ? toolDir : toolDir + QLatin1Char(':') + ldPath);
+        prependPathEnvironment(env, QStringLiteral("LD_LIBRARY_PATH"),
+                               discoverKLayoutLibraryDirs(toolDir));
+
+        const QStringList pluginDirs = discoverQtPluginDirs(toolDir);
+        if(!pluginDirs.isEmpty()) {
+            prependPathEnvironment(env, QStringLiteral("QT_PLUGIN_PATH"), pluginDirs);
+        }
 #endif
     }
 
@@ -237,7 +322,21 @@ bool MainWindow::ensureKLayoutServerRunning(const QString &tool)
 
     if(!isKLayoutServerRunning()) {
         m_klayoutServerPid = 0;
-        error(QString("KLayout server exited immediately: %1").arg(cmdLine), false);
+        QString details = QString("KLayout server exited immediately: %1").arg(cmdLine);
+#ifdef Q_OS_UNIX
+        const QString ldPath = env.value(QStringLiteral("LD_LIBRARY_PATH"));
+        const QString qtPlugins = env.value(QStringLiteral("QT_PLUGIN_PATH"));
+        if(!ldPath.isEmpty()) {
+            details += QString("\nLD_LIBRARY_PATH=%1").arg(ldPath);
+        }
+        if(!qtPlugins.isEmpty()) {
+            details += QString("\nQT_PLUGIN_PATH=%1").arg(qtPlugins);
+        }
+        details += QString(
+            "\nIf Qt reports xcb plugin errors, ensure system libs such as "
+            "libxcb-xinerama0 and libxkbcommon-x11 are installed.");
+#endif
+        error(details, false);
         return false;
     }
 
