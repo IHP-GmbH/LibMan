@@ -23,19 +23,51 @@
 
 namespace {
 
+struct ToolCommand {
+    QString program;
+    QStringList prefixArgs;
+};
+
+ToolCommand splitToolCommand(const QString &tool)
+{
+    ToolCommand out;
+    const QString trimmed = tool.trimmed();
+    if(trimmed.isEmpty()) {
+        return out;
+    }
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    QStringList parts = QProcess::splitCommand(trimmed);
+#else
+    QStringList parts = trimmed.split(QLatin1Char(' '), QString::SkipEmptyParts);
+#endif
+    if(parts.isEmpty()) {
+        return out;
+    }
+
+    out.program = parts.takeFirst();
+    out.prefixArgs = parts;
+    return out;
+}
+
 QString resolveToolProgram(const QString &tool)
 {
-    const QFileInfo fi(tool);
+    const QString program = tool.trimmed();
+    if(program.isEmpty()) {
+        return QString();
+    }
+
+    const QFileInfo fi(program);
     if(fi.isAbsolute() && fi.exists()) {
         return fi.absoluteFilePath();
     }
 
-    const QString found = QStandardPaths::findExecutable(tool);
+    const QString found = QStandardPaths::findExecutable(program);
     if(!found.isEmpty()) {
         return found;
     }
 
-    return tool;
+    return program;
 }
 
 bool isProcessAlive(qint64 pid)
@@ -138,6 +170,19 @@ QProcessEnvironment buildKLayoutLaunchEnvironment(const QProcessEnvironment &par
         "DESKTOP_SESSION",
         "XDG_SESSION_TYPE",
         "XDG_CURRENT_DESKTOP",
+#ifdef Q_OS_WIN
+        "PATH",
+        "SystemRoot",
+        "WINDIR",
+        "USERPROFILE",
+        "HOMEDRIVE",
+        "HOMEPATH",
+        "APPDATA",
+        "LOCALAPPDATA",
+        "ProgramFiles",
+        "ProgramFiles(x86)",
+        "CommonProgramFiles",
+#endif
         nullptr
     };
 
@@ -160,6 +205,26 @@ QProcessEnvironment buildKLayoutLaunchEnvironment(const QProcessEnvironment &par
         const QStringList pluginDirs = discoverQtPluginDirs(toolDir);
         if(!pluginDirs.isEmpty()) {
             env.insert(QStringLiteral("QT_PLUGIN_PATH"), pluginDirs.join(QLatin1Char(':')));
+        }
+    }
+#elif defined(Q_OS_WIN)
+    const QFileInfo toolFi(toolProgram);
+    if(toolFi.exists()) {
+        const QString toolDir = QDir::toNativeSeparators(toolFi.absolutePath());
+        QString path = env.value(QStringLiteral("PATH"));
+        if(path.isEmpty()) {
+            path = parent.value(QStringLiteral("PATH"));
+        }
+        if(!path.isEmpty()) {
+            env.insert(QStringLiteral("PATH"), toolDir + QLatin1Char(';') + path);
+        }
+        else {
+            env.insert(QStringLiteral("PATH"), toolDir);
+        }
+
+        const QStringList pluginDirs = discoverQtPluginDirs(toolDir);
+        if(!pluginDirs.isEmpty()) {
+            env.insert(QStringLiteral("QT_PLUGIN_PATH"), pluginDirs.join(QLatin1Char(';')));
         }
     }
 #endif
@@ -336,24 +401,33 @@ bool MainWindow::ensureKLayoutServerRunning(const QString &tool)
     m_klayoutServerScript = createKLayoutServerScript(m_klayoutCmdFile);
     if(m_klayoutServerScript.isEmpty() ||
        !QFileInfo(m_klayoutServerScript).exists()) {
+        error(QString("Failed to create KLayout server script in %1")
+                  .arg(QDir::tempPath()),
+              false);
         return false;
     }
 
-    const QString program = resolveToolProgram(tool);
+    const ToolCommand toolCmd = splitToolCommand(tool);
+    if(toolCmd.program.isEmpty()) {
+        return false;
+    }
+
+    const QString program = resolveToolProgram(toolCmd.program);
     const QFileInfo programFi(program);
     if(!programFi.exists()) {
-        error(QString("KLayout executable not found: %1").arg(tool), false);
+        error(QString("KLayout executable not found: %1").arg(toolCmd.program), false);
         return false;
     }
 
-    QStringList args;
+    QStringList args = toolCmd.prefixArgs;
     args << QStringLiteral("-rr") << m_klayoutServerScript;
 
     QString cmdLine = program;
-    for (const QString &arg : args) {
-        if (arg.contains(QLatin1Char(' '))) {
+    for(const QString &arg : args) {
+        if(arg.contains(QLatin1Char(' '))) {
             cmdLine += QLatin1String(" \"") + arg + QLatin1Char('"');
-        } else {
+        }
+        else {
             cmdLine += QLatin1Char(' ') + arg;
         }
     }

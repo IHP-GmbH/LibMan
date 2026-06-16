@@ -217,7 +217,7 @@ void MainWindow::addNewSpiceView()
 void MainWindow::addNewLayoutView()
 {
     QStringList items;
-    items << "gds" << "oas" << "lstr";
+    items << "gds" << "oas" << "lstr" << "core";
 
     bool ok = false;
     QString selectedView = QInputDialog::getItem(this,
@@ -239,6 +239,9 @@ void MainWindow::addNewLayoutView()
     }
     else if(selectedView == "lstr") {
         addNewLStreamView();
+    }
+    else if(selectedView == "core") {
+        addNewCoreView();
     }
 }
 
@@ -294,6 +297,11 @@ bool MainWindow::registerCreatedView(const QString &libName,
     else if(viewName == "lstr") {
         viewItem->setData(0, RoleType, ItemViewLStream);
         viewItem->setData(0, RoleLStreamPath, viewPath);
+        viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+    }
+    else if(viewName == "core") {
+        viewItem->setData(0, RoleType, ItemViewCore);
+        viewItem->setData(0, RoleCorePath, viewPath);
         viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
     }
 
@@ -474,6 +482,57 @@ void MainWindow::addNewLStreamView()
     }
 
     registerCreatedView(libName, groupName, "lstr", viewPath);
+}
+
+/*!*********************************************************************************************************************
+ * \brief Creates new CORE layout view (.core) and adds it to the list widget.
+ **********************************************************************************************************************/
+void MainWindow::addNewCoreView()
+{
+    const QString libName = getCurrentLibraryName();
+    if(libName.isEmpty()) {
+        return;
+    }
+
+    const QString libRoot = getLibraryPath(libName);
+    if(libRoot.isEmpty() || !QFileInfo(libRoot).exists()) {
+        return;
+    }
+
+    const QString groupName = getCurrentGroupName();
+    if(groupName.isEmpty()) {
+        return;
+    }
+
+    const QStringList views = getCurrentViews(libName, groupName);
+    if(views.contains("core")) {
+        return;
+    }
+
+    const QString groupPath = QDir::toNativeSeparators(libRoot + "/" + groupName);
+    QDir dir;
+    if(!dir.mkpath(groupPath)) {
+        error(QString("Failed to create cell directory '%1'.").arg(groupPath), false);
+        return;
+    }
+
+    const QString viewPath = QDir::toNativeSeparators(groupPath + "/" + groupName + ".core");
+    if(QFileInfo(viewPath).exists()) {
+        return;
+    }
+
+    CoreCellReader reader(viewPath);
+    reader.coreCreate(groupName);
+
+    const QStringList errors = reader.getErrors();
+    if(errors.count()) {
+        foreach(const QString &explain, errors) {
+            error(explain, false);
+        }
+        return;
+    }
+
+    registerCreatedView(libName, groupName, "core", viewPath);
 }
 
 /*!*********************************************************************************************************************

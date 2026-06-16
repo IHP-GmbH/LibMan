@@ -132,6 +132,9 @@ include("${CMAKE_SOURCE_DIR}/cmake/FetchCore.cmake")
 # -----------------------------------------------------------------------------
 
 set(SOURCES
+    core/corecellreader.cpp
+    core/coreKlayoutBridge.cpp
+    core/coreReadAsync.cpp
     lstream/lstreamcellwriter.cpp
     oas/oasCreate.cpp
     src/main.cpp
@@ -187,6 +190,8 @@ set(SOURCES
 )
 
 set(HEADERS
+    core/corecellreader.h
+    core/coreKlayoutBridge.h
     lstream/lstreamcellwriter.h
     src/mainwindow.h
 

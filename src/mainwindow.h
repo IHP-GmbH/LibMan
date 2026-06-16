@@ -3,6 +3,8 @@
 
 #include "gds/gdsreader.h"
 #include "oas/oasReader.h"
+#include "core/corecellreader.h"
+#include "core/coreKlayoutBridge.h"
 
 #include <QProcess>
 #include <QMainWindow>
@@ -67,7 +69,8 @@ class MainWindow : public QMainWindow
         RoleCellName             = Qt::UserRole + 3,    /*!< Cell name for hierarchy nodes. */
         RoleOasPath              = Qt::UserRole + 4,    /*!< Absolute path to OASIS file for "oas" view node. */
         RoleLStreamPath          = Qt::UserRole + 5,    /*!< Absolute path to LStream file for "lstream" view node. */
-        RoleDocumentPath         = Qt::UserRole + 6     /*!< Absolute path to document (pdf/txt/etc). */
+        RoleDocumentPath         = Qt::UserRole + 6,    /*!< Absolute path to document (pdf/txt/etc). */
+        RoleCorePath             = Qt::UserRole + 7     /*!< Absolute path to CORE (.core) file. */
     };
 
     /*!
@@ -77,7 +80,8 @@ class MainWindow : public QMainWindow
         ItemViewGds              = 1,                   /*!< "gds" view root node. */
         ItemCell                 = 2,                   /*!< Cell node in hierarchy (GDS/OASIS). */
         ItemViewOas              = 3,                   /*!< "oas" view root node. */
-        ItemViewLStream          = 4                    /*!< "lstr" view root node. */
+        ItemViewLStream          = 4,                   /*!< "lstr" view root node. */
+        ItemViewCore             = 5                    /*!< "core" view root node. */
     };
 
 public:
@@ -123,6 +127,18 @@ public:
     };
 
     /*!
+     * \brief Cache entry storing parsed CORE hierarchy for a given .core file.
+     */
+    struct CoreCacheEntry
+    {
+        bool                                loaded   = false;
+        bool                                loading  = false;
+        QString                             path;
+        CoreCellReader::CoreHierarchy       hierarchy;
+        QStringList                         errors;
+    };
+
+    /*!
      * \brief Per-item spinner animation state.
      */
     struct SpinnerState
@@ -150,6 +166,7 @@ private slots:
     void                                addNewGdsView();
     void                                addNewOasView();
     void                                addNewLStreamView();
+    void                                addNewCoreView();
 
     void                                addNewGroup();
     void                                addNewProject();
@@ -296,6 +313,18 @@ private:
     void                                populateLStreamTopLevel(QTreeWidgetItem *item,
                                                                 const std::shared_ptr<LStreamCacheEntry> &entry);
 
+    void                                loadCoreHierarchyAsync(const QString &corePath,
+                                                               const std::shared_ptr<CoreCacheEntry> &entry,
+                                                               QTreeWidgetItem *targetItem,
+                                                               const QString &requestedCellName = QString());
+
+    std::shared_ptr<CoreCacheEntry>     ensureCoreLoaded(const QString &corePath);
+    void                                populateCoreTopLevel(QTreeWidgetItem *coreItem,
+                                                             const std::shared_ptr<CoreCacheEntry> &entry);
+    void                                populateCoreCellChildren(QTreeWidgetItem *cellItem,
+                                                                 const std::shared_ptr<CoreCacheEntry> &entry,
+                                                                 const QString &cellName);
+
     void                                checkAndSaveProjectData(QCloseEvent *);
 
     void                                createProjectUnionMenu();
@@ -385,6 +414,10 @@ private:
                                                                 const QString &scriptPath);
 
     QMap<QString, QStringList>          getSupportedViewsByTool() const;
+    QStringList                         layoutViewsForTool(const QString &toolName) const;
+    QString                             layoutPathForKLayout(const QString &viewName,
+                                                             const QString &viewPath,
+                                                             QStringList *errors = nullptr) const;
     bool                                updateProjectFileLibraryName(const QString &oldName,
                                                                      const QString &newName);
 
@@ -415,6 +448,7 @@ private:
     QHash<QString, std::shared_ptr<GdsCacheEntry>> m_gdsCache;             /*!< GDS hierarchy cache: abs path -> entry. */
     QHash<QString, std::shared_ptr<OasCacheEntry>> m_oasCache;             /*!< OASIS hierarchy cache: abs path -> entry. */
     QHash<QString, std::shared_ptr<LStreamCacheEntry>> m_lstreamCache;     /*!< LStream hierarchy cache: abs path -> entry. */
+    QHash<QString, std::shared_ptr<CoreCacheEntry>> m_coreCache;           /*!< CORE hierarchy cache: abs path -> entry. */
 };
 
 /*!*******************************************************************************************************************

@@ -325,7 +325,7 @@ void MainWindow::loadSettings()
         m_properties->set("Schematic", "nedit");
         m_properties->set("SchematicViews", "cdl,spice");
         m_properties->set("Layout", "klayout");
-        m_properties->set("LayoutViews", "gds,oas,lstr");
+        m_properties->set("LayoutViews", "gds,oas,lstr,core");
     }
 
     m_properties->set("PdfReader", pdfReader);
@@ -647,21 +647,61 @@ QStringList MainWindow::getValidViewList() const
  **********************************************************************************************************************/
 QString MainWindow::getToolByView(const QString &viewName) const
 {
-    QString tool;
+    const QString view = viewName.trimmed().toLower();
+    if(view.isEmpty()) {
+        return QString();
+    }
 
-    QStringList tools = m_properties->get<QString>("ToolList").split(",");
-    foreach(const QString &name, tools) {
-        if(m_properties->exists(name + "Views")) {
-            QStringList views = m_properties->get<QString>(name + "Views").remove(" ").split(",");
-            if(views.contains(viewName)) {
-                if(m_properties->exists(name)) {
-                    return(m_properties->get<QString>(name));
-                }
+    const QStringList tools = m_properties->get<QString>("ToolList").split(",", QString::SkipEmptyParts);
+    for(const QString &name : tools) {
+        const QString toolName = name.trimmed();
+        if(toolName.isEmpty()) {
+            continue;
+        }
+
+        if(layoutViewsForTool(toolName).contains(view)) {
+            if(m_properties->exists(toolName)) {
+                return m_properties->get<QString>(toolName);
             }
         }
     }
 
-    return tool;
+    return QString();
+}
+
+QStringList MainWindow::layoutViewsForTool(const QString &toolName) const
+{
+    const QString trimmedTool = toolName.trimmed();
+    const QString key = trimmedTool + QStringLiteral("Views");
+    if(!m_properties->exists(key)) {
+        return {};
+    }
+
+    QStringList views =
+        m_properties->get<QString>(key).remove(QLatin1Char(' ')).split(QLatin1Char(','), QString::SkipEmptyParts);
+
+    for(QString &view : views) {
+        view = view.trimmed().toLower();
+    }
+    views.removeAll(QString());
+
+    if(trimmedTool == QStringLiteral("Layout") && !views.contains(QStringLiteral("core"))) {
+        views << QStringLiteral("core");
+    }
+
+    views.sort();
+    return views;
+}
+
+QString MainWindow::layoutPathForKLayout(const QString &viewName,
+                                         const QString &viewPath,
+                                         QStringList *errors) const
+{
+    if(viewName == QStringLiteral("core")) {
+        return coreLayoutPathForKLayout(viewPath, errors);
+    }
+
+    return QFileInfo(viewPath).absoluteFilePath();
 }
 
 /*!*******************************************************************************************************************
@@ -722,7 +762,7 @@ QString MainWindow::getCurrentViewFilePath(const QString &viewName) const
 {
     const QString v = viewName.trimmed().toLower();
 
-    if(v != "gds" && v != "oas" && v != "oasis" && v != "lstr") {
+    if(v != "gds" && v != "oas" && v != "oasis" && v != "lstr" && v != "core") {
         return QString();
     }
 
@@ -1318,6 +1358,11 @@ void MainWindow::loadViews(const QString &libName, const QString &groupName)
             viewItem->setData(0, RoleOasPath, viewPath);
             viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         }
+        else if(viewName == "core") {
+            viewItem->setData(0, RoleType, ItemViewCore);
+            viewItem->setData(0, RoleCorePath, viewPath);
+            viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+        }
     }
 
     m_ui->listViews->sortItems(0, Qt::AscendingOrder);
@@ -1770,6 +1815,10 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
         viewName = "lstr";
         viewPath = item->data(0, RoleLStreamPath).toString();
     }
+    else if(type == ItemViewCore && item->text(0) == "core") {
+        viewName = "core";
+        viewPath = item->data(0, RoleCorePath).toString();
+    }
     else if(type == ItemCell) {
 
         // find top view root ("gds" or "oas" or "lstr")
@@ -1794,6 +1843,10 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
         else if(rootName == "lstr" || rootName == "lstream") {
             viewName = "lstr";
             viewPath = p->data(0, RoleLStreamPath).toString();
+        }
+        else if(rootName == "core") {
+            viewName = "core";
+            viewPath = p->data(0, RoleCorePath).toString();
         }
         else {
             return;
@@ -1831,38 +1884,46 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
     // ------------------------------------------------------------
     // Layout handling via KLayout server: GDS + OAS (same behavior)
     // ------------------------------------------------------------
-    if(viewName == "gds" || viewName == "oas" || viewName == "lstr") {
+    if(viewName == "gds" || viewName == "oas" || viewName == "lstr" || viewName == "core") {
 
-        // Root item: "gds" or "oas"
-        if(type == ItemViewGds || type == ItemViewOas || type == ItemViewLStream) {
+        QStringList bridgeErrors;
+        const QString klayoutPath = layoutPathForKLayout(viewName, viewPath, &bridgeErrors);
+        if(klayoutPath.isEmpty()) {
+            if(!bridgeErrors.isEmpty()) {
+                error(bridgeErrors.join(QLatin1Char('\n')), false);
+            }
+            else {
+                error(QString("Failed to prepare layout file for KLayout: %1").arg(viewPath), false);
+            }
+            return;
+        }
+
+        // Root item: "gds", "oas", "lstr", or "core"
+        if(type == ItemViewGds || type == ItemViewOas || type == ItemViewLStream || type == ItemViewCore) {
 
             const bool serverWasRunning = isKLayoutServerRunning();
 
             if(serverWasRunning) {
                 const QString groupName = getCurrentGroupName();
                 if(!groupName.isEmpty()) {
-                    sendKLayoutSelectRequest(viewPath, groupName);
+                    sendKLayoutSelectRequest(klayoutPath, groupName);
                 }
                 return;
             }
 
             if(!ensureKLayoutServerRunning(tool)) {
-                error("Failed to start KLayout server.");
                 return;
             }
 
-            // open file only (no specific cell)
-            sendKLayoutOpenRequest(viewPath, QString());
+            sendKLayoutOpenRequest(klayoutPath, QString());
             return;
         }
 
-        // Cell node: open file + select cell
         if(!ensureKLayoutServerRunning(tool)) {
-            error("Failed to start KLayout server.");
             return;
         }
 
-        sendKLayoutOpenRequest(viewPath, cellName);
+        sendKLayoutOpenRequest(klayoutPath, cellName);
         return;
     }
 
@@ -2786,30 +2847,12 @@ QMap<QString, QStringList> MainWindow::getSupportedViewsByTool() const
             continue;
         }
 
-        const QString key = toolName + "Views";
-        if(!m_properties->exists(key)) {
+        QStringList views = layoutViewsForTool(toolName);
+        if(views.isEmpty()) {
             continue;
         }
 
-        const QString rawViews = m_properties->get<QString>(key).trimmed();
-        if(rawViews.isEmpty()) {
-            continue;
-        }
-
-        QStringList views;
-        const QStringList toolViews = rawViews.split(",", QString::SkipEmptyParts);
-        for(QString view : toolViews) {
-            view = view.trimmed().toLower();
-            if(!view.isEmpty() && !views.contains(view)) {
-                views << view;
-            }
-        }
-
-        views.sort();
-
-        if(views.count()) {
-            toolViewsMap.insert(toolName, views);
-        }
+        toolViewsMap.insert(toolName, views);
     }
 
     return toolViewsMap;
@@ -2842,6 +2885,9 @@ QStringList MainWindow::collectSupportedViewSuffixes() const
         allViews = getValidViewList();
         if(!allViews.contains(QStringLiteral("lstr"))) {
             allViews << QStringLiteral("lstr");
+        }
+        if(!allViews.contains(QStringLiteral("core"))) {
+            allViews << QStringLiteral("core");
         }
     }
 

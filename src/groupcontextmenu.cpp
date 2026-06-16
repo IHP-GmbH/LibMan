@@ -383,7 +383,36 @@ void MainWindow::on_viewItemExpanded(QTreeWidgetItem *item)
     }
 
     // ------------------------------------------------------------
-    // Cell node (GDS or OAS)
+    // CORE root ("core")
+    // ------------------------------------------------------------
+    if (item->text(0) == "core") {
+
+        if (item->childCount() > 0) {
+            return;
+        }
+
+        const QString corePath = item->data(0, RoleCorePath).toString();
+        if (corePath.isEmpty()) {
+            return;
+        }
+
+        auto entry = ensureCoreLoaded(corePath);
+
+        if (entry->loaded) {
+            populateCoreTopLevel(item, entry);
+            return;
+        }
+
+        if (entry->loading) {
+            return;
+        }
+
+        loadCoreHierarchyAsync(entry->path, entry, item);
+        return;
+    }
+
+    // ------------------------------------------------------------
+    // Cell node (GDS, OAS, or CORE)
     // ------------------------------------------------------------
     if (type == ItemCell) {
 
@@ -431,6 +460,24 @@ void MainWindow::on_viewItemExpanded(QTreeWidgetItem *item)
             }
 
             loadOasHierarchyAsync(entry->path, entry, item, cellName);
+            return;
+        }
+
+        const QString corePath = item->data(0, RoleCorePath).toString();
+        if (!corePath.isEmpty()) {
+
+            auto entry = ensureCoreLoaded(corePath);
+
+            if (entry->loaded) {
+                populateCoreCellChildren(item, entry, cellName);
+                return;
+            }
+
+            if (entry->loading) {
+                return;
+            }
+
+            loadCoreHierarchyAsync(entry->path, entry, item, cellName);
             return;
         }
 
@@ -507,6 +554,79 @@ void MainWindow::populateGdsTopLevel(QTreeWidgetItem *gdsItem,
         const auto it = entry->hierarchy.children.find(topCell);
         if (it != entry->hierarchy.children.end() && !it.value().isEmpty()) {
             cellItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+        }
+    }
+}
+
+std::shared_ptr<MainWindow::CoreCacheEntry> MainWindow::ensureCoreLoaded(const QString &corePath)
+{
+    const QString key = QFileInfo(corePath).absoluteFilePath();
+
+    auto it = m_coreCache.find(key);
+    if (it != m_coreCache.end()) {
+        return it.value();
+    }
+
+    auto entry = std::make_shared<CoreCacheEntry>();
+    entry->path = key;
+
+    m_coreCache.insert(key, entry);
+    return entry;
+}
+
+void MainWindow::populateCoreTopLevel(QTreeWidgetItem *coreItem,
+                                      const std::shared_ptr<CoreCacheEntry> &entry)
+{
+    if (!coreItem || !entry) {
+        return;
+    }
+
+    if (coreItem->childCount() > 0) {
+        return;
+    }
+
+    for (const QString &topCell : entry->hierarchy.topCells) {
+        auto *cellItem = new QTreeWidgetItem(coreItem);
+        cellItem->setText(0, topCell);
+        cellItem->setData(0, RoleType, ItemCell);
+        cellItem->setData(0, RoleCellName, topCell);
+        cellItem->setData(0, RoleCorePath, entry->path);
+
+        const auto it = entry->hierarchy.children.find(topCell);
+        if (it != entry->hierarchy.children.end() && !it.value().isEmpty()) {
+            cellItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+        }
+    }
+}
+
+void MainWindow::populateCoreCellChildren(QTreeWidgetItem *cellItem,
+                                          const std::shared_ptr<CoreCacheEntry> &entry,
+                                          const QString &cellName)
+{
+    if (!cellItem || !entry) {
+        return;
+    }
+
+    if (cellItem->childCount() > 0) {
+        return;
+    }
+
+    const auto it = entry->hierarchy.children.find(cellName);
+    if (it == entry->hierarchy.children.end()) {
+        return;
+    }
+
+    const QStringList childs = it.value();
+    for (const QString &ch : childs) {
+        auto *chItem = new QTreeWidgetItem(cellItem);
+        chItem->setText(0, ch);
+        chItem->setData(0, RoleType, ItemCell);
+        chItem->setData(0, RoleCellName, ch);
+        chItem->setData(0, RoleCorePath, entry->path);
+
+        const auto childIt = entry->hierarchy.children.find(ch);
+        if (childIt != entry->hierarchy.children.end() && !childIt.value().isEmpty()) {
+            chItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         }
     }
 }

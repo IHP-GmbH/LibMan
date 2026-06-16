@@ -60,3 +60,13 @@ db.loadFromFile("layout.core");
 ```
 
 Link targets are already set in `CMakeLists.txt` (`CORE::core`, `CORE::core_utils`).
+
+## Layout view in LibMan
+
+`core` is a first-class layout view suffix (like `gds`, `oas`, `lstr`):
+
+- **Create:** View panel → New → Layout → `core` (creates `<cell>/<cell>.core`)
+- **Tree:** expand `core` to browse cell hierarchy from `LibIndex`
+- **Open:** double-click opens the file in KLayout. `.core` views are exported to a temporary GDS automatically unless your KLayout build includes the `mcore` streamer.
+
+Default `LayoutViews` property: `gds,oas,lstr,core`.
