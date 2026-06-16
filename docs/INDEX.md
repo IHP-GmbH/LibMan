@@ -34,6 +34,7 @@ Detailed setup and configuration information:
 
 1. **[VS Code Setup](setup/VSCODE_SETUP.md)** - Complete VS Code configuration guide
 2. **[Directory Structure](setup/DIRECTORY_STRUCTURE.md)** - Where everything is located
+3. **[CORE integration](setup/CORE_INTEGRATION.md)** - Automatic fetch/build of CommonDB
 
 ### 📖 Reference & Advanced
 Detailed reference and customization guides:

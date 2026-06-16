@@ -122,6 +122,12 @@ add_custom_target(prepare_libman_deps
 )
 
 # -----------------------------------------------------------------------------
+# CORE (CommonDB) — fetched from GitHub on first configure
+# -----------------------------------------------------------------------------
+
+include("${CMAKE_SOURCE_DIR}/cmake/FetchCore.cmake")
+
+# -----------------------------------------------------------------------------
 # Sources
 # -----------------------------------------------------------------------------
 
@@ -242,6 +248,9 @@ add_executable(libman
 )
 
 add_dependencies(libman prepare_libman_deps)
+if(TARGET core)
+    add_dependencies(libman core)
+endif()
 
 target_include_directories(libman PRIVATE
     ${CMAKE_SOURCE_DIR}
@@ -264,5 +273,7 @@ target_link_libraries(libman PRIVATE
     ZLIB::ZLIB
     capnp
     kj
+    CORE::core
+    CORE::core_utils
 )
 
