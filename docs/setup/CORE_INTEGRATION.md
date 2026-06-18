@@ -61,6 +61,22 @@ db.loadFromFile("layout.core");
 
 Link targets are already set in `CMakeLists.txt` (`CORE::core`, `CORE::core_utils`).
 
+## CI (GitHub Actions)
+
+CommonDB is a private repository. For full CORE linkage in CI, add a repository secret:
+
+| Secret | Description |
+|--------|-------------|
+| `LIBMAN_CORE_GIT_TOKEN` | PAT with `repo` read access to `IHP-GmbH/CommonDB` |
+
+Without this secret, CI builds with `CONFIG+=no_core` (stub implementations; layout UI still compiles).
+
+Local qmake without CORE:
+
+```bash
+qmake CONFIG+=no_core ../libman.pro
+```
+
 ## Layout view in LibMan
 
 `core` is a first-class layout view suffix (like `gds`, `oas`, `lstr`):

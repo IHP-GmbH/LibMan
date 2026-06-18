@@ -65,10 +65,19 @@ SOURCES += \
     $$PWD/../src/categorycontextmenu.cpp \
     $$PWD/../src/about.cpp \
     $$PWD/../src/newview.cpp \
-    $$PWD/../core/corecellreader.cpp \
-    $$PWD/../core/coreReadAsync.cpp \
-    $$PWD/../core/coreKlayoutBridge.cpp \
     main.cpp \
+
+contains(CONFIG, no_core) {
+    DEFINES += LIBMAN_NO_CORE
+    SOURCES += $$PWD/../core/libman_no_core_stubs.cpp
+} else {
+    SOURCES += \
+        $$PWD/../core/corecellreader.cpp \
+        $$PWD/../core/coreReadAsync.cpp \
+        $$PWD/../core/coreKlayoutBridge.cpp
+}
+
+SOURCES += \
     tst_dialogs.cpp \
     tst_klayout_requests.cpp \
     tst_libfileparser.cpp \
@@ -149,7 +158,9 @@ TESTDATA += \
 # Cap'n Proto (same clone-on-make flow as libman.pro)
 LIBMAN_ROOT = $$dirname(_PRO_FILE_)/..
 include($$LIBMAN_ROOT/capnp_deps.pri)
-include($$LIBMAN_ROOT/core_deps.pri)
+!contains(CONFIG, no_core) {
+    include($$LIBMAN_ROOT/core_deps.pri)
+}
 
 CAPNP_GEN_DIR = $$LIBMAN_ROOT/capnp
 SOURCES += $$files($$CAPNP_GEN_DIR/*.cc)
@@ -171,4 +182,6 @@ coverage {
 }
 
 include($$LIBMAN_ROOT/capnp_deps_finalize.pri)
-include($$LIBMAN_ROOT/core_deps_finalize.pri)
+!contains(CONFIG, no_core) {
+    include($$LIBMAN_ROOT/core_deps_finalize.pri)
+}

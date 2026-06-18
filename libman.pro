@@ -56,10 +56,17 @@ SOURCES += \
     src/projectcontextmenu.cpp \
     src/categorycontextmenu.cpp \
     src/about.cpp \
-    src/newview.cpp \
-    core/corecellreader.cpp \
-    core/coreReadAsync.cpp \
-    core/coreKlayoutBridge.cpp
+    src/newview.cpp
+
+contains(CONFIG, no_core) {
+    DEFINES += LIBMAN_NO_CORE
+    SOURCES += core/libman_no_core_stubs.cpp
+} else {
+    SOURCES += \
+        core/corecellreader.cpp \
+        core/coreReadAsync.cpp \
+        core/coreKlayoutBridge.cpp
+}
 
 HEADERS += \
     lstream/lstreamcellwriter.h \
@@ -105,7 +112,9 @@ RESOURCES += icons.qrc
 # Repo root (directory of this .pro file), not the shadow-build cwd.
 LIBMAN_ROOT = $$dirname(_PRO_FILE_)
 include(capnp_deps.pri)
-include(core_deps.pri)
+!contains(CONFIG, no_core) {
+    include(core_deps.pri)
+}
 
 # Generated Cap'n Proto files
 # Must be listed explicitly so qmake knows them.
@@ -135,4 +144,6 @@ HEADERS += \
     capnp/variant.capnp.h
 
 include(capnp_deps_finalize.pri)
-include(core_deps_finalize.pri)
+!contains(CONFIG, no_core) {
+    include(core_deps_finalize.pri)
+}

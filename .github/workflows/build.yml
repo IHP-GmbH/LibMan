@@ -17,6 +17,8 @@ jobs:
 
   build-linux:
     runs-on: ubuntu-latest
+    env:
+      LIBMAN_CORE_GIT_TOKEN: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
 
     steps:
       - name: Checkout sources
@@ -26,11 +28,12 @@ jobs:
           fetch-tags: true
 
       - name: Checkout CORE (CommonDB)
+        if: ${{ env.LIBMAN_CORE_GIT_TOKEN != '' }}
         uses: actions/checkout@v4
         with:
           repository: IHP-GmbH/CommonDB
           path: .deps/CommonDB
-          token: ${{ secrets.LIBMAN_CORE_GIT_TOKEN || github.token }}
+          token: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -56,7 +59,11 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          qmake ../libman.pro
+          EXTRA=""
+          if [ -z "$LIBMAN_CORE_GIT_TOKEN" ]; then
+            EXTRA="CONFIG+=no_core"
+          fi
+          qmake $EXTRA ../libman.pro
 
       - name: Build
         env:
@@ -65,7 +72,9 @@ jobs:
           cd build
           make -j1 capnp_install
           make -j1 lstream_schemas
-          make -j1 core_fetch
+          if [ -n "$LIBMAN_CORE_GIT_TOKEN" ]; then
+            make -j1 core_fetch
+          fi
           make -j"$(nproc)"
 
       - name: Package Linux bundle (tar.gz)
@@ -108,6 +117,8 @@ jobs:
   build-rhel8:
     name: Build RHEL 8 bundle
     runs-on: ubuntu-latest
+    env:
+      LIBMAN_CORE_GIT_TOKEN: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
     container:
       image: rockylinux:8
 
@@ -119,11 +130,12 @@ jobs:
           fetch-tags: true
 
       - name: Checkout CORE (CommonDB)
+        if: ${{ env.LIBMAN_CORE_GIT_TOKEN != '' }}
         uses: actions/checkout@v4
         with:
           repository: IHP-GmbH/CommonDB
           path: .deps/CommonDB
-          token: ${{ secrets.LIBMAN_CORE_GIT_TOKEN || github.token }}
+          token: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
 
       - name: Install build dependencies
         run: bash scripts/ci_deps_rhel8.sh
@@ -135,7 +147,11 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          qmake CONFIG+=release ../libman.pro
+          EXTRA=""
+          if [ -z "$LIBMAN_CORE_GIT_TOKEN" ]; then
+            EXTRA="CONFIG+=no_core"
+          fi
+          qmake CONFIG+=release $EXTRA ../libman.pro
 
       - name: Build
         env:
@@ -144,7 +160,9 @@ jobs:
           cd build
           make -j1 capnp_install
           make -j1 lstream_schemas
-          make -j1 core_fetch
+          if [ -n "$LIBMAN_CORE_GIT_TOKEN" ]; then
+            make -j1 core_fetch
+          fi
           make -j"$(nproc)"
 
       - name: Install linuxdeployqt
@@ -169,6 +187,8 @@ jobs:
 
   tests-linux:
     runs-on: ubuntu-latest
+    env:
+      LIBMAN_CORE_GIT_TOKEN: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
 
     steps:
       - name: Checkout sources
@@ -178,11 +198,12 @@ jobs:
           fetch-tags: true
 
       - name: Checkout CORE (CommonDB)
+        if: ${{ env.LIBMAN_CORE_GIT_TOKEN != '' }}
         uses: actions/checkout@v4
         with:
           repository: IHP-GmbH/CommonDB
           path: .deps/CommonDB
-          token: ${{ secrets.LIBMAN_CORE_GIT_TOKEN || github.token }}
+          token: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -214,7 +235,11 @@ jobs:
         run: |
           mkdir -p build-tests
           cd build-tests
-          qmake CONFIG+=debug CONFIG+=coverage ../tests/tests.pro
+          EXTRA=""
+          if [ -z "$LIBMAN_CORE_GIT_TOKEN" ]; then
+            EXTRA="CONFIG+=no_core"
+          fi
+          qmake CONFIG+=debug CONFIG+=coverage $EXTRA ../tests/tests.pro
 
       - name: Build tests
         env:
@@ -223,7 +248,9 @@ jobs:
           cd build-tests
           make -j1 capnp_install
           make -j1 lstream_schemas
-          make -j1 core_fetch
+          if [ -n "$LIBMAN_CORE_GIT_TOKEN" ]; then
+            make -j1 core_fetch
+          fi
           make -j"$(nproc)"
 
       - name: Export Cap'n Proto runtime path
@@ -266,6 +293,8 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
+    env:
+      LIBMAN_CORE_GIT_TOKEN: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
 
     steps:
       - name: Checkout sources
@@ -275,11 +304,12 @@ jobs:
           fetch-tags: true
 
       - name: Checkout CORE (CommonDB)
+        if: ${{ env.LIBMAN_CORE_GIT_TOKEN != '' }}
         uses: actions/checkout@v4
         with:
           repository: IHP-GmbH/CommonDB
           path: .deps/CommonDB
-          token: ${{ secrets.LIBMAN_CORE_GIT_TOKEN || github.token }}
+          token: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
 
       - name: Install Qt (Qt 5.15.2 MinGW 64-bit)
         uses: jurplel/install-qt-action@v4
@@ -306,6 +336,7 @@ jobs:
           )
 
       - name: Build CORE (CommonDB)
+        if: ${{ env.LIBMAN_CORE_GIT_TOKEN != '' }}
         shell: cmd
         run: call scripts\fetch_core.cmd
 
@@ -314,7 +345,11 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          qmake CONFIG+=release ../libman.pro
+          EXTRA=""
+          if [ -z "$LIBMAN_CORE_GIT_TOKEN" ]; then
+            EXTRA="CONFIG+=no_core"
+          fi
+          qmake CONFIG+=release $EXTRA ../libman.pro
           bash ../scripts/patch_capnp_makefile.sh
 
       - name: Build (mingw32-make)
