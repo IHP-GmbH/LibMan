@@ -35,6 +35,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             build-essential \
+            cmake \
             libgl1-mesa-dev \
             autoconf \
             automake \
@@ -54,6 +55,7 @@ jobs:
           cd build
           make -j1 capnp_install
           make -j1 lstream_schemas
+          make -j1 core_fetch
           make -j"$(nproc)"
 
       - name: Package Linux bundle (tar.gz)
@@ -125,6 +127,7 @@ jobs:
           cd build
           make -j1 capnp_install
           make -j1 lstream_schemas
+          make -j1 core_fetch
           make -j"$(nproc)"
 
       - name: Install linuxdeployqt
@@ -171,6 +174,7 @@ jobs:
           sudo apt-get install -y \
             xvfb \
             build-essential \
+            cmake \
             libgl1-mesa-dev \
             autoconf \
             automake \
@@ -195,6 +199,7 @@ jobs:
           cd build-tests
           make -j1 capnp_install
           make -j1 lstream_schemas
+          make -j1 core_fetch
           make -j"$(nproc)"
 
       - name: Export Cap'n Proto runtime path
@@ -268,6 +273,10 @@ jobs:
             echo ERROR: capnp headers missing after install
             exit /b 1
           )
+
+      - name: Build CORE (CommonDB)
+        shell: cmd
+        run: call scripts\fetch_core.cmd
 
       - name: Configure (qmake)
         shell: bash

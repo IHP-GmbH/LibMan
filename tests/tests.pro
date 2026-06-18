@@ -2,7 +2,7 @@
 # LibMan GUI tests (QtTest)
 # -------------------------------------------------
 
-QT += core gui widgets testlib
+QT += core gui widgets testlib concurrent
 LIBS += -lz
 
 TEMPLATE = app
@@ -65,6 +65,9 @@ SOURCES += \
     $$PWD/../src/categorycontextmenu.cpp \
     $$PWD/../src/about.cpp \
     $$PWD/../src/newview.cpp \
+    $$PWD/../core/corecellreader.cpp \
+    $$PWD/../core/coreReadAsync.cpp \
+    $$PWD/../core/coreKlayoutBridge.cpp \
     main.cpp \
     tst_dialogs.cpp \
     tst_klayout_requests.cpp \
@@ -105,6 +108,8 @@ HEADERS += \
     $$PWD/../src/toolmanager.h \
     $$PWD/../src/about.h \
     $$PWD/../src/newview.h \
+    $$PWD/../core/corecellreader.h \
+    $$PWD/../core/coreKlayoutBridge.h \
     tst_dialogs.h \
     tst_klayout_requests.h \
     tst_libfileparser.h \
@@ -144,6 +149,7 @@ TESTDATA += \
 # Cap'n Proto (same clone-on-make flow as libman.pro)
 LIBMAN_ROOT = $$dirname(_PRO_FILE_)/..
 include($$LIBMAN_ROOT/capnp_deps.pri)
+include($$LIBMAN_ROOT/core_deps.pri)
 
 CAPNP_GEN_DIR = $$LIBMAN_ROOT/capnp
 SOURCES += $$files($$CAPNP_GEN_DIR/*.cc)
@@ -165,3 +171,4 @@ coverage {
 }
 
 include($$LIBMAN_ROOT/capnp_deps_finalize.pri)
+include($$LIBMAN_ROOT/core_deps_finalize.pri)

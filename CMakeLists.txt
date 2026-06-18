@@ -25,7 +25,7 @@ if(NOT Qt5_DIR)
     set(Qt5_DIR "C:/Qt/5.15.2/mingw81_64/lib/cmake/Qt5")
 endif()
 
-find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Network)
+find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Network Concurrent)
 
 if(WIN32)
     set(ZLIB_INCLUDE_DIR "C:/Qt/Tools/mingw810_64/x86_64-w64-mingw32/include")
@@ -275,6 +275,7 @@ target_link_libraries(libman PRIVATE
     Qt5::Gui
     Qt5::Widgets
     Qt5::Network
+    Qt5::Concurrent
     ZLIB::ZLIB
     capnp
     kj

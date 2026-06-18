@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT += core gui
+QT += core gui concurrent
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = libman
@@ -56,7 +56,10 @@ SOURCES += \
     src/projectcontextmenu.cpp \
     src/categorycontextmenu.cpp \
     src/about.cpp \
-    src/newview.cpp
+    src/newview.cpp \
+    core/corecellreader.cpp \
+    core/coreReadAsync.cpp \
+    core/coreKlayoutBridge.cpp
 
 HEADERS += \
     lstream/lstreamcellwriter.h \
@@ -83,7 +86,9 @@ HEADERS += \
     src/property.h \
     src/toolmanager.h \
     src/about.h \
-    src/newview.h
+    src/newview.h \
+    core/corecellreader.h \
+    core/coreKlayoutBridge.h
 
 FORMS += \
     src/mainwindow.ui \
@@ -100,6 +105,7 @@ RESOURCES += icons.qrc
 # Repo root (directory of this .pro file), not the shadow-build cwd.
 LIBMAN_ROOT = $$dirname(_PRO_FILE_)
 include(capnp_deps.pri)
+include(core_deps.pri)
 
 # Generated Cap'n Proto files
 # Must be listed explicitly so qmake knows them.
@@ -129,3 +135,4 @@ HEADERS += \
     capnp/variant.capnp.h
 
 include(capnp_deps_finalize.pri)
+include(core_deps_finalize.pri)

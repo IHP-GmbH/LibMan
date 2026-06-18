@@ -9,7 +9,7 @@ dnf config-manager --set-enabled powertools 2>/dev/null || \
 dnf config-manager --set-enabled crb 2>/dev/null || true
 
 dnf install -y \
-    gcc gcc-c++ make git autoconf automake libtool pkgconfig \
+    gcc gcc-c++ make cmake git autoconf automake libtool pkgconfig \
     python39 python39-pip p7zip p7zip-plugins \
     curl tar gzip which file patch patchelf \
     mesa-libGL-devel zlib-devel libdrm-devel \
