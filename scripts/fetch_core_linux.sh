@@ -10,6 +10,16 @@ STAMP="${CORE_BUILD}/libman_core_built.stamp"
 CORE_GIT_URL="${CORE_GIT_URL:-https://github.com/IHP-GmbH/CommonDB.git}"
 CORE_GIT_BRANCH="${CORE_GIT_BRANCH:-main}"
 
+core_git_clone_url() {
+    local url="$1"
+    local token="${LIBMAN_CORE_GIT_TOKEN:-${GITHUB_TOKEN:-}}"
+    if [ -n "$token" ] && [[ "$url" == https://github.com/* ]]; then
+        echo "https://x-access-token:${token}@${url#https://}"
+    else
+        echo "$url"
+    fi
+}
+
 if [ -f "$STAMP" ]; then
     echo "CORE already built ($STAMP)"
     exit 0
@@ -22,8 +32,9 @@ else
     CORE_SRC="${LIBMAN_ROOT}/.deps/CommonDB"
     mkdir -p "$(dirname "$CORE_SRC")"
     if [ ! -d "$CORE_SRC/.git" ]; then
+        clone_url="$(core_git_clone_url "$CORE_GIT_URL")"
         echo "Cloning CORE from ${CORE_GIT_URL} (${CORE_GIT_BRANCH})..."
-        git clone --depth 1 --branch "$CORE_GIT_BRANCH" "$CORE_GIT_URL" "$CORE_SRC"
+        git clone --depth 1 --branch "$CORE_GIT_BRANCH" "$clone_url" "$CORE_SRC"
     fi
 fi
 

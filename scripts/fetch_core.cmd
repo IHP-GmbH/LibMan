@@ -19,8 +19,15 @@ if defined LIBMAN_CORE_SOURCE_DIR (
 
 set "CORE_SRC=%ROOT%\.deps\CommonDB"
 if not exist "%CORE_SRC%\.git" (
+    if defined LIBMAN_CORE_GIT_TOKEN (
+        set "CLONE_URL=https://x-access-token:%LIBMAN_CORE_GIT_TOKEN%@github.com/IHP-GmbH/CommonDB.git"
+    ) else if defined GITHUB_TOKEN (
+        set "CLONE_URL=https://x-access-token:%GITHUB_TOKEN%@github.com/IHP-GmbH/CommonDB.git"
+    ) else (
+        set "CLONE_URL=https://github.com/IHP-GmbH/CommonDB.git"
+    )
     echo Cloning CORE from GitHub...
-    git clone --depth 1 --branch main https://github.com/IHP-GmbH/CommonDB.git "%CORE_SRC%"
+    git clone --depth 1 --branch main "%CLONE_URL%" "%CORE_SRC%"
     if errorlevel 1 exit /b 1
 )
 
