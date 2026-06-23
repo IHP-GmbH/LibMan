@@ -8,13 +8,13 @@ isEmpty(CORE_FETCH_PHONY) {
 for(_src, SOURCES) {
     _src_key = $$_src
     contains(_src, $$LIBMAN_ROOT): _src_key = $$relative_path($$LIBMAN_ROOT, $$_src)
-    _src_key = $$replace(_src_key, \\, /)
-    _src_esc = $$replace(_src_key, \\., \\.)
+    _src_key = $$replace(_src_key, \\\\, /)
+    _src_esc = $$replace(_src_key, \\\., \\.)
     eval($${_src_esc}.depends += $$CORE_FETCH_PHONY)
 }
 
 for(_obj, OBJECTS) {
-    _obj_key = $$replace(_obj, \\, /)
-    _obj_esc = $$replace(_obj_key, \\., \\.)
+    _obj_key = $$replace(_obj, \\\\, /)
+    _obj_esc = $$replace(_obj_key, \\\., \\.)
     eval($${_obj_esc}.depends += $$CORE_FETCH_PHONY)
 }
