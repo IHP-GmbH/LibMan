@@ -27,6 +27,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "libman_test_mode.h"
+
 #include "about.h"
 #include "newview.h"
 #include "property.h"
@@ -598,9 +600,9 @@ void MainWindow::on_actionOpen_triggered()
 {
     QString workDir = getCurrentWorkingDir();
     QString fileName = QFileDialog::getOpenFileName(this,
-                                                    tr("Open file(s)"),
+                                                    tr("Open Project..."),
                                                     workDir,
-                                                    tr("KLayout Lib (*.lib);; All (*)"));
+                                                    tr("LibMan project (*.projects *.lib);;All files (*)"));
 
     if(!fileName.isEmpty()) {
         loadProjectFile(fileName);
@@ -1285,23 +1287,25 @@ void MainWindow::loadDocuments(const QString &libPath)
     }
 
     const QString projectDir = getCurrentProjectDirectory();
-    const QStringList pdfFiles = findProjectPdfDocuments(projectDir);
+    if (!libmanAutomatedTestRun()) {
+        const QStringList pdfFiles = findProjectPdfDocuments(projectDir);
 
-    foreach(const QString &pdfPath, pdfFiles) {
-        if(addedPaths.contains(pdfPath)) {
-            continue;
+        foreach(const QString &pdfPath, pdfFiles) {
+            if(addedPaths.contains(pdfPath)) {
+                continue;
+            }
+
+            QFileInfo fi(pdfPath);
+
+            QTreeWidgetItem *docItem = new QTreeWidgetItem;
+            docItem->setText(0, fi.fileName());
+            docItem->setToolTip(0, pdfPath);
+            docItem->setData(0, RoleDocumentPath, pdfPath);
+            docItem->setIcon(0, QIcon(":/icons/pdf.svg"));
+
+            m_ui->listDocumentation->addTopLevelItem(docItem);
+            addedPaths.insert(pdfPath);
         }
-
-        QFileInfo fi(pdfPath);
-
-        QTreeWidgetItem *docItem = new QTreeWidgetItem;
-        docItem->setText(0, fi.fileName());
-        docItem->setToolTip(0, pdfPath);
-        docItem->setData(0, RoleDocumentPath, pdfPath);
-        docItem->setIcon(0, QIcon(":/icons/pdf.svg"));
-
-        m_ui->listDocumentation->addTopLevelItem(docItem);
-        addedPaths.insert(pdfPath);
     }
 
 #if QT_VERSION >= 0x050000
@@ -2294,9 +2298,9 @@ void MainWindow::on_actionSave_As_triggered()
 {
     QString workDir = getCurrentWorkingDir();
     QString fileName = QFileDialog::getSaveFileName(this,
-                                                    tr("Save Lib File As.."),
+                                                    tr("Save Project As..."),
                                                     workDir,
-                                                    tr("KLayout Lib (*.lib);; All (*)"));
+                                                    tr("LibMan project (*.projects *.lib);;All files (*)"));
     if(!fileName.isEmpty()) {
         saveProjectFile(fileName);
     }
@@ -2683,10 +2687,10 @@ void MainWindow::on_actionClear_Recent_File_Stack_triggered()
  **********************************************************************************************************************/
 void MainWindow::setupProjectFileWatcher(const QString &projFile)
 {
-#ifdef LIBMAN_TESTING
-    Q_UNUSED(projFile);
-    return;
-#endif
+    if (libmanAutomatedTestRun()) {
+        Q_UNUSED(projFile);
+        return;
+    }
 
     if(!m_projFileWatcher) {
         return;
@@ -2773,9 +2777,9 @@ void MainWindow::onProjectFileChanged(const QString &path)
         setupProjectFileWatcher(path);
     }
 
-#ifdef LIBMAN_TESTING
-    return;
-#endif
+    if (libmanAutomatedTestRun()) {
+        return;
+    }
 
     QMessageBox msgBox(this);
     msgBox.setIcon(QMessageBox::Question);

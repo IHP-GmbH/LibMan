@@ -21,6 +21,7 @@
 #include "lstream/lstreamcellwriter.h"
 #include "core/core_path_utils.h"
 #include "core/corecellreader.h"
+#include "libman_test_mode.h"
 
 /*!*********************************************************************************************************************
  * \brief Displays menu for view widget.
@@ -309,7 +310,7 @@ bool MainWindow::registerCreatedView(const QString &libName,
 
     setStateChanged();
 
-    if(!m_currentProjFile.isEmpty()) {
+    if(!m_currentProjFile.isEmpty() && !libmanAutomatedTestRun()) {
         saveProjectFile(m_currentProjFile);
     }
 

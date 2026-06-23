@@ -19,6 +19,7 @@
 #include "property.h"
 #include "libfileparser.h"
 #include "core/core_path_utils.h"
+#include "libman_test_mode.h"
 
 /*!******************************************************************************************************************
  * \brief Detects view name from file suffix.
@@ -125,12 +126,12 @@ void MainWindow::loadProjectFile(const QString &fileName)
 
     LibFileParser parser;
     if(!parser.parseFile(fileName)) {
-#ifndef LIBMAN_TESTING
-        QMessageBox::warning(this, tr("LibManager"),
-                             tr("Can not read lib file '%1':\n%2.")
-                                 .arg(fileName)
-                                 .arg(parser.errorString()));
-#endif
+        if (!libmanAutomatedTestRun()) {
+            QMessageBox::warning(this, tr("LibManager"),
+                                 tr("Can not read lib file '%1':\n%2.")
+                                     .arg(fileName)
+                                     .arg(parser.errorString()));
+        }
         error("Can not read lib file '" + fileName + "'.");
         return;
     }
@@ -398,12 +399,12 @@ bool MainWindow::saveProjectEntriesToFile(const QString &fileName,
             m_projFileWatcher->addPath(absFileName);
         }
 
-#ifndef LIBMAN_TESTING
-        QMessageBox::warning(this, tr("LibManager"),
-                             tr("Can not write to file '%1':\n%2.")
-                                 .arg(absFileName)
-                                 .arg(file.errorString()));
-#endif
+        if (!libmanAutomatedTestRun()) {
+            QMessageBox::warning(this, tr("LibManager"),
+                                 tr("Can not write to file '%1':\n%2.")
+                                     .arg(absFileName)
+                                     .arg(file.errorString()));
+        }
         error("Can not write to file '" + absFileName + "'.");
         return false;
     }
@@ -517,12 +518,12 @@ bool MainWindow::createNewFile(const QString &fileName)
 
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-#ifndef LIBMAN_TESTING
-        QMessageBox::warning(this, tr("LibManager"),
-                             tr("Can not write to file '%1':\n%2.")
-                                 .arg(fileName)
-                                 .arg(file.errorString()));
-#endif
+        if (!libmanAutomatedTestRun()) {
+            QMessageBox::warning(this, tr("LibManager"),
+                                 tr("Can not write to file '%1':\n%2.")
+                                     .arg(fileName)
+                                     .arg(file.errorString()));
+        }
         error("Can not write to file '" + fileName + "'.");
         return false;
     }
