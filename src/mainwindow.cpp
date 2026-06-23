@@ -2683,6 +2683,11 @@ void MainWindow::on_actionClear_Recent_File_Stack_triggered()
  **********************************************************************************************************************/
 void MainWindow::setupProjectFileWatcher(const QString &projFile)
 {
+#ifdef LIBMAN_TESTING
+    Q_UNUSED(projFile);
+    return;
+#endif
+
     if(!m_projFileWatcher) {
         return;
     }
