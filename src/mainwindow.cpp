@@ -2768,6 +2768,11 @@ void MainWindow::onProjectFileChanged(const QString &path)
         setupProjectFileWatcher(path);
     }
 
+#ifdef LIBMAN_TESTING
+    reloadProjectFileFromDisk();
+    return;
+#endif
+
     QMessageBox msgBox(this);
     msgBox.setIcon(QMessageBox::Question);
     msgBox.setWindowTitle("Project File Changed");

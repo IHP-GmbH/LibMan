@@ -11,6 +11,7 @@
 #include <QListWidgetItem>
 #include <QRegularExpression>
 #include <QFileSystemWatcher>
+#include <QTimer>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -396,7 +397,9 @@ bool MainWindow::saveProjectEntriesToFile(const QString &fileName,
         if (m_projFileWatcher && QFileInfo(absFileName).exists()) {
             m_projFileWatcher->addPath(absFileName);
         }
-        m_ignoreProjectFileChange = false;
+        QTimer::singleShot(0, this, [this]() {
+            m_ignoreProjectFileChange = false;
+        });
 
         QMessageBox::warning(this, tr("LibManager"),
                              tr("Can not write to file '%1':\n%2.")
@@ -447,7 +450,10 @@ bool MainWindow::saveProjectEntriesToFile(const QString &fileName,
         m_projFileWatcher->addPath(absFileName);
     }
 
-    m_ignoreProjectFileChange = false;
+    // Defer clearing so QFileSystemWatcher events from this save are ignored.
+    QTimer::singleShot(0, this, [this]() {
+        m_ignoreProjectFileChange = false;
+    });
     return true;
 }
 
