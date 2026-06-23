@@ -1,16 +1,7 @@
 #include <QtTest>
 
 #include "core/core_path_utils.h"
-
-class CorePathUtilsTest : public QObject
-{
-    Q_OBJECT
-
-private slots:
-    void layoutCorePath_parsesCellAndView();
-    void schematicCorePath_parsesCellAndView();
-    void legacyCorePath_defaultsToLayout();
-};
+#include "tst_core_path_utils.h"
 
 void CorePathUtilsTest::layoutCorePath_parsesCellAndView()
 {
@@ -37,5 +28,3 @@ void CorePathUtilsTest::legacyCorePath_defaultsToLayout()
     QCOMPARE(identity.cellName, QStringLiteral("top"));
     QCOMPARE(identity.viewName, QStringLiteral("layout"));
 }
-
-#include "tst_core_path_utils.moc"
