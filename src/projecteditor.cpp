@@ -11,6 +11,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QSet>
+#include <QTimer>
 #include <algorithm>
 #include <QTableWidgetItem>
 
@@ -165,7 +166,16 @@ bool ProjectEditor::saveToFile(const QString &filePath)
     }
 
     const QList<QPair<QString, QString>> entries = collectEntries();
-    if (!m_mainWindow->saveProjectEntriesToFile(filePath, entries)) {
+    m_mainWindow->m_ignoreProjectFileChange = true;
+    const bool saved = m_mainWindow->saveProjectEntriesToFile(filePath, entries);
+    if (saved) {
+        QTimer::singleShot(100, m_mainWindow, [mw = m_mainWindow]() {
+            mw->m_ignoreProjectFileChange = false;
+        });
+    } else {
+        m_mainWindow->m_ignoreProjectFileChange = false;
+    }
+    if (!saved) {
         return false;
     }
 

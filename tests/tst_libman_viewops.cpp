@@ -176,7 +176,18 @@ static TempProject createTempProjectCopy()
     const QString srcRoot = srcProjInfo.absolutePath();
     const QString dstRoot = out.dir->path() + "/fixture";
 
-    if(!copyRecursively(srcRoot, dstRoot)) {
+    if(!QDir().mkpath(dstRoot)) {
+        out.dir.reset();
+        return out;
+    }
+
+    if(!QFile::copy(srcProject, dstRoot + "/" + srcProjInfo.fileName())) {
+        out.dir.reset();
+        return out;
+    }
+
+    // View-ops tests only need the Test cell subtree; avoid copying the full ~500MB fixture tree.
+    if(!copyRecursively(srcRoot + "/sg13g2_stdcell/Test", dstRoot + "/sg13g2_stdcell/Test")) {
         out.dir.reset();
         return out;
     }

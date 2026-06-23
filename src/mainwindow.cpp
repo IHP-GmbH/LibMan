@@ -2769,7 +2769,6 @@ void MainWindow::onProjectFileChanged(const QString &path)
     }
 
 #ifdef LIBMAN_TESTING
-    reloadProjectFileFromDisk();
     return;
 #endif
 

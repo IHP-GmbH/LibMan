@@ -125,10 +125,12 @@ void MainWindow::loadProjectFile(const QString &fileName)
 
     LibFileParser parser;
     if(!parser.parseFile(fileName)) {
+#ifndef LIBMAN_TESTING
         QMessageBox::warning(this, tr("LibManager"),
                              tr("Can not read lib file '%1':\n%2.")
                                  .arg(fileName)
                                  .arg(parser.errorString()));
+#endif
         error("Can not read lib file '" + fileName + "'.");
         return;
     }
@@ -386,8 +388,6 @@ bool MainWindow::saveProjectEntriesToFile(const QString &fileName,
 
     const QString absFileName = QFileInfo(fileName).absoluteFilePath();
 
-    m_ignoreProjectFileChange = true;
-
     if (m_projFileWatcher) {
         m_projFileWatcher->removePath(absFileName);
     }
@@ -397,14 +397,13 @@ bool MainWindow::saveProjectEntriesToFile(const QString &fileName,
         if (m_projFileWatcher && QFileInfo(absFileName).exists()) {
             m_projFileWatcher->addPath(absFileName);
         }
-        QTimer::singleShot(0, this, [this]() {
-            m_ignoreProjectFileChange = false;
-        });
 
+#ifndef LIBMAN_TESTING
         QMessageBox::warning(this, tr("LibManager"),
                              tr("Can not write to file '%1':\n%2.")
                                  .arg(absFileName)
                                  .arg(file.errorString()));
+#endif
         error("Can not write to file '" + absFileName + "'.");
         return false;
     }
@@ -450,10 +449,6 @@ bool MainWindow::saveProjectEntriesToFile(const QString &fileName,
         m_projFileWatcher->addPath(absFileName);
     }
 
-    // Defer clearing so QFileSystemWatcher events from this save are ignored.
-    QTimer::singleShot(0, this, [this]() {
-        m_ignoreProjectFileChange = false;
-    });
     return true;
 }
 
@@ -466,7 +461,12 @@ void MainWindow::saveProjectFile(const QString &fileName)
         return;
     }
 
+    m_ignoreProjectFileChange = true;
+
     if (!saveProjectEntriesToFile(fileName, getCurrentProjectEntries())) {
+        QTimer::singleShot(100, this, [this]() {
+            m_ignoreProjectFileChange = false;
+        });
         return;
     }
 
@@ -485,6 +485,10 @@ void MainWindow::saveProjectFile(const QString &fileName)
 
     info(QString("Project '%1' has been saved.").arg(absFileName));
     setStateSaved();
+
+    QTimer::singleShot(100, this, [this]() {
+        m_ignoreProjectFileChange = false;
+    });
 }
 
 /*!******************************************************************************************************************
@@ -513,10 +517,12 @@ bool MainWindow::createNewFile(const QString &fileName)
 
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+#ifndef LIBMAN_TESTING
         QMessageBox::warning(this, tr("LibManager"),
                              tr("Can not write to file '%1':\n%2.")
                                  .arg(fileName)
                                  .arg(file.errorString()));
+#endif
         error("Can not write to file '" + fileName + "'.");
         return false;
     }
