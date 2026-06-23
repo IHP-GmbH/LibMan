@@ -219,19 +219,24 @@ void MainWindow::addNewSpiceView()
  **********************************************************************************************************************/
 void MainWindow::addNewLayoutView()
 {
-    QStringList items;
-    items << "gds" << "oas" << "lstr" << "layout";
+    QString selectedView;
+    if (libmanAutomatedTestRun()) {
+        selectedView = QStringLiteral("gds");
+    } else {
+        QStringList items;
+        items << "gds" << "oas" << "lstr" << "layout";
 
-    bool ok = false;
-    QString selectedView = QInputDialog::getItem(this,
-                                                 tr("Create Layout View"),
-                                                 tr("Select layout view type:"),
-                                                 items,
-                                                 0,
-                                                 false,
-                                                 &ok);
-    if(!ok || selectedView.isEmpty()) {
-        return;
+        bool ok = false;
+        selectedView = QInputDialog::getItem(this,
+                                             tr("Create Layout View"),
+                                             tr("Select layout view type:"),
+                                             items,
+                                             0,
+                                             false,
+                                             &ok);
+        if (!ok || selectedView.isEmpty()) {
+            return;
+        }
     }
 
     if(selectedView == "gds") {
@@ -564,19 +569,24 @@ void MainWindow::addNewCoreSymbolView()
  **********************************************************************************************************************/
 void MainWindow::addNewSchematicView()
 {
-    QStringList items;
-    items << "cdl" << "schematic" << "symbol";
+    QString selectedView;
+    if (libmanAutomatedTestRun()) {
+        selectedView = QStringLiteral("cdl");
+    } else {
+        QStringList items;
+        items << "cdl" << "schematic" << "symbol";
 
-    bool ok = false;
-    const QString selectedView = QInputDialog::getItem(this,
-                                                       tr("Create Schematic View"),
-                                                       tr("Select schematic view type:"),
-                                                       items,
-                                                       0,
-                                                       false,
-                                                       &ok);
-    if (!ok || selectedView.isEmpty()) {
-        return;
+        bool ok = false;
+        selectedView = QInputDialog::getItem(this,
+                                             tr("Create Schematic View"),
+                                             tr("Select schematic view type:"),
+                                             items,
+                                             0,
+                                             false,
+                                             &ok);
+        if (!ok || selectedView.isEmpty()) {
+            return;
+        }
     }
 
     if (selectedView == QStringLiteral("schematic")) {
