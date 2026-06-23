@@ -9,13 +9,17 @@ on:
 permissions:
   contents: read
 
+env:
+  CAPNP_SKIP_CHECK: 1
+
 jobs:
 
   # ============================================================
-  # Linux build
+  # Linux build (stage 1)
   # ============================================================
 
   build-linux:
+    name: build-ubuntu
     runs-on: ubuntu-latest
     env:
       LIBMAN_CORE_GIT_TOKEN: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
@@ -66,8 +70,6 @@ jobs:
           qmake $EXTRA ../libman.pro
 
       - name: Build
-        env:
-          CAPNP_SKIP_CHECK: 1
         run: |
           cd build
           make -j1 capnp_install
@@ -109,83 +111,13 @@ jobs:
           path: libman-linux.tar.gz
           if-no-files-found: error
 
-
   # ============================================================
-  # RHEL 8 compatible build (Rocky Linux 8 container, glibc 2.28)
-  # ============================================================
-
-  build-rhel8:
-    name: Build RHEL 8 bundle
-    runs-on: ubuntu-latest
-    env:
-      LIBMAN_CORE_GIT_TOKEN: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
-    container:
-      image: rockylinux:8
-
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Checkout CORE (CommonDB)
-        if: ${{ env.LIBMAN_CORE_GIT_TOKEN != '' }}
-        uses: actions/checkout@v4
-        with:
-          repository: IHP-GmbH/CommonDB
-          path: .deps/CommonDB
-          token: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
-
-      - name: Install build dependencies
-        run: bash scripts/ci_deps_rhel8.sh
-
-      - name: Install Qt
-        run: bash scripts/ci_install_qt_rhel8.sh
-
-      - name: Configure (qmake)
-        run: |
-          mkdir -p build
-          cd build
-          EXTRA=""
-          if [ -z "$LIBMAN_CORE_GIT_TOKEN" ]; then
-            EXTRA="CONFIG+=no_core"
-          fi
-          qmake CONFIG+=release $EXTRA ../libman.pro
-
-      - name: Build
-        env:
-          CAPNP_SKIP_CHECK: 1
-        run: |
-          cd build
-          make -j1 capnp_install
-          make -j1 lstream_schemas
-          if [ -n "$LIBMAN_CORE_GIT_TOKEN" ]; then
-            make -j1 core_fetch
-          fi
-          make -j"$(nproc)"
-
-      - name: Install linuxdeployqt
-        run: bash scripts/ci_install_linuxdeployqt.sh
-
-      - name: Package RHEL 8 bundle
-        run: |
-          chmod +x scripts/package_linux_bundle.sh
-          bash scripts/package_linux_bundle.sh build libman-rhel8.tar.gz "RHEL 8.10 compatible"
-
-      - name: Upload RHEL 8 artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: libman-rhel8
-          path: libman-rhel8.tar.gz
-          if-no-files-found: error
-
-
-  # ============================================================
-  # Linux tests + Code Coverage
+  # Linux tests (stage 2, after build-linux)
   # ============================================================
 
   tests-linux:
+    name: Tests
+    needs: build-linux
     runs-on: ubuntu-latest
     env:
       LIBMAN_CORE_GIT_TOKEN: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
@@ -224,14 +156,9 @@ jobs:
             autoconf \
             automake \
             libtool \
-            pkg-config \
-            python3 \
-            python3-pip
+            pkg-config
 
-          python3 -m pip install --upgrade pip
-          python3 -m pip install gcovr
-
-      - name: Configure tests (coverage enabled)
+      - name: Configure tests
         run: |
           mkdir -p build-tests
           cd build-tests
@@ -239,11 +166,9 @@ jobs:
           if [ -z "$LIBMAN_CORE_GIT_TOKEN" ]; then
             EXTRA="CONFIG+=no_core"
           fi
-          qmake CONFIG+=debug CONFIG+=coverage $EXTRA ../tests/tests.pro
+          qmake CONFIG+=debug $EXTRA ../tests/tests.pro
 
       - name: Build tests
-        env:
-          CAPNP_SKIP_CHECK: 1
         run: |
           cd build-tests
           make -j1 capnp_install
@@ -258,15 +183,14 @@ jobs:
           echo "LD_LIBRARY_PATH=$GITHUB_WORKSPACE/capnp-install/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
 
       - name: Make Linux test script executable
-        run: |
-          chmod +x scripts/run_tests.sh
+        run: chmod +x scripts/run_tests.sh
 
-      - name: Run tests and generate coverage
+      - name: Run tests
         env:
           QT_QPA_PLATFORM: offscreen
           LIBMAN_TEST_DATA_DIR: ${{ github.workspace }}/tests/data
-        run: |
-          xvfb-run -a ./scripts/run_tests.sh
+          LIBMAN_SKIP_COVERAGE: 1
+        run: xvfb-run -a ./scripts/run_tests.sh
 
       - name: Upload test log
         uses: actions/upload-artifact@v4
@@ -274,6 +198,90 @@ jobs:
           name: libman-test-log-linux
           path: test_results.txt
           if-no-files-found: warn
+
+  # ============================================================
+  # Linux coverage (stage 3, after Tests)
+  # ============================================================
+
+  coverage-linux:
+    name: Coverage (Ubuntu)
+    needs: tests-linux
+    runs-on: ubuntu-latest
+    env:
+      LIBMAN_CORE_GIT_TOKEN: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Checkout CORE (CommonDB)
+        if: ${{ env.LIBMAN_CORE_GIT_TOKEN != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: IHP-GmbH/CommonDB
+          path: .deps/CommonDB
+          token: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          host: 'linux'
+          target: 'desktop'
+          arch: 'gcc_64'
+
+      - name: Install coverage dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            xvfb \
+            build-essential \
+            cmake \
+            libgl1-mesa-dev \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            python3 \
+            python3-pip
+          python3 -m pip install --upgrade pip
+          python3 -m pip install gcovr
+
+      - name: Configure tests (coverage enabled)
+        run: |
+          mkdir -p build-tests
+          cd build-tests
+          EXTRA=""
+          if [ -z "$LIBMAN_CORE_GIT_TOKEN" ]; then
+            EXTRA="CONFIG+=no_core"
+          fi
+          qmake CONFIG+=debug CONFIG+=coverage $EXTRA ../tests/tests.pro
+
+      - name: Build tests
+        run: |
+          cd build-tests
+          make -j1 capnp_install
+          make -j1 lstream_schemas
+          if [ -n "$LIBMAN_CORE_GIT_TOKEN" ]; then
+            make -j1 core_fetch
+          fi
+          make -j"$(nproc)"
+
+      - name: Export Cap'n Proto runtime path
+        run: |
+          echo "LD_LIBRARY_PATH=$GITHUB_WORKSPACE/capnp-install/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
+      - name: Make Linux test script executable
+        run: chmod +x scripts/run_tests.sh
+
+      - name: Run tests and generate coverage
+        env:
+          QT_QPA_PLATFORM: offscreen
+          LIBMAN_TEST_DATA_DIR: ${{ github.workspace }}/tests/data
+        run: xvfb-run -a ./scripts/run_tests.sh
 
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v4
@@ -286,9 +294,8 @@ jobs:
             coverage.js
           if-no-files-found: warn
 
-
   # ============================================================
-  # Windows build
+  # Windows build (parallel with Linux chain)
   # ============================================================
 
   build-windows:
@@ -326,8 +333,6 @@ jobs:
 
       - name: Build Cap'n Proto
         shell: cmd
-        env:
-          CAPNP_SKIP_CHECK: 1
         run: |
           call scripts\mkcapnp.cmd
           if not exist capnp-install\include\capnp\message.h (
@@ -354,8 +359,6 @@ jobs:
 
       - name: Build (mingw32-make)
         shell: bash
-        env:
-          CAPNP_SKIP_CHECK: 1
         run: |
           cd build
           mingw32-make -j"$(nproc)"
@@ -401,4 +404,72 @@ jobs:
         with:
           name: libman-windows-installer
           path: build/installer/*.exe
+          if-no-files-found: error
+
+  # ============================================================
+  # RHEL 8 bundle (parallel with Linux chain / Windows)
+  # ============================================================
+
+  build-rhel8:
+    name: Build RHEL 8 bundle
+    runs-on: ubuntu-latest
+    env:
+      LIBMAN_CORE_GIT_TOKEN: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
+    container:
+      image: rockylinux:8
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Checkout CORE (CommonDB)
+        if: ${{ env.LIBMAN_CORE_GIT_TOKEN != '' }}
+        uses: actions/checkout@v4
+        with:
+          repository: IHP-GmbH/CommonDB
+          path: .deps/CommonDB
+          token: ${{ secrets.LIBMAN_CORE_GIT_TOKEN }}
+
+      - name: Install build dependencies
+        run: bash scripts/ci_deps_rhel8.sh
+
+      - name: Install Qt
+        run: bash scripts/ci_install_qt_rhel8.sh
+
+      - name: Configure (qmake)
+        run: |
+          mkdir -p build
+          cd build
+          EXTRA=""
+          if [ -z "$LIBMAN_CORE_GIT_TOKEN" ]; then
+            EXTRA="CONFIG+=no_core"
+          fi
+          qmake CONFIG+=release $EXTRA ../libman.pro
+
+      - name: Build
+        run: |
+          cd build
+          make -j1 capnp_install
+          make -j1 lstream_schemas
+          if [ -n "$LIBMAN_CORE_GIT_TOKEN" ]; then
+            make -j1 core_fetch
+          fi
+          make -j"$(nproc)"
+
+      - name: Install linuxdeployqt
+        run: bash scripts/ci_install_linuxdeployqt.sh
+
+      - name: Package RHEL 8 bundle
+        run: |
+          chmod +x scripts/package_linux_bundle.sh
+          bash scripts/package_linux_bundle.sh build libman-rhel8.tar.gz "RHEL 8.10 compatible"
+
+      - name: Upload RHEL 8 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libman-rhel8
+          path: libman-rhel8.tar.gz
           if-no-files-found: error

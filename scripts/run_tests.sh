@@ -112,6 +112,14 @@ else
     echo "All tests passed."
 fi
 
+if [[ "${LIBMAN_SKIP_COVERAGE:-}" == "1" ]]; then
+    if [[ $TEST_EXIT -ne 0 ]]; then
+        echo "Error: one or more tests failed."
+        exit 1
+    fi
+    exit 0
+fi
+
 # =========================
 # Coverage (gcovr)
 # =========================
