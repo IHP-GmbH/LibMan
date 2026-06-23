@@ -94,6 +94,8 @@ If you see the LibMan window, you're done! 🎉
 
 ## 📚 Next Steps
 
+- **Edit project libraries**: [Project Editor](../setup/PROJECT_EDITOR.md) (`Ctrl+E`)
+- **Layout / schematic tools**: [KLayout](../setup/KLAYOUT_INTEGRATION.md) · [Xschem + WSL](../setup/XSCHEM_INTEGRATION.md) · [CORE](../setup/CORE_INTEGRATION.md)
 - **Learn VS Code tasks**: [Quick Reference](../reference/QUICK_REFERENCE.md)
 - **Advanced setup**: [VS Code Setup Guide](../setup/VSCODE_SETUP.md)
 - **Customize build**: [Advanced Customization](../reference/VSCODE_ADVANCED.md)

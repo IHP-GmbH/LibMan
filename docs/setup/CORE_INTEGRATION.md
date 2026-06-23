@@ -28,7 +28,7 @@ cmake -B build -DCORE_GIT_TAG=91705d7
 When working on CORE and LibMan side by side, skip the git fetch:
 
 ```powershell
-cmake -B build -DLIBMAN_CORE_SOURCE_DIR=C:/Users/anton/Documents/CommonDB
+cmake -B build -DLIBMAN_CORE_SOURCE_DIR=C:/path/to/CommonDB
 ```
 
 ## Installed CORE (advanced)
@@ -79,10 +79,16 @@ qmake CONFIG+=no_core ../libman.pro
 
 ## Layout view in LibMan
 
-`core` is a first-class layout view suffix (like `gds`, `oas`, `lstr`):
+`layout` (and legacy `core`) is a first-class layout view suffix (like `gds`, `oas`, `lstr`):
 
-- **Create:** View panel → New → Layout → `core` (creates `<cell>/<cell>.core`)
-- **Tree:** expand `core` to browse cell hierarchy from `LibIndex`
-- **Open:** double-click opens the file in KLayout. `.core` views are exported to a temporary GDS automatically unless your KLayout build includes the `mcore` streamer.
+- **Create:** View panel → New → Layout → `layout` (creates `<cell>/<cell>.layout.core`)
+- **Tree:** expand `layout` to browse cell hierarchy from `LibIndex`
+- **Open:** double-click opens the file in KLayout with a resolved top cell; see **[KLayout integration](KLAYOUT_INTEGRATION.md)** for server setup, root-cell rules, and mcore plugin notes.
 
-Default `LayoutViews` property: `gds,oas,lstr,core`.
+**Schematic/symbol (`*.schematic.core`, `*.symbol.core`):** opened in **Xschem via WSL** on Windows. See **[Xschem integration](XSCHEM_INTEGRATION.md)** for `open-xschem-wsl.bat`, Tool Manager, and CORE save/load behaviour.
+
+Default `LayoutViews` property: `gds,oas,lstr,layout`.
+
+## Project file and views
+
+View paths come from the project file (`define(library, path)`). Edit entries in **[Project Editor](PROJECT_EDITOR.md)** (**File → Edit Project...**, `Ctrl+E`). After Save, LibMan reloads libraries; removed views disappear from the tree and documentation for the selected library is refreshed.

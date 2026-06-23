@@ -13,6 +13,8 @@
 #include "tst_klayout_requests.h"
 #undef private
 
+#include "src/klayoutCellResolver.h"
+
 /*!*********************************************************************************************************************
  * \brief Verifies that sendKLayoutOpenRequest() fails when command file path is empty.
  **********************************************************************************************************************/
@@ -147,4 +149,65 @@ void KLayoutRequestsTest::createKLayoutServerScript_createsPythonFile()
             text.contains("load_layout"));
 
     QFile::remove(scriptPath);
+}
+
+void KLayoutRequestsTest::resolveKLayoutRootCell_prefersGroupWhenPresent()
+{
+    LayoutHierarchySnapshot hierarchy;
+    hierarchy.topCells = {QStringLiteral("alpha"), QStringLiteral("beta")};
+    hierarchy.allCells.insert(QStringLiteral("alpha"));
+    hierarchy.allCells.insert(QStringLiteral("beta"));
+    hierarchy.allCells.insert(QStringLiteral("my_group"));
+
+    QCOMPARE(resolveKLayoutRootCell(hierarchy, QStringLiteral("my_group")),
+             QStringLiteral("my_group"));
+}
+
+void KLayoutRequestsTest::resolveKLayoutRootCell_singleTopCell()
+{
+    LayoutHierarchySnapshot hierarchy;
+    hierarchy.topCells = {QStringLiteral("TOP")};
+    hierarchy.allCells.insert(QStringLiteral("TOP"));
+    hierarchy.allCells.insert(QStringLiteral("child"));
+
+    QCOMPARE(resolveKLayoutRootCell(hierarchy, QStringLiteral("missing_group")),
+             QStringLiteral("TOP"));
+}
+
+void KLayoutRequestsTest::resolveKLayoutRootCell_multipleTopCellsUsesFirstSorted()
+{
+    LayoutHierarchySnapshot hierarchy;
+    hierarchy.topCells = {QStringLiteral("zebra"), QStringLiteral("alpha")};
+    hierarchy.topCells.sort();
+    hierarchy.allCells.insert(QStringLiteral("zebra"));
+    hierarchy.allCells.insert(QStringLiteral("alpha"));
+
+    QCOMPARE(resolveKLayoutRootCell(hierarchy, QStringLiteral("not_in_file")),
+             QStringLiteral("alpha"));
+}
+
+void KLayoutRequestsTest::resolveKLayoutRootCell_emptyHierarchyReturnsEmpty()
+{
+    LayoutHierarchySnapshot hierarchy;
+    QVERIFY(resolveKLayoutRootCell(hierarchy, QStringLiteral("group")).isEmpty());
+}
+
+void KLayoutRequestsTest::loadLayoutHierarchySnapshot_layoutCore_fixture()
+{
+    const QString fixture =
+        QDir(QDir::currentPath()).filePath(QStringLiteral("data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.layout.core"));
+    if (!QFileInfo::exists(fixture)) {
+        QSKIP("sg13g2_stdcell.layout.core fixture not found");
+    }
+
+    LayoutHierarchySnapshot hierarchy;
+    QStringList errors;
+    QVERIFY2(loadLayoutHierarchySnapshot(fixture, hierarchy, &errors),
+             qPrintable(errors.join(QLatin1Char(';'))));
+    QVERIFY(hierarchy.topCells.size() > 1);
+    QVERIFY(!hierarchy.allCells.contains(QStringLiteral("sg13g2_stdcell")));
+
+    const QString resolved =
+        resolveKLayoutRootCell(hierarchy, QStringLiteral("sg13g2_stdcell"));
+    QCOMPARE(resolved, hierarchy.topCells.first());
 }

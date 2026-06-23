@@ -17,13 +17,65 @@
 
 #include "property.h"
 #include "libfileparser.h"
+#include "core/core_path_utils.h"
 
 /*!******************************************************************************************************************
  * \brief Detects view name from file suffix.
  *******************************************************************************************************************/
 QString MainWindow::detectViewFromPath(const QString& filePath) const
 {
-    return(QFileInfo(filePath).suffix().toLower());
+    QString groupName;
+    QString viewName;
+    if (resolveCellViewFromPath(filePath, &groupName, &viewName)) {
+        return viewName;
+    }
+    return QString();
+}
+
+bool MainWindow::resolveCellViewFromPath(const QString &filePath,
+                                         QString *groupName,
+                                         QString *viewName) const
+{
+    if (!groupName || !viewName) {
+        return false;
+    }
+
+    const CoreViewIdentity coreIdentity = parseCoreViewIdentity(filePath);
+    if (coreIdentity.valid) {
+        *groupName = coreIdentity.cellName;
+        *viewName = coreIdentity.viewName;
+        return true;
+    }
+
+    const QFileInfo fi(filePath);
+    const QString suffix = fi.suffix().trimmed().toLower();
+    if (suffix.isEmpty()) {
+        return false;
+    }
+
+    const QString cellName = fi.completeBaseName().trimmed();
+    if (cellName.isEmpty()) {
+        return false;
+    }
+
+    *groupName = cellName;
+    *viewName = suffix;
+    return true;
+}
+
+void MainWindow::configureCoreViewTreeItem(QTreeWidgetItem *viewItem,
+                                           const QString &viewName,
+                                           const QString &viewPath) const
+{
+    if (!viewItem || !isCoreViewName(viewName)) {
+        return;
+    }
+
+    viewItem->setData(0, RoleType, ItemViewCore);
+    viewItem->setData(0, RoleCorePath, viewPath);
+    if (isLayoutCoreViewName(viewName)) {
+        viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+    }
 }
 
 /*!******************************************************************************************************************
@@ -67,6 +119,9 @@ QString MainWindow::resolveProjectPath(const QString& projectsFile, const QStrin
  *******************************************************************************************************************/
 void MainWindow::loadProjectFile(const QString &fileName)
 {
+    const QString selectedLib = getCurrentLibraryName();
+    const QString selectedGroup = getCurrentGroupName();
+
     LibFileParser parser;
     if(!parser.parseFile(fileName)) {
         QMessageBox::warning(this, tr("LibManager"),
@@ -88,12 +143,19 @@ void MainWindow::loadProjectFile(const QString &fileName)
     m_ui->txtCellSearch->clear();
     m_ui->txtViewSearch->clear();
 
+    clearLibraryViewProperties();
+
     QSet<QString> loadedLibraries;
 
     for(const LibDefinition& def : data.definitions) {
 
         const QString libName = def.name.trimmed();
-        const QString libPath = expandShellVariables(QDir::fromNativeSeparators(def.path.trimmed()));
+        QString libPath = expandShellVariables(QDir::fromNativeSeparators(def.path.trimmed()));
+
+        if (!QDir::isAbsolutePath(libPath)) {
+            const QDir projectDir = QFileInfo(fileName).absoluteDir();
+            libPath = QDir::toNativeSeparators(projectDir.absoluteFilePath(libPath));
+        }
 
         if(libName.isEmpty()) {
             error(QString("Skipping library with empty name from '%1'.").arg(def.sourceFile));
@@ -117,14 +179,14 @@ void MainWindow::loadProjectFile(const QString &fileName)
             continue;
         }
 
-        const QString viewName = detectViewFromPath(fi.absoluteFilePath());
-        if(viewName.isEmpty()) {
+        QString groupName;
+        QString viewName;
+        if (!resolveCellViewFromPath(fi.absoluteFilePath(), &groupName, &viewName)) {
             error(QString("Skipping file with unknown view type: %1").arg(fi.absoluteFilePath()));
             continue;
         }
 
-        const QString groupName = fi.completeBaseName().trimmed();
-        if(groupName.isEmpty()) {
+        if (groupName.isEmpty()) {
             error(QString("Skipping file with empty group name: %1").arg(fi.absoluteFilePath()));
             continue;
         }
@@ -136,6 +198,30 @@ void MainWindow::loadProjectFile(const QString &fileName)
     }
 
     loadLibraries();
+
+    if (!selectedLib.isEmpty()) {
+        for (int i = 0; i < m_ui->treeLibs->topLevelItemCount(); ++i) {
+            QTreeWidgetItem *libItem = m_ui->treeLibs->topLevelItem(i);
+            if (!libItem || libItem->text(0) != selectedLib) {
+                continue;
+            }
+            m_ui->treeLibs->setCurrentItem(libItem);
+            populateLibraryBrowser(selectedLib);
+            break;
+        }
+    }
+
+    if (!selectedLib.isEmpty() && !selectedGroup.isEmpty()) {
+        for (int i = 0; i < m_ui->listGroups->count(); ++i) {
+            QListWidgetItem *groupItem = m_ui->listGroups->item(i);
+            if (!groupItem || groupItem->text() != selectedGroup) {
+                continue;
+            }
+            m_ui->listGroups->setCurrentItem(groupItem);
+            loadViews(selectedLib, selectedGroup);
+            break;
+        }
+    }
 
     setRecentProject(fileName);
 
@@ -156,6 +242,27 @@ void MainWindow::loadProjectFile(const QString &fileName)
     info(QString("Lib file '%1' has been loaded. %2 libraries found.")
              .arg(fileName)
              .arg(loadedLibraries.count()));
+}
+
+void MainWindow::clearLibraryViewProperties()
+{
+    if (!m_properties) {
+        return;
+    }
+
+    const QString prefix = getLibraryKeyPrefix();
+    const QMap<QString, PropertyItem *> props = m_properties->getMap();
+    QStringList keysToRemove;
+
+    for (auto it = props.constBegin(); it != props.constEnd(); ++it) {
+        if (it.key().startsWith(prefix, Qt::CaseInsensitive)) {
+            keysToRemove.append(it.key());
+        }
+    }
+
+    for (const QString &key : keysToRemove) {
+        m_properties->remove(key);
+    }
 }
 
 /*!*********************************************************************************************************************
@@ -246,30 +353,49 @@ QList<QPair<QString, QString>> MainWindow::getCurrentProjectEntries() const
     return entries;
 }
 
-/*!******************************************************************************************************************
- * \brief Saves LibMan libraries into KLayout .lib file.
- *******************************************************************************************************************/
-void MainWindow::saveProjectFile(const QString &fileName)
+QList<QPair<QString, QString>> MainWindow::projectEntriesForEditor() const
 {
-    if(fileName.isEmpty()) {
-        return;
+    if (!m_currentProjFile.isEmpty()) {
+        LibFileParser parser;
+        if (parser.parseFile(m_currentProjFile)) {
+            QList<QPair<QString, QString>> rows;
+            for (const LibDefinition &def : parser.data().definitions) {
+                rows.append(qMakePair(def.name.trimmed(), def.path.trimmed()));
+            }
+            return rows;
+        }
+    }
+
+    QList<QPair<QString, QString>> rows;
+    const QList<QPair<QString, QString>> absoluteEntries = getCurrentProjectEntries();
+    for (const auto &entry : absoluteEntries) {
+        rows.append(qMakePair(entry.first,
+                              QDir::toNativeSeparators(QFileInfo(entry.second).absoluteFilePath())));
+    }
+
+    return rows;
+}
+
+bool MainWindow::saveProjectEntriesToFile(const QString &fileName,
+                                          const QList<QPair<QString, QString>> &entries)
+{
+    if (fileName.isEmpty()) {
+        return false;
     }
 
     const QString absFileName = QFileInfo(fileName).absoluteFilePath();
 
     m_ignoreProjectFileChange = true;
 
-    if(m_projFileWatcher) {
+    if (m_projFileWatcher) {
         m_projFileWatcher->removePath(absFileName);
     }
 
     QFile file(absFileName);
-    if(!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-
-        if(m_projFileWatcher && QFileInfo(absFileName).exists()) {
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        if (m_projFileWatcher && QFileInfo(absFileName).exists()) {
             m_projFileWatcher->addPath(absFileName);
         }
-
         m_ignoreProjectFileChange = false;
 
         QMessageBox::warning(this, tr("LibManager"),
@@ -277,7 +403,7 @@ void MainWindow::saveProjectFile(const QString &fileName)
                                  .arg(absFileName)
                                  .arg(file.errorString()));
         error("Can not write to file '" + absFileName + "'.");
-        return;
+        return false;
     }
 
     QTextStream out(&file);
@@ -286,26 +412,27 @@ void MainWindow::saveProjectFile(const QString &fileName)
     out << "# KLayout library definition file\n";
     out << "# Generated by LibMan\n\n";
 
-    const QList<QPair<QString, QString>> entries = getCurrentProjectEntries();
-
-    for(const auto &entry : entries) {
-
+    for (const auto &entry : entries) {
         const QString libName = entry.first.trimmed();
-        const QString filePath = entry.second.trimmed();
+        QString filePath = entry.second.trimmed();
 
-        if(libName.isEmpty() || filePath.isEmpty()) {
+        if (libName.isEmpty() || filePath.isEmpty()) {
             continue;
         }
 
-        QFileInfo fi(filePath);
-        if(!fi.exists() || !fi.isFile()) {
+        const QString resolvedPath = QDir::isAbsolutePath(filePath)
+            ? filePath
+            : baseDir.absoluteFilePath(filePath);
+        const QFileInfo fi(resolvedPath);
+        if (!fi.exists() || !fi.isFile()) {
             error(QString("Skipping library entry '%1': file does not exist: %2")
-                      .arg(libName, filePath));
+                      .arg(libName, resolvedPath));
             continue;
         }
 
-        const QString storedPath =
-            QDir::toNativeSeparators(baseDir.relativeFilePath(fi.absoluteFilePath()));
+        const QString storedPath = QDir::isAbsolutePath(filePath)
+            ? QDir::toNativeSeparators(baseDir.relativeFilePath(fi.absoluteFilePath()))
+            : QDir::toNativeSeparators(filePath);
 
         out << "define("
             << toLibStringLiteral(libName)
@@ -316,17 +443,33 @@ void MainWindow::saveProjectFile(const QString &fileName)
 
     file.close();
 
-    if(m_projFileWatcher && QFileInfo(absFileName).exists()) {
+    if (m_projFileWatcher && QFileInfo(absFileName).exists()) {
         m_projFileWatcher->addPath(absFileName);
     }
 
     m_ignoreProjectFileChange = false;
+    return true;
+}
 
+/*!******************************************************************************************************************
+ * \brief Saves LibMan libraries into KLayout .lib file.
+ *******************************************************************************************************************/
+void MainWindow::saveProjectFile(const QString &fileName)
+{
+    if (fileName.isEmpty()) {
+        return;
+    }
+
+    if (!saveProjectEntriesToFile(fileName, getCurrentProjectEntries())) {
+        return;
+    }
+
+    const QString absFileName = QFileInfo(fileName).absoluteFilePath();
     m_currentProjFile = absFileName;
 
     QString fileTitle = QFileInfo(absFileName).completeBaseName();
     const QString fileSuffix = QFileInfo(absFileName).completeSuffix();
-    if(!fileSuffix.isEmpty()) {
+    if (!fileSuffix.isEmpty()) {
         fileTitle += "." + fileSuffix;
     }
 
@@ -335,7 +478,6 @@ void MainWindow::saveProjectFile(const QString &fileName)
     setRecentProject(absFileName);
 
     info(QString("Project '%1' has been saved.").arg(absFileName));
-
     setStateSaved();
 }
 

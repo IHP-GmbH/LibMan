@@ -136,7 +136,20 @@ Ctrl+Shift+B → "Tests: Run All Tests" → Enter
 - **Dependencies**: See `docs/getting-started/DEPENDENCIES.md`
 - **Customization**: See `docs/reference/VSCODE_ADVANCED.md`
 - **Problems**: See `docs/reference/TROUBLESHOOTING.md`
+- **Project file editing**: See `docs/setup/PROJECT_EDITOR.md`
 - **All docs**: See `docs/INDEX.md`
+
+---
+
+## 🗂️ LibMan application shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+O` | Open project file |
+| `Ctrl+S` | Save project |
+| `Ctrl+E` | Edit Project... (Project Editor) |
+
+Double-click a **layout** view root (`gds`, `oas`, `lstr`, `layout`) to open KLayout. Double-click **schematic** / **symbol** to open Xschem (WSL on Windows). See [KLayout](../setup/KLAYOUT_INTEGRATION.md) and [Xschem](../setup/XSCHEM_INTEGRATION.md).
 
 ---
 

@@ -9,9 +9,10 @@ CoreCellReader::CoreCellReader(const QString &fileName)
 {
 }
 
-void CoreCellReader::coreCreate(const QString &cellName)
+void CoreCellReader::coreCreate(const QString &cellName, const QString &viewName)
 {
     Q_UNUSED(cellName);
+    Q_UNUSED(viewName);
     m_errorList << QStringLiteral("CORE support is not built (CONFIG+=no_core).");
 }
 

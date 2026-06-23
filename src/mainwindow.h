@@ -5,6 +5,8 @@
 #include "oas/oasReader.h"
 #include "core/corecellreader.h"
 #include "core/coreKlayoutBridge.h"
+#include "core/core_path_utils.h"
+#include "src/klayoutCellResolver.h"
 
 #include <QProcess>
 #include <QMainWindow>
@@ -39,6 +41,7 @@ class MainWindow : public QMainWindow
 
     friend class NewView;
     friend class ProjectManager;
+    friend class ProjectEditor;
 #ifdef LIBMAN_TESTING
     friend class MainWindowTestHooks;
 #endif
@@ -167,6 +170,8 @@ private slots:
     void                                addNewOasView();
     void                                addNewLStreamView();
     void                                addNewCoreView();
+    void                                addNewCoreSchematicView();
+    void                                addNewCoreSymbolView();
 
     void                                addNewGroup();
     void                                addNewProject();
@@ -203,6 +208,9 @@ private slots:
     void                                updateRecentProjectActions();
     void                                loadProjectFile(const QString &);
     void                                saveProjectFile(const QString &);
+    QList<QPair<QString, QString>>      projectEntriesForEditor() const;
+    bool                                saveProjectEntriesToFile(const QString &fileName,
+                                                                 const QList<QPair<QString, QString>> &entries);
     void                                setRecentProject(const QString &);
     QString                             resolveProjectPath(const QString& projectsFile, const QString& rawPath);
     QString                             findRepresentativeLibraryFile(const QString &libName) const;
@@ -225,6 +233,7 @@ private slots:
     void                                on_actionTools_triggered();
     void                                on_actionProjects_triggered();
     void                                on_actionOpen_triggered();
+    void                                on_actionEditProject_triggered();
     void                                on_actionClear_Recent_File_Stack_triggered();
 
     void                                on_treeLibs_itemClicked(QTreeWidgetItem *item, int column);
@@ -271,6 +280,7 @@ private:
 
     void                                setupProjectFileWatcher(const QString &projFile);
     void                                clearCurrentProjectData();
+    void                                clearLibraryViewProperties();
     void                                reloadProjectFileFromDisk();
 
     bool                                filterViewsTreeItemNoPopulate(QTreeWidgetItem *item, const QString &filter);
@@ -330,6 +340,7 @@ private:
     void                                createProjectUnionMenu();
 
     void                                loadLibraries();
+    void                                populateLibraryBrowser(const QString &libName);
     void                                loadGroups(const QString &libPath);
     void                                loadDocuments(const QString &libPath);
     void                                loadCategories(const QString &libPath);
@@ -367,6 +378,13 @@ private:
     QString                             getProjectFileFromDir(const QString &) const;
     QString                             expandShellVariables(const QString &path) const;
     QString                             detectViewFromPath(const QString& filePath) const;
+    bool                                resolveCellViewFromPath(const QString &filePath,
+                                                                  QString *groupName,
+                                                                  QString *viewName) const;
+    void                                configureCoreViewTreeItem(QTreeWidgetItem *viewItem,
+                                                                  const QString &viewName,
+                                                                  const QString &viewPath) const;
+    void                                createCoreView(const QString &viewName);
 
     QString                             generateCopyName(const QString &, const QString &, const QString &suffix = "") const;
 
@@ -418,6 +436,9 @@ private:
     QString                             layoutPathForKLayout(const QString &viewName,
                                                              const QString &viewPath,
                                                              QStringList *errors = nullptr) const;
+    QString                             preferredKLayoutCellForRoot(const QString &layoutPath,
+                                                                  const QString &groupName) const;
+    bool                                isLayoutViewTreeItem(QTreeWidgetItem *item) const;
     bool                                updateProjectFileLibraryName(const QString &oldName,
                                                                      const QString &newName);
 

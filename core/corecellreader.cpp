@@ -1,22 +1,40 @@
 #include "core/corecellreader.h"
 
+#include "core_paths.h"
 #include "database.h"
 
 #include <QString>
+
+namespace {
+
+core::ViewType viewTypeForName(const QString &viewName)
+{
+    const std::optional<core::ViewType> parsed = core::parseViewTypeName(viewName.toStdString());
+    if (parsed.has_value()) {
+        return *parsed;
+    }
+    return core::ViewType::Layout;
+}
+
+} // namespace
 
 CoreCellReader::CoreCellReader(const QString &fileName)
     : m_fileName(fileName)
 {
 }
 
-void CoreCellReader::coreCreate(const QString &cellName)
+void CoreCellReader::coreCreate(const QString &cellName, const QString &viewName)
 {
     try {
+        const core::ViewType fileView = viewTypeForName(viewName);
         core::Database db;
         db.setGenerator("LibMan");
-        db.lib().getOrCreateCell(cellName.toStdString());
-        db.lib().refreshIndex(core::ViewType::Layout);
-        db.saveToFile(m_fileName.toStdString());
+        core::Cell &cell = db.lib().getOrCreateCell(cellName.toStdString());
+        cell.getOrCreateContent(fileView);
+        if (fileView == core::ViewType::Layout) {
+            db.lib().refreshIndex(fileView);
+        }
+        db.saveToFile(m_fileName.toStdString(), fileView);
     }
     catch (const std::exception &e) {
         m_errorList << QString::fromUtf8(e.what());
@@ -29,8 +47,11 @@ bool CoreCellReader::readHierarchy(CoreHierarchy &out)
         core::Database db = core::Database::loadFromFile(m_fileName.toStdString());
         core::Lib &lib = db.lib();
 
-        if (!lib.hasIndex()) {
-            lib.refreshIndex(core::ViewType::Layout);
+        const core::ViewType fileView = db.fileView();
+        if (fileView == core::ViewType::Layout) {
+            lib.refreshIndex(fileView);
+        } else if (!lib.hasIndex()) {
+            lib.refreshIndex(fileView);
         }
 
         const core::LibIndex &idx = lib.index();

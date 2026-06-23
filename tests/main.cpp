@@ -22,6 +22,7 @@
 #include "tst_mainwindow_categories.h"
 #include "tst_coverage_expansion.h"
 #include "tst_coverage_80.h"
+#include "tst_core_path_utils.h"
 
 namespace
 {
@@ -140,7 +141,8 @@ int main(int argc, char **argv)
         ADD_TEST(MainWindowSlotSmokeTest),
         ADD_TEST(Coverage80MainWindowDeepTest),
         ADD_TEST(Coverage80LStreamReaderTest),
-        ADD_TEST(Coverage80GdsExtraTest)
+        ADD_TEST(Coverage80GdsExtraTest),
+        ADD_TEST(CorePathUtilsTest)
     };
 
     QStringList logFiles;

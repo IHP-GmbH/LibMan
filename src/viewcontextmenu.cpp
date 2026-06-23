@@ -19,6 +19,8 @@
 
 #include "gds/gdsreader.h"
 #include "lstream/lstreamcellwriter.h"
+#include "core/core_path_utils.h"
+#include "core/corecellreader.h"
 
 /*!*********************************************************************************************************************
  * \brief Displays menu for view widget.
@@ -217,7 +219,7 @@ void MainWindow::addNewSpiceView()
 void MainWindow::addNewLayoutView()
 {
     QStringList items;
-    items << "gds" << "oas" << "lstr" << "core";
+    items << "gds" << "oas" << "lstr" << "layout";
 
     bool ok = false;
     QString selectedView = QInputDialog::getItem(this,
@@ -240,7 +242,7 @@ void MainWindow::addNewLayoutView()
     else if(selectedView == "lstr") {
         addNewLStreamView();
     }
-    else if(selectedView == "core") {
+    else if(selectedView == "layout") {
         addNewCoreView();
     }
 }
@@ -299,10 +301,8 @@ bool MainWindow::registerCreatedView(const QString &libName,
         viewItem->setData(0, RoleLStreamPath, viewPath);
         viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
     }
-    else if(viewName == "core") {
-        viewItem->setData(0, RoleType, ItemViewCore);
-        viewItem->setData(0, RoleCorePath, viewPath);
-        viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+    else if(isCoreViewName(viewName)) {
+        configureCoreViewTreeItem(viewItem, viewName, viewPath);
     }
 
     m_ui->listViews->sortItems(0, Qt::AscendingOrder);
@@ -485,64 +485,108 @@ void MainWindow::addNewLStreamView()
 }
 
 /*!*********************************************************************************************************************
- * \brief Creates new CORE layout view (.core) and adds it to the list widget.
+ * \brief Creates a new empty CORE view file for the current cell.
  **********************************************************************************************************************/
-void MainWindow::addNewCoreView()
+void MainWindow::createCoreView(const QString &viewName)
 {
+    const QString normalizedView = viewName.trimmed().toLower();
+    if (!isCoreViewName(normalizedView) || normalizedView == QStringLiteral("core")) {
+        return;
+    }
+
     const QString libName = getCurrentLibraryName();
-    if(libName.isEmpty()) {
+    if (libName.isEmpty()) {
         return;
     }
 
     const QString libRoot = getLibraryPath(libName);
-    if(libRoot.isEmpty() || !QFileInfo(libRoot).exists()) {
+    if (libRoot.isEmpty() || !QFileInfo(libRoot).exists()) {
         return;
     }
 
     const QString groupName = getCurrentGroupName();
-    if(groupName.isEmpty()) {
+    if (groupName.isEmpty()) {
         return;
     }
 
     const QStringList views = getCurrentViews(libName, groupName);
-    if(views.contains("core")) {
+    if (views.contains(normalizedView)) {
         return;
     }
 
     const QString groupPath = QDir::toNativeSeparators(libRoot + "/" + groupName);
     QDir dir;
-    if(!dir.mkpath(groupPath)) {
+    if (!dir.mkpath(groupPath)) {
         error(QString("Failed to create cell directory '%1'.").arg(groupPath), false);
         return;
     }
 
-    const QString viewPath = QDir::toNativeSeparators(groupPath + "/" + groupName + ".core");
-    if(QFileInfo(viewPath).exists()) {
+    const QString viewPath = QDir::toNativeSeparators(coreViewFilePath(groupPath, groupName, normalizedView));
+    if (QFileInfo(viewPath).exists()) {
         return;
     }
 
     CoreCellReader reader(viewPath);
-    reader.coreCreate(groupName);
+    reader.coreCreate(groupName, normalizedView);
 
     const QStringList errors = reader.getErrors();
-    if(errors.count()) {
-        foreach(const QString &explain, errors) {
+    if (errors.count()) {
+        foreach (const QString &explain, errors) {
             error(explain, false);
         }
         return;
     }
 
-    registerCreatedView(libName, groupName, "core", viewPath);
+    registerCreatedView(libName, groupName, normalizedView, viewPath);
+}
+
+/*!*********************************************************************************************************************
+ * \brief Creates new CORE layout view and adds it to the list widget.
+ **********************************************************************************************************************/
+void MainWindow::addNewCoreView()
+{
+    createCoreView(QStringLiteral("layout"));
+}
+
+void MainWindow::addNewCoreSchematicView()
+{
+    createCoreView(QStringLiteral("schematic"));
+}
+
+void MainWindow::addNewCoreSymbolView()
+{
+    createCoreView(QStringLiteral("symbol"));
 }
 
 /*!*********************************************************************************************************************
  * \brief Creates new schematic view and adds it to the list widget.
  **********************************************************************************************************************/
-/*!*********************************************************************************************************************
- * \brief Creates new schematic view and adds it to the list widget.
- **********************************************************************************************************************/
 void MainWindow::addNewSchematicView()
 {
+    QStringList items;
+    items << "cdl" << "schematic" << "symbol";
+
+    bool ok = false;
+    const QString selectedView = QInputDialog::getItem(this,
+                                                       tr("Create Schematic View"),
+                                                       tr("Select schematic view type:"),
+                                                       items,
+                                                       0,
+                                                       false,
+                                                       &ok);
+    if (!ok || selectedView.isEmpty()) {
+        return;
+    }
+
+    if (selectedView == QStringLiteral("schematic")) {
+        addNewCoreSchematicView();
+        return;
+    }
+    if (selectedView == QStringLiteral("symbol")) {
+        addNewCoreSymbolView();
+        return;
+    }
+
     const QString libName = getCurrentLibraryName();
     if(libName.isEmpty()) {
         return;

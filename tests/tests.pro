@@ -36,6 +36,7 @@ SOURCES += \
     $$PWD/../lstream/lstrReadAsync.cpp \
     $$PWD/../src/libfileparser.cpp \
     $$PWD/../src/klayoutServer.cpp \
+    $$PWD/../src/klayoutCellResolver.cpp \
     $$PWD/../src/lstreamcellreader.cpp \
     $$PWD/../src/mainwindow.cpp \
     $$PWD/../extension/variantmanager.cpp \
@@ -65,6 +66,7 @@ SOURCES += \
     $$PWD/../src/categorycontextmenu.cpp \
     $$PWD/../src/about.cpp \
     $$PWD/../src/newview.cpp \
+    $$PWD/../core/core_path_utils.cpp \
     main.cpp \
 
 contains(CONFIG, no_core) {
@@ -89,7 +91,8 @@ SOURCES += \
     tst_oas_writer.cpp \
     tst_toolmanager.cpp \
     tst_coverage_expansion.cpp \
-    tst_coverage_80.cpp
+    tst_coverage_80.cpp \
+    tst_core_path_utils.cpp
 
 HEADERS += \
     $$PWD/tst_libman_gui.h \
@@ -131,6 +134,7 @@ HEADERS += \
     tst_toolmanager.h \
     tst_coverage_expansion.h \
     tst_coverage_80.h \
+    tst_core_path_utils.h \
     test_paths.h
 
 FORMS += \
@@ -153,6 +157,8 @@ TESTDATA += \
     $$PWD/data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.gds \
     $$PWD/data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.oas \
     $$PWD/data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.lstr \
+    $$PWD/data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.layout.core \
+    $$PWD/data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.schematic.core \
     $$PWD/data/sg13g2_stdcell/lstr/sg13g2_stdcell.lstr
 
 # Cap'n Proto (same clone-on-make flow as libman.pro)

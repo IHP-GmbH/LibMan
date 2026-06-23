@@ -294,6 +294,75 @@
 
 ---
 
+## 🟡 LibMan runtime issues
+
+### View still shown after deleting it in Project Editor
+
+**Cause (fixed):** Old `LIBRARY_*` property keys were not cleared on project reload.
+
+**If it happens on an old build:** Upgrade LibMan, save again from Project Editor, or **File → Open** the project file to force a full reload.
+
+---
+
+### New view from Browse does not appear in LibMan
+
+**Symptoms:** Row added in Project Editor but View tree has no `lstr` / new view.
+
+**Check:**
+1. **Library** column is filled (Browse copies the name from the row above if empty).
+2. Path points to an existing file.
+3. You clicked **File → Save** in Project Editor (or main **File → Save**).
+
+---
+
+### Browse inserted a short relative path; view missing
+
+**Cause (fixed):** Relative paths in the editor table were hard to read; missing library name caused the row to be skipped on Save.
+
+**Current behaviour:** Browse inserts an **absolute** path; Save writes **relative** paths into `.projects`. Both resolve on load.
+
+---
+
+### Documentation list empty after Project Editor Save
+
+**Cause (fixed):** Project reload cleared the Documentation panel but did not call `loadDocuments()` when the library was re-selected programmatically.
+
+**Workaround on old builds:** Click the **Project** library name again in the left tree.
+
+---
+
+### Layout double-click expands tree instead of opening KLayout
+
+**Expected:** Double-click on the **layout view root** opens KLayout and does **not** toggle expand. Use the tree arrow to browse hierarchy.
+
+See [KLayout integration](../setup/KLAYOUT_INTEGRATION.md).
+
+---
+
+### Wrong or missing cell in KLayout after opening layout root
+
+LibMan picks a root cell by: group name (if present in file) → single top cell → first top cell alphabetically. See [Root cell selection](../setup/KLAYOUT_INTEGRATION.md#root-cell-selection).
+
+---
+
+### Xschem does not start from LibMan (Windows)
+
+**Symptoms:** Double-click **schematic** does nothing or WSL error.
+
+**Check:**
+1. Tool Manager → schematic tool → path to `...\Xschem\integrations\open-xschem-wsl.bat`
+2. **Name(s)** = `schematic` (not `schematic.core`)
+3. WSL: `xschem --version` works; `build-core-tcl.sh` was run
+4. **CommonDB** is a sibling of **Xschem**, or set `COMMONDB_ROOT` in WSL (see [Xschem integration](../setup/XSCHEM_INTEGRATION.md))
+
+---
+
+### Xschem window is only a small title bar (WSL)
+
+Corrupted `~/.xschem/geometry` with `1x1+` entries. See [Xschem integration — Troubleshooting](../setup/XSCHEM_INTEGRATION.md#troubleshooting).
+
+---
+
 ## 🟡 Qt/GUI Issues
 
 ### GUI doesn't appear correctly
@@ -312,8 +381,10 @@
 
 1. **Quick answers**: See [Quick Reference](QUICK_REFERENCE.md)
 2. **Setup help**: See [VS Code Setup](../setup/VSCODE_SETUP.md)
-3. **Dependencies**: See [DEPENDENCIES.md](../getting-started/DEPENDENCIES.md)
-4. **All docs**: See [Documentation Index](../INDEX.md)
+3. **Project Editor**: See [PROJECT_EDITOR.md](../setup/PROJECT_EDITOR.md)
+4. **Xschem / WSL**: See [XSCHEM_INTEGRATION.md](../setup/XSCHEM_INTEGRATION.md)
+5. **Dependencies**: See [DEPENDENCIES.md](../getting-started/DEPENDENCIES.md)
+6. **All docs**: See [Documentation Index](../INDEX.md)
 
 ---
 

@@ -306,6 +306,8 @@ void MainWindowLoadersTest::selectingGroup_populatesViewsAndSearch()
     QVERIFY2(findTopItem(listViews, kViewGds), "Expected gds view not found.");
     QVERIFY2(findTopItem(listViews, kViewOas), "Expected oas view not found.");
     QVERIFY2(findTopItem(listViews, kViewLstr), "Expected lstr view not found.");
+    QVERIFY2(findTopItem(listViews, "layout"), "Expected layout view not found.");
+    QVERIFY2(findTopItem(listViews, "schematic"), "Expected schematic view not found.");
 
     QCOMPARE(txtCellSearch->text(), QString(kGroupStdCell));
 

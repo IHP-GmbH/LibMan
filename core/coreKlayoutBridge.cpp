@@ -1,9 +1,6 @@
 #include "core/coreKlayoutBridge.h"
+#include "core/core_path_utils.h"
 
-#include "database.h"
-#include "gds_exporter.h"
-
-#include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
 
@@ -17,42 +14,24 @@ QString coreLayoutPathForKLayout(const QString &viewPath, QStringList *errors)
         return QString();
     }
 
-    if (fi.suffix().compare(QStringLiteral("core"), Qt::CaseInsensitive) != 0) {
-        return fi.absoluteFilePath();
-    }
-
-    const QString tempGds = QDir::temp().filePath(
-        QStringLiteral("libman_%1_%2.gds")
-            .arg(fi.completeBaseName())
-            .arg(fi.lastModified().toSecsSinceEpoch()));
-
-    try {
-        const core::Database db = core::Database::loadFromFile(fi.absoluteFilePath().toStdString());
-        core::GdsExporter exporter;
-        exporter.exportFile(db, tempGds.toStdString());
-
-        if (!exporter.errors().empty()) {
-            if (errors) {
-                for (const std::string &e : exporter.errors()) {
-                    errors->append(QString::fromStdString(e));
-                }
-            }
-            return QString();
-        }
-
-        if (!QFileInfo::exists(tempGds)) {
-            if (errors) {
-                *errors << QString("Failed to create temporary GDS for KLayout: %1").arg(tempGds);
-            }
-            return QString();
-        }
-
-        return QDir::toNativeSeparators(tempGds);
-    }
-    catch (const std::exception &e) {
+    const CoreViewIdentity identity = parseCoreViewIdentity(viewPath);
+    if (identity.valid && !isLayoutCoreViewName(identity.viewName)) {
         if (errors) {
-            *errors << QString::fromUtf8(e.what());
+            *errors << QString("CORE file is not a layout view: %1").arg(viewPath);
         }
         return QString();
     }
+
+    const bool isCoreLayout = identity.valid
+        || fi.suffix().compare(QStringLiteral("core"), Qt::CaseInsensitive) == 0;
+
+    if (isCoreLayout) {
+        // KLayout opens *.layout.core natively via the mcore streamer plugin.
+        return QDir::toNativeSeparators(fi.absoluteFilePath());
+    }
+
+    if (errors) {
+        *errors << QString("Not a CORE layout file: %1").arg(viewPath);
+    }
+    return QString();
 }

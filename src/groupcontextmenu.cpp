@@ -383,9 +383,9 @@ void MainWindow::on_viewItemExpanded(QTreeWidgetItem *item)
     }
 
     // ------------------------------------------------------------
-    // CORE root ("core")
+    // CORE root (layout / schematic / symbol)
     // ------------------------------------------------------------
-    if (item->text(0) == "core") {
+    if (type == ItemViewCore && !item->parent()) {
 
         if (item->childCount() > 0) {
             return;
@@ -585,17 +585,35 @@ void MainWindow::populateCoreTopLevel(QTreeWidgetItem *coreItem,
         return;
     }
 
-    for (const QString &topCell : entry->hierarchy.topCells) {
+    auto addCoreCellItem = [&](const QString &cellName) {
         auto *cellItem = new QTreeWidgetItem(coreItem);
-        cellItem->setText(0, topCell);
+        cellItem->setText(0, cellName);
         cellItem->setData(0, RoleType, ItemCell);
-        cellItem->setData(0, RoleCellName, topCell);
+        cellItem->setData(0, RoleCellName, cellName);
         cellItem->setData(0, RoleCorePath, entry->path);
 
-        const auto it = entry->hierarchy.children.find(topCell);
-        if (it != entry->hierarchy.children.end() && !it.value().isEmpty()) {
+        const auto childIt = entry->hierarchy.children.find(cellName);
+        if (childIt != entry->hierarchy.children.end() && !childIt.value().isEmpty()) {
             cellItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         }
+    };
+
+    const QStringList topCells = entry->hierarchy.topCells;
+
+    // Single wrapper top cell (e.g. library root) — show its children directly.
+    if (topCells.size() == 1) {
+        const QString topCell = topCells.first();
+        const auto topChildren = entry->hierarchy.children.find(topCell);
+        if (topChildren != entry->hierarchy.children.end() && !topChildren.value().isEmpty()) {
+            for (const QString &childCell : topChildren.value()) {
+                addCoreCellItem(childCell);
+            }
+            return;
+        }
+    }
+
+    for (const QString &topCell : topCells) {
+        addCoreCellItem(topCell);
     }
 }
 

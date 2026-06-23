@@ -33,6 +33,8 @@
 #include "toolmanager.h"
 #include "libfileparser.h"
 #include "projectmanager.h"
+#include "projecteditor.h"
+#include "core/core_path_utils.h"
 
 /*!*******************************************************************************************************************
  * \brief Constructs a LibMan MainWindow object with the given arguments.
@@ -323,9 +325,9 @@ void MainWindow::loadSettings()
     else {
         m_properties->set("ToolList", "Schematic,Layout");
         m_properties->set("Schematic", "nedit");
-        m_properties->set("SchematicViews", "cdl,spice");
+        m_properties->set("SchematicViews", "cdl,spice,schematic,symbol");
         m_properties->set("Layout", "klayout");
-        m_properties->set("LayoutViews", "gds,oas,lstr,core");
+        m_properties->set("LayoutViews", "gds,oas,lstr,layout");
     }
 
     m_properties->set("PdfReader", pdfReader);
@@ -392,6 +394,12 @@ void MainWindow::on_actionTools_triggered()
 void MainWindow::on_actionProjects_triggered()
 {
     ProjectManager(this, m_properties).exec();
+}
+
+void MainWindow::on_actionEditProject_triggered()
+{
+    ProjectEditor editor(this);
+    editor.exec();
 }
 
 /*!*******************************************************************************************************************
@@ -685,8 +693,8 @@ QStringList MainWindow::layoutViewsForTool(const QString &toolName) const
     }
     views.removeAll(QString());
 
-    if(trimmedTool == QStringLiteral("Layout") && !views.contains(QStringLiteral("core"))) {
-        views << QStringLiteral("core");
+    if(trimmedTool == QStringLiteral("Layout") && !views.contains(QStringLiteral("layout"))) {
+        views << QStringLiteral("layout");
     }
 
     views.sort();
@@ -697,11 +705,141 @@ QString MainWindow::layoutPathForKLayout(const QString &viewName,
                                          const QString &viewPath,
                                          QStringList *errors) const
 {
-    if(viewName == QStringLiteral("core")) {
+    if(isLayoutCoreViewName(viewName)) {
         return coreLayoutPathForKLayout(viewPath, errors);
     }
 
     return QFileInfo(viewPath).absoluteFilePath();
+}
+
+namespace {
+
+LayoutHierarchySnapshot snapshotFromGds(const GdsReader::GdsHierarchy &hierarchy)
+{
+    LayoutHierarchySnapshot snapshot;
+    snapshot.topCells = hierarchy.topCells;
+    snapshot.allCells = hierarchy.allCells;
+    return snapshot;
+}
+
+LayoutHierarchySnapshot snapshotFromOas(const LayoutHierarchy &hierarchy)
+{
+    LayoutHierarchySnapshot snapshot;
+    snapshot.topCells = hierarchy.topCells;
+    snapshot.allCells = hierarchy.allCells;
+    return snapshot;
+}
+
+LayoutHierarchySnapshot snapshotFromCore(const CoreCellReader::CoreHierarchy &hierarchy)
+{
+    LayoutHierarchySnapshot snapshot;
+    snapshot.topCells = hierarchy.topCells;
+    snapshot.allCells = hierarchy.allCells;
+    return snapshot;
+}
+
+LayoutHierarchySnapshot snapshotFromLStream(const QStringList &cellNames)
+{
+    LayoutHierarchySnapshot snapshot;
+    snapshot.topCells = cellNames;
+    snapshot.topCells.sort();
+    for (const QString &name : cellNames) {
+        snapshot.allCells.insert(name);
+    }
+    return snapshot;
+}
+
+} // namespace
+
+QString MainWindow::preferredKLayoutCellForRoot(const QString &layoutPath,
+                                              const QString &groupName) const
+{
+    const QString key = QFileInfo(layoutPath).absoluteFilePath();
+    LayoutHierarchySnapshot snapshot;
+    bool haveSnapshot = false;
+
+    const auto useSnapshot = [&](const LayoutHierarchySnapshot &candidate) {
+        if (!candidate.allCells.isEmpty() || !candidate.topCells.isEmpty()) {
+            snapshot = candidate;
+            haveSnapshot = true;
+        }
+    };
+
+    if (const auto it = m_gdsCache.constFind(key); it != m_gdsCache.cend()) {
+        const std::shared_ptr<GdsCacheEntry> &entry = it.value();
+        if (entry && entry->loaded) {
+            useSnapshot(snapshotFromGds(entry->hierarchy));
+        }
+    }
+    if (!haveSnapshot) {
+        if (const auto it = m_oasCache.constFind(key); it != m_oasCache.cend()) {
+            const std::shared_ptr<OasCacheEntry> &entry = it.value();
+            if (entry && entry->loaded) {
+                useSnapshot(snapshotFromOas(entry->hierarchy));
+            }
+        }
+    }
+    if (!haveSnapshot) {
+        if (const auto it = m_coreCache.constFind(key); it != m_coreCache.cend()) {
+            const std::shared_ptr<CoreCacheEntry> &entry = it.value();
+            if (entry && entry->loaded) {
+                useSnapshot(snapshotFromCore(entry->hierarchy));
+            }
+        }
+    }
+    if (!haveSnapshot) {
+        if (const auto it = m_lstreamCache.constFind(key); it != m_lstreamCache.cend()) {
+            const std::shared_ptr<LStreamCacheEntry> &entry = it.value();
+            if (entry && entry->loaded) {
+                useSnapshot(snapshotFromLStream(entry->cellNames));
+            }
+        }
+    }
+
+    if (!haveSnapshot) {
+        QStringList errors;
+        haveSnapshot = loadLayoutHierarchySnapshot(layoutPath, snapshot, &errors);
+        Q_UNUSED(errors);
+    }
+
+    if (!haveSnapshot) {
+        return QString();
+    }
+
+    return resolveKLayoutRootCell(snapshot, groupName);
+}
+
+bool MainWindow::isLayoutViewTreeItem(QTreeWidgetItem *item) const
+{
+    if (!item) {
+        return false;
+    }
+
+    const int type = item->data(0, RoleType).toInt();
+
+    if (type == ItemViewGds || type == ItemViewOas || type == ItemViewLStream) {
+        return true;
+    }
+
+    if (type == ItemViewCore && isLayoutCoreViewName(item->text(0))) {
+        return true;
+    }
+
+    if (type != ItemCell) {
+        return false;
+    }
+
+    QTreeWidgetItem *root = item;
+    while (root->parent()) {
+        root = root->parent();
+    }
+
+    const int rootType = root->data(0, RoleType).toInt();
+    if (rootType == ItemViewGds || rootType == ItemViewOas || rootType == ItemViewLStream) {
+        return true;
+    }
+
+    return rootType == ItemViewCore && isLayoutCoreViewName(root->text(0));
 }
 
 /*!*******************************************************************************************************************
@@ -762,7 +900,7 @@ QString MainWindow::getCurrentViewFilePath(const QString &viewName) const
 {
     const QString v = viewName.trimmed().toLower();
 
-    if(v != "gds" && v != "oas" && v != "oasis" && v != "lstr" && v != "core") {
+    if(v != "gds" && v != "oas" && v != "oasis" && v != "lstr" && !isLayoutCoreViewName(v)) {
         return QString();
     }
 
@@ -1358,10 +1496,8 @@ void MainWindow::loadViews(const QString &libName, const QString &groupName)
             viewItem->setData(0, RoleOasPath, viewPath);
             viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         }
-        else if(viewName == "core") {
-            viewItem->setData(0, RoleType, ItemViewCore);
-            viewItem->setData(0, RoleCorePath, viewPath);
-            viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+        else if(isCoreViewName(viewName)) {
+            configureCoreViewTreeItem(viewItem, viewName, viewPath);
         }
     }
 
@@ -1395,6 +1531,23 @@ void MainWindow::loadLibraries()
 #else
     m_ui->treeLibs->sortByColumn(0);
 #endif
+}
+
+void MainWindow::populateLibraryBrowser(const QString &libName)
+{
+    if (libName.isEmpty()) {
+        return;
+    }
+
+    m_itemText = libName;
+    m_ui->txtLibSearch->setText(libName);
+
+    loadGroups(libName);
+
+    const QString libPath = getLibraryPath(libName);
+    loadDocuments(libPath);
+    loadCategories(libPath);
+    updateLibraryActionStates();
 }
 
 /*!*******************************************************************************************************************
@@ -1459,15 +1612,7 @@ void MainWindow::on_treeLibs_itemClicked(QTreeWidgetItem *item, int)
     m_ui->txtCellSearch->clear();
     m_ui->txtViewSearch->clear();
 
-    m_ui->txtLibSearch->setText(item->text(0));
-
-    loadGroups(item->text(0));
-
-    const QString libPath = getLibraryPath(item->text(0));
-    loadDocuments(libPath);
-    loadCategories(libPath);
-
-    updateLibraryActionStates();
+    populateLibraryBrowser(item->text(0));
 }
 
 /*!*******************************************************************************************************************
@@ -1815,8 +1960,8 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
         viewName = "lstr";
         viewPath = item->data(0, RoleLStreamPath).toString();
     }
-    else if(type == ItemViewCore && item->text(0) == "core") {
-        viewName = "core";
+    else if(type == ItemViewCore) {
+        viewName = item->text(0);
         viewPath = item->data(0, RoleCorePath).toString();
     }
     else if(type == ItemCell) {
@@ -1844,8 +1989,8 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
             viewName = "lstr";
             viewPath = p->data(0, RoleLStreamPath).toString();
         }
-        else if(rootName == "core") {
-            viewName = "core";
+        else if(p->data(0, RoleType).toInt() == ItemViewCore) {
+            viewName = rootName;
             viewPath = p->data(0, RoleCorePath).toString();
         }
         else {
@@ -1867,7 +2012,7 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
             return;
         }
 
-        viewPath = getCurrentViewFilePath(viewName);
+        viewPath = getViewPath(getCurrentLibraryName(), getCurrentGroupName(), viewName);
     }
 
     if(viewPath.isEmpty() || !QFileInfo(viewPath).exists()) {
@@ -1884,7 +2029,7 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
     // ------------------------------------------------------------
     // Layout handling via KLayout server: GDS + OAS (same behavior)
     // ------------------------------------------------------------
-    if(viewName == "gds" || viewName == "oas" || viewName == "lstr" || viewName == "core") {
+    if(viewName == "gds" || viewName == "oas" || viewName == "lstr" || isLayoutCoreViewName(viewName)) {
 
         QStringList bridgeErrors;
         const QString klayoutPath = layoutPathForKLayout(viewName, viewPath, &bridgeErrors);
@@ -1898,15 +2043,16 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
             return;
         }
 
-        // Root item: "gds", "oas", "lstr", or "core"
+        // Root item: "gds", "oas", "lstr", or layout CORE view
         if(type == ItemViewGds || type == ItemViewOas || type == ItemViewLStream || type == ItemViewCore) {
 
+            const QString groupName = getCurrentGroupName();
+            const QString rootCell = preferredKLayoutCellForRoot(klayoutPath, groupName);
             const bool serverWasRunning = isKLayoutServerRunning();
 
             if(serverWasRunning) {
-                const QString groupName = getCurrentGroupName();
-                if(!groupName.isEmpty()) {
-                    sendKLayoutSelectRequest(klayoutPath, groupName);
+                if(!rootCell.isEmpty()) {
+                    sendKLayoutSelectRequest(klayoutPath, rootCell);
                 }
                 return;
             }
@@ -1915,7 +2061,7 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
                 return;
             }
 
-            sendKLayoutOpenRequest(klayoutPath, QString());
+            sendKLayoutOpenRequest(klayoutPath, rootCell);
             return;
         }
 
@@ -1937,8 +2083,8 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
  * \brief Filters events for the Views tree widget to suppress default expand/collapse behavior on double click.
  *
  * This event filter prevents QTreeWidget from automatically expanding or collapsing
- * GDS view nodes and hierarchy cell nodes on mouse double click. Double click is
- * reserved exclusively for opening the corresponding view or cell in KLayout.
+ * layout view nodes (gds/oas/lstr/layout) and their hierarchy cell nodes on double click.
+ * Double click is reserved exclusively for opening the corresponding view or cell in KLayout.
  *
  * \param obj      Object which received the event.
  * \param event    Event instance.
@@ -1948,6 +2094,15 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
  **********************************************************************************************************************/
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
+    if (obj == m_ui->listViews->viewport() && event->type() == QEvent::MouseButtonDblClick) {
+        auto *mouseEvent = static_cast<QMouseEvent*>(event);
+        QTreeWidgetItem *item = m_ui->listViews->itemAt(mouseEvent->pos());
+        if (isLayoutViewTreeItem(item)) {
+            on_listViews_itemDoubleClicked(item, m_ui->listViews->columnAt(mouseEvent->pos().x()));
+            return true;
+        }
+    }
+
     const bool isDropTarget =
         obj == m_ui->treeLibs->viewport() ||
         obj == m_ui->listGroups->viewport();
@@ -2847,7 +3002,22 @@ QMap<QString, QStringList> MainWindow::getSupportedViewsByTool() const
             continue;
         }
 
-        QStringList views = layoutViewsForTool(toolName);
+        const QString key = toolName + QStringLiteral("Views");
+        if(!m_properties->exists(key)) {
+            continue;
+        }
+
+        QStringList views =
+            m_properties->get<QString>(key).remove(QLatin1Char(' ')).split(QLatin1Char(','), QString::SkipEmptyParts);
+        for(QString &view : views) {
+            view = view.trimmed().toLower();
+        }
+        views.removeAll(QString());
+
+        if(toolName == QStringLiteral("Layout") && !views.contains(QStringLiteral("layout"))) {
+            views << QStringLiteral("layout");
+        }
+
         if(views.isEmpty()) {
             continue;
         }
@@ -2886,8 +3056,14 @@ QStringList MainWindow::collectSupportedViewSuffixes() const
         if(!allViews.contains(QStringLiteral("lstr"))) {
             allViews << QStringLiteral("lstr");
         }
-        if(!allViews.contains(QStringLiteral("core"))) {
-            allViews << QStringLiteral("core");
+        if(!allViews.contains(QStringLiteral("layout"))) {
+            allViews << QStringLiteral("layout");
+        }
+        if(!allViews.contains(QStringLiteral("schematic"))) {
+            allViews << QStringLiteral("schematic");
+        }
+        if(!allViews.contains(QStringLiteral("symbol"))) {
+            allViews << QStringLiteral("symbol");
         }
     }
 
@@ -2913,6 +3089,11 @@ bool MainWindow::isSupportedViewDrop(const QMimeData *mimeData) const
         const QString localPath = url.toLocalFile();
         if(localPath.isEmpty()) {
             continue;
+        }
+
+        const CoreViewIdentity coreIdentity = parseCoreViewIdentity(localPath);
+        if(coreIdentity.valid && supportedViews.contains(coreIdentity.viewName)) {
+            return true;
         }
 
         const QString viewName = QFileInfo(localPath).suffix().trimmed().toLower();
@@ -2957,13 +3138,18 @@ bool MainWindow::importCellViewFile(const QString &libName, const QString &srcFi
         return false;
     }
 
-    const QString groupName = srcFi.completeBaseName().trimmed();
+    QString groupName;
+    QString viewName;
+    if(!resolveCellViewFromPath(srcFilePath, &groupName, &viewName)) {
+        error(QString("Failed to determine cell/view from '%1'.").arg(srcFilePath), false);
+        return false;
+    }
+
     if(groupName.isEmpty()) {
         error(QString("Failed to determine cell name from '%1'.").arg(srcFilePath), false);
         return false;
     }
 
-    const QString viewName = srcFi.suffix().trimmed().toLower();
     if(viewName.isEmpty()) {
         error(QString("Failed to determine view type from '%1'.").arg(srcFilePath), false);
         return false;
@@ -2981,7 +3167,10 @@ bool MainWindow::importCellViewFile(const QString &libName, const QString &srcFi
         return false;
     }
 
-    const QString dstFilePath = QDir::toNativeSeparators(cellDirPath + "/" + groupName + "." + viewName);
+    const QString dstFilePath = QDir::toNativeSeparators(
+        isCoreViewName(viewName)
+            ? coreViewFilePath(cellDirPath, groupName, viewName)
+            : cellDirPath + "/" + groupName + "." + viewName);
     if(QFileInfo(dstFilePath).exists()) {
         error(QString("Cell view already exists: %1").arg(dstFilePath), false);
         return false;

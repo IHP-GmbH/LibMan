@@ -13,6 +13,12 @@ private slots:
     void sendKLayoutSelectRequest_emptyCommandFile_returnsFalse();
     void sendKLayoutSelectRequest_writesJsonCommand();
     void createKLayoutServerScript_createsPythonFile();
+
+    void resolveKLayoutRootCell_prefersGroupWhenPresent();
+    void resolveKLayoutRootCell_singleTopCell();
+    void resolveKLayoutRootCell_multipleTopCellsUsesFirstSorted();
+    void resolveKLayoutRootCell_emptyHierarchyReturnsEmpty();
+    void loadLayoutHierarchySnapshot_layoutCore_fixture();
 };
 
 #endif // TST_KLAYOUT_REQUESTS_H

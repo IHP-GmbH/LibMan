@@ -17,7 +17,7 @@ public:
 
     explicit CoreCellReader(const QString &fileName);
 
-    void coreCreate(const QString &cellName);
+    void coreCreate(const QString &cellName, const QString &viewName = QStringLiteral("layout"));
     QStringList getErrors() const { return m_errorList; }
 
     bool readHierarchy(CoreHierarchy &out);

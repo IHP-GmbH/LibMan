@@ -27,6 +27,7 @@ SOURCES += \
     oas/oasReadAsync.cpp \
     oas/oasReader.cpp \
     src/klayoutServer.cpp \
+    src/klayoutCellResolver.cpp \
     src/lstreamcellreader.cpp \
     src/mainwindow.cpp \
     extension/variantmanager.cpp \
@@ -45,6 +46,7 @@ SOURCES += \
     QtPropertyBrowser/qtbuttonpropertybrowser.cpp \
     gds/gdsreader.cpp \
     src/projectmanager.cpp \
+    src/projecteditor.cpp \
     lstream/lstrReadAsync.cpp \
     src/property.cpp \
     src/toolcustomtool.cpp \
@@ -90,6 +92,7 @@ HEADERS += \
     oas/oasReader.h \
     src/lstreamcellreader.h \
     src/projectmanager.h \
+    src/projecteditor.h \
     src/property.h \
     src/toolmanager.h \
     src/about.h \
@@ -100,6 +103,7 @@ HEADERS += \
 FORMS += \
     src/mainwindow.ui \
     src/projectmanager.ui \
+    src/projecteditor.ui \
     src/toolmanager.ui \
     src/about.ui \
     src/newview.ui
