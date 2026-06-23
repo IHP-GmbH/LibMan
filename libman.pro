@@ -58,7 +58,8 @@ SOURCES += \
     src/projectcontextmenu.cpp \
     src/categorycontextmenu.cpp \
     src/about.cpp \
-    src/newview.cpp
+    src/newview.cpp \
+    core/core_path_utils.cpp
 
 contains(CONFIG, no_core) {
     DEFINES += LIBMAN_NO_CORE
@@ -98,7 +99,8 @@ HEADERS += \
     src/about.h \
     src/newview.h \
     core/corecellreader.h \
-    core/coreKlayoutBridge.h
+    core/coreKlayoutBridge.h \
+    core/core_path_utils.h
 
 FORMS += \
     src/mainwindow.ui \

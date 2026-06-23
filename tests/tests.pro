@@ -55,6 +55,7 @@ SOURCES += \
     $$PWD/../QtPropertyBrowser/qtbuttonpropertybrowser.cpp \
     $$PWD/../gds/gdsreader.cpp \
     $$PWD/../src/projectmanager.cpp \
+    $$PWD/../src/projecteditor.cpp \
     $$PWD/../src/property.cpp \
     $$PWD/../src/toolcustomtool.cpp \
     $$PWD/../src/toolmanager.cpp \
@@ -116,6 +117,7 @@ HEADERS += \
     $$PWD/../gds/gdsreader.h \
     $$PWD/../oas/oasReader.h \
     $$PWD/../src/projectmanager.h \
+    $$PWD/../src/projecteditor.h \
     $$PWD/../src/property.h \
     $$PWD/../src/toolmanager.h \
     $$PWD/../src/about.h \
@@ -140,6 +142,7 @@ HEADERS += \
 FORMS += \
     $$PWD/../src/mainwindow.ui \
     $$PWD/../src/projectmanager.ui \
+    $$PWD/../src/projecteditor.ui \
     $$PWD/../src/toolmanager.ui \
     $$PWD/../src/about.ui \
     $$PWD/../src/newview.ui

@@ -154,7 +154,8 @@ void KLayoutRequestsTest::createKLayoutServerScript_createsPythonFile()
 void KLayoutRequestsTest::resolveKLayoutRootCell_prefersGroupWhenPresent()
 {
     LayoutHierarchySnapshot hierarchy;
-    hierarchy.topCells = {QStringLiteral("alpha"), QStringLiteral("beta")};
+    hierarchy.topCells = QStringList{
+        QStringLiteral("alpha"), QStringLiteral("beta")};
     hierarchy.allCells.insert(QStringLiteral("alpha"));
     hierarchy.allCells.insert(QStringLiteral("beta"));
     hierarchy.allCells.insert(QStringLiteral("my_group"));
@@ -166,7 +167,7 @@ void KLayoutRequestsTest::resolveKLayoutRootCell_prefersGroupWhenPresent()
 void KLayoutRequestsTest::resolveKLayoutRootCell_singleTopCell()
 {
     LayoutHierarchySnapshot hierarchy;
-    hierarchy.topCells = {QStringLiteral("TOP")};
+    hierarchy.topCells = QStringList{QStringLiteral("TOP")};
     hierarchy.allCells.insert(QStringLiteral("TOP"));
     hierarchy.allCells.insert(QStringLiteral("child"));
 
@@ -177,7 +178,8 @@ void KLayoutRequestsTest::resolveKLayoutRootCell_singleTopCell()
 void KLayoutRequestsTest::resolveKLayoutRootCell_multipleTopCellsUsesFirstSorted()
 {
     LayoutHierarchySnapshot hierarchy;
-    hierarchy.topCells = {QStringLiteral("zebra"), QStringLiteral("alpha")};
+    hierarchy.topCells = QStringList{
+        QStringLiteral("zebra"), QStringLiteral("alpha")};
     hierarchy.topCells.sort();
     hierarchy.allCells.insert(QStringLiteral("zebra"));
     hierarchy.allCells.insert(QStringLiteral("alpha"));
