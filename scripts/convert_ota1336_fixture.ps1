@@ -43,8 +43,8 @@ $lines = @(
     ""
 )
 Get-ChildItem $DestRoot -Recurse -Filter *.core | Sort-Object FullName | ForEach-Object {
-    $abs = $_.FullName.Replace("\", "/")
-    $lines += "define(`"ihp_ota1336`", `"$abs`");"
+    $rel = $_.FullName.Substring($DataRoot.Length).TrimStart("\", "/").Replace("\", "/")
+    $lines += "define(`"ihp_ota1336`", `"$rel`");"
 }
 [System.IO.File]::WriteAllLines((Join-Path $DataRoot "ota1336.projects"), $lines)
 Remove-Item $Roundtrip -Force -ErrorAction SilentlyContinue
