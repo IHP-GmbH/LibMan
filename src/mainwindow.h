@@ -42,6 +42,8 @@ class MainWindow : public QMainWindow
     friend class NewView;
     friend class ProjectManager;
     friend class ProjectEditor;
+    friend class ImportDialog;
+    friend class CoreImportService;
 #ifdef LIBMAN_TESTING
     friend class MainWindowTestHooks;
 #endif
@@ -234,6 +236,7 @@ private slots:
     void                                on_actionProjects_triggered();
     void                                on_actionOpen_triggered();
     void                                on_actionEditProject_triggered();
+    void                                on_actionImport_triggered();
     void                                on_actionClear_Recent_File_Stack_triggered();
 
     void                                on_treeLibs_itemClicked(QTreeWidgetItem *item, int column);
@@ -276,7 +279,7 @@ private:
     void                                setStateChanged();
 
     QString                             getCurrentProjectDirectory() const;
-    QStringList                         findProjectPdfDocuments(const QString &projectDir) const;
+    QStringList                         findLibraryDocuments(const QString &libraryDir) const;
 
     void                                setupProjectFileWatcher(const QString &projFile);
     void                                clearCurrentProjectData();
@@ -354,6 +357,10 @@ private:
     QStringList                         collectSupportedViewSuffixes() const;
     bool                                isSupportedViewDrop(const QMimeData *mimeData) const;
     bool                                importCellViewFile(const QString &libName, const QString &srcFilePath);
+    bool                                registerCellViewAtPath(const QString &libName,
+                                                               const QString &cellName,
+                                                               const QString &viewName,
+                                                               const QString &filePath);
     void                                handleViewFileDrop(QDropEvent *event);
     void                                setLibraryRootDirectory(const QString &libName, const QString &dirPath);
 

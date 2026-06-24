@@ -133,6 +133,7 @@ include("${CMAKE_SOURCE_DIR}/cmake/FetchCore.cmake")
 
 set(SOURCES
     core/core_path_utils.cpp
+    core/converter_paths.cpp
     core/corecellreader.cpp
     core/coreKlayoutBridge.cpp
     core/coreReadAsync.cpp
@@ -167,6 +168,8 @@ set(SOURCES
     gds/gdsreader.cpp
     src/projectmanager.cpp
     src/projecteditor.cpp
+    src/importdialog.cpp
+    src/core_import_service.cpp
     lstream/lstrReadAsync.cpp
     src/property.cpp
     src/toolcustomtool.cpp
@@ -194,6 +197,7 @@ set(SOURCES
 
 set(HEADERS
     core/core_path_utils.h
+    core/converter_paths.h
     core/corecellreader.h
     core/coreKlayoutBridge.h
     lstream/lstreamcellwriter.h
@@ -221,6 +225,8 @@ set(HEADERS
     src/lstreamcellreader.h
     src/projectmanager.h
     src/projecteditor.h
+    src/importdialog.h
+    src/core_import_service.h
     src/property.h
     src/toolmanager.h
     src/about.h
@@ -242,6 +248,7 @@ set(FORMS
     src/mainwindow.ui
     src/projectmanager.ui
     src/projecteditor.ui
+    src/importdialog.ui
     src/toolmanager.ui
     src/about.ui
     src/newview.ui
@@ -288,4 +295,15 @@ target_link_libraries(libman PRIVATE
     CORE::core
     CORE::core_utils
 )
+
+foreach(_converter gds_to_core xschem_to_core qucs_to_core oas_to_core)
+    if(TARGET ${_converter})
+        add_custom_command(TARGET libman POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "$<TARGET_FILE:${_converter}>"
+                    "$<TARGET_FILE_DIR:libman>"
+            COMMENT "Deploying ${_converter} next to libman.exe"
+        )
+    endif()
+endforeach()
 

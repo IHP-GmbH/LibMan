@@ -86,6 +86,7 @@ After Project Editor Save, select the library in the main window if needed — d
 
 ## Related topics
 
+- [Import](IMPORT.md) — convert GDS, Xschem, Qucs, OAS into CORE views and add `define()` rows
 - [KLayout integration](KLAYOUT_INTEGRATION.md) — opening layout views from the View tree
 - [CORE integration](CORE_INTEGRATION.md) — `*.layout.core`, `*.schematic.core`
 - [Xschem integration](XSCHEM_INTEGRATION.md) — WSL launchers, Tool Manager

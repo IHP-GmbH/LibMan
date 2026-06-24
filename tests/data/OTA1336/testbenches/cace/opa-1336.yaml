@@ -1,0 +1,560 @@
+#--------------------------------------------------------------
+# CACE circuit characterization file
+#--------------------------------------------------------------
+
+name: OTA1336
+description: Two stage Miller amplifier
+PDK: ihp-sg13g2
+cace_format: 5.2
+
+authorship:
+  designer: Phillip B, Krzysztof H 
+  company: IHP-GmbH
+  creation_date: April 5, 2025
+  license: Apache 2.0
+
+paths:
+  root: ..
+  schematic: ../schematic/xschem
+  netlist:   ../netlist/
+  documentation: ../../doc
+
+pins:
+  ibias:
+    description: Bias current
+    type: analog
+    direction: input
+    Imin: 70u
+    Imax: 85u
+    note: use 80uA
+  v-:
+    description: amplifier voltage negative input
+    type: signal
+    direction: output
+    Vmin: vss - 0.3
+    Vmax: vdd + 0.3
+  v+:
+    description: amplifier voltage positive input
+    type: signal
+    direction: output
+    Vmin: vss - 0.3
+    Vmax: vdd + 0.3
+  vout:
+    description: amplifier voltage output
+    type: signal
+    direction: output
+    Vmin: vss
+    Vmax: vdd
+  vdd:
+    description: Analog power supply
+    type: power
+    direction: inout
+    Vmin: 1.0
+    Vmax: 1.6
+  vss:
+    description: Analog ground
+    type: ground
+    direction: inout
+    Vmin: -0.3
+    Vmax: 0.3
+
+default_conditions:
+  Vvdd:
+    description: Analog power supply voltage
+    display: vdd
+    unit: V
+    typical: 1.2
+  Vvss:
+    description: Analog ground
+    display: vss
+    unit: V
+    typical: 0
+  Ibias:
+    description: Bias current
+    display: Ib
+    unit: A
+    typical: 80u
+  Rout:
+    description: Output load resistance
+    display: RLoad
+    unit: MΩ
+    typical: 100
+  Cout:
+    description: Output load capacitance
+    display: CLoad
+    unit: fF
+    maximum: 100
+  Vcm:
+    description: Common-mode input voltage
+    display: Vcm
+    typical: 0.6
+  Vdiff:
+    description: Differential input voltage
+    display: Vdiff
+    typical: 0
+  temperature:
+    description: Ambient temperature
+    display: Temp
+    unit: °C
+    minimum: -40
+    typical: 27
+    maximum: 130
+  corner:
+    description: Process corner
+    display: Corner
+    minimum: mos_ss
+    typical: mos_tt
+    maximum: mos_ff
+  iterations:
+    description: Iterations to run
+    display: Iterations
+    minimum: 1
+    maximum: 10
+    step: linear
+    stepsize: 1
+
+parameters:
+  offset_error:
+    description: Output offset error
+    display: Offset Error
+    unit: "mV"
+    spec:
+      result:
+        minimum:
+          value: any
+          fail: 
+        typical:
+          value: 500
+        maximum:
+          value: 1000
+          fail: 
+    tool:
+      ngspice:
+        template: input_offset.sch
+        format: ascii
+        suffix: .data
+        variables: [result, null]
+    conditions:
+      Vvdd:
+        typical: 1.2
+      temperature:
+        maximum: 110
+        typical: 27
+        minimum: -40
+      risetime:
+        display: Trise
+        unit: ms
+        typical: 50
+        note: Ramp rate of Vdiff for input offset measurement
+      corner:
+        minimum: mos_ss
+        typical: mos_tt
+        maximum: mos_ff
+  cmrr:
+    description: CMRR 
+    display: CMRR 
+    unit: dB
+    spec:
+      result:
+        maximum:
+          value: -40
+          fail: 
+        typical:
+          value: any
+        minimum:
+          value: any
+    tool:
+      ngspice:
+        template: cmrr.sch
+        format: ascii
+        suffix: .data
+        variables: [result]
+    conditions:
+      Vvdd:
+        typical: 1.2
+      temperature:
+        maximum: 110
+        typical: 27
+        minimum: -40
+      corner:
+        minimum: mos_ss
+        typical: mos_tt
+        maximum: mos_ff
+  avo:
+    description: open loop voltage gain
+    display: Open-loop Voltage Gain
+    unit: dB
+    spec:
+      result:
+        minimum:
+          value: 100
+          fail: true
+        typical:
+          value: 125
+        maximum:
+          value: 125
+          fail: true
+          calculation: maximum
+          limit: above
+    tool:
+      ngspice:
+        template: avo.sch
+        format: ascii
+        suffix: .data
+        variables: [result]
+    conditions:
+      Vvdd:
+        typical: 1.2
+      temperature:
+        maximum: 110
+        typical: 27
+        minimum: -40
+      Vcm:
+        typical: 0.6
+        note: AC analysis not dependent on Vcm
+      corner:
+        minimum: mos_ss
+        typical: mos_tt
+        maximum: mos_ff
+  gain_bandwidth:
+    description: Gain Bandwidth Product
+    display: Gain-Bandwidth
+    unit: MHz
+    spec:
+      result:
+        minimum:
+          value: 0
+          fail: 
+        typical:
+          value: 4
+        maximum:
+          value: 4
+          fail: 
+          calculation: maximum
+          limit: above
+    tool:
+      ngspice:
+        template: gbw.sch
+        format: ascii
+        suffix: .data
+        variables: [result, null, null]
+    conditions:
+      Vvdd:
+        typical: 1.2
+      temperature:
+        maximum: 110
+        typical: 27
+        minimum: -40
+      Vcm:
+        typical: 0.6
+        note: AC analysis not dependent on Vcm
+      Vdiff:
+        typical: 0.1
+      corner:
+        minimum: mos_ss
+        typical: mos_tt
+        maximum: mos_ff
+  phase_margin:
+    description: Phase margin
+    display: Phase Margin
+    unit: °
+    spec:
+      result:
+        minimum:
+          value: 100
+          fail: true
+        typical:
+          value: 160
+        maximum:
+          value: any
+    tool:
+      ngspice:
+        template: gbw.sch
+        format: ascii
+        suffix: .data
+        variables: [null, result, null]
+    conditions:
+      Vvdd:
+        typical: 1.2
+      temperature:
+        maximum: 110
+        typical: 27
+        minimum: -40
+      Vcm:
+        typical: 0.6
+        note: AC analysis not dependent on Vcm
+      Vdiff:
+        typical: 0.1
+      corner:
+        minimum: mos_ss
+        typical: mos_tt
+        maximum: mos_ff
+  gain_margin:
+    status: active
+    description: Gain margin
+    display: Gain Margin
+    unit: dB
+    spec:
+      result:
+        minimum:
+          value: any
+        typical:
+          value: -100
+        maximum:
+          value: any
+    tool:
+      ngspice:
+        template: gbw.sch
+        format: ascii
+        suffix: .data
+        variables: [null, null, result]
+    conditions:
+      Vvdd:
+        typical: 1.2
+      temperature:
+        maximum: 110
+        typical: 27
+        minimum: -40
+      Vcm:
+        typical: 0.6
+        note: AC analysis not dependent on Vcm
+      Vdiff:
+        typical: 0.1
+      corner:
+        minimum: mos_ss
+        typical: mos_tt
+        maximum: mos_ff
+  Idd_enabled:
+    description: Current draw through analog supply, amplifier enabled, no load
+    display: Idd
+    unit: µA
+    spec:
+      result:
+        minimum:
+          value: any
+        typical:
+          value: 170
+        maximum:
+          value: 250
+    tool:
+      ngspice:
+        template: dccurrent_vdd.sch
+        format: ascii
+        suffix: .data
+        variables: [null, result]
+    conditions:
+      Vvdd:
+        typical: 1.2
+      Vcm:
+        typical: 0.6
+      temperature:
+        typical: 27
+      corner:
+        typical: mos_tt
+  Idd_dynamic:
+    description: Current draw through analog supply, amplifier enabled, no load
+    display: Idd (dynamic)
+    unit: µA
+    spec:
+      result:
+        minimum:
+          value: any
+        typical:
+          value: 40
+        maximum:
+          value: 6500
+    tool:
+      ngspice:
+        template: dccurrent_dyn.sch
+        format: ascii
+        suffix: .data
+        variables: [result]
+    conditions:
+      Vvdd:
+        typical: 1.2
+      frequency:
+        typical: 1
+        unit: kHz
+      Vcm:
+        typical: 0.6
+      Vdiff:
+        typical: 0.0001
+        note: Zero-to-peak amplitude of sine input
+      temperature:
+        typical: 27
+      corner:
+        typical: mos_tt
+  equiv_noise:
+    description: Equivalent Output Noise Voltage from 1 Hz - 10 MHzz
+    display: Equivalent Output Noise Voltage from 1 Hz to 10 MHz 
+    unit: uV
+    spec:
+      result:
+        minimum:
+          value: any
+        typical:
+          value: 280
+        maximum:
+          value: any
+    tool:
+      ngspice:
+        template: eqvnoise.sch
+        format: ascii
+        suffix: .data
+        variables: [result]
+    conditions:
+      Vvdd:
+        typical: 1.2
+      frequency:
+        typical: 1
+        unit: Hz
+      temperature:
+        maximum: 110
+        typical: 27
+        minimum: -40
+      corner:
+        minimum: mos_ss
+        typical: mos_tt
+        maximum: mos_ff
+  offset_error:
+    description: Output offset error
+    display: Offset Error
+    unit: "uV"
+    spec:
+      result:
+        minimum:
+          value: any
+          fail: 
+        typical:
+          value: any
+        maximum:
+          value: 500
+          fail: yes
+    tool:
+      ngspice:
+        template: input_offset.sch
+        format: ascii
+        suffix: .data
+        variables: [result, null]
+    conditions:
+      Vvdd:
+        typical: 1.2
+      temperature:
+        maximum: 110
+        typical: 27
+        minimum: -40
+      risetime:
+        display: Trise
+        unit: ms
+        typical: 50
+        note: Ramp rate of Vdiff for input offset measurement
+      corner:
+        minimum: mos_ss
+        typical: mos_tt
+        maximum: mos_ff
+  psrr:
+    description: PSRR at defined frequency 
+    display: PSRR at given frequency
+    unit: dB
+    spec:
+      result:
+        maximum:
+          value: any
+          fail: any
+        typical: 
+          value: 40
+        minimum:
+          value: 35
+    tool:
+      ngspice:
+        template: psrr.sch
+        format: ascii
+        suffix: .data
+        variables: [result]
+    conditions:
+      Vvdd:
+        maximum: 1.2
+        note: Measured with 0.5V p-p signal on power supply
+      temperature:
+        maximum: 110
+        typical: 27
+        minimum: -40
+      Vcmp:
+        typical: 0.6
+        note: Common voltage
+      frequency:
+        typical: 100k
+        note: Evaluation frequency
+      corner:
+        minimum: mos_ss
+        typical: mos_tt
+        maximum: mos_ff
+  overshoot:
+    description: Small signal overshoot 
+    display: Small signal overshoot
+    unit: \%
+    spec:
+      result:
+        maximum: 
+          value: 2
+          fail: 
+        typical:
+          value: 1
+        minimum:
+          value: any
+    tool:
+      ngspice:
+        template: overshoot.sch
+        format: ascii
+        suffix: .data
+        variables: [result]
+    conditions:
+      Vvdd:
+        maximum: 1.2
+      temperature:
+        maximum: 110
+        typical: 27
+        minimum: -40
+      Vcmp:
+        typical: 0.6
+        note: Common voltage
+      corner:
+        minimum: mos_ss
+        typical: mos_tt
+        maximum: mos_ff
+  slewrate:
+    description: Slew rate 
+    display: Slew rate
+    unit: 
+    spec:
+      result:
+        maximum: 
+          value: 
+          fail: 
+        typical:
+          value: 3
+        minimum:
+          value: 2
+    tool:
+      ngspice:
+        template: slewrate.sch
+        format: ascii
+        suffix: .data
+        variables: [result]
+    conditions:
+      Vvdd:
+        maximum: 1.2
+      temperature:
+        maximum: 110
+        typical: 27
+        minimum: -40
+      Vcmp:
+        typical: 0.6
+        note: Common voltage
+      ampl:
+        typical: 0.250
+        note: input signal amplitude
+      corner:
+        minimum: mos_ss
+        typical: mos_tt
+        maximum: mos_ff

@@ -1,0 +1,13 @@
+** sch_path: /home/herman/github/IHP-GmbH/IP/IHP__OTA1336/OTA1336-main/schematic/xschem/OTA1336.sch
+.subckt OTA1336 vdd iout vout v- v+ vss
+*.PININFO v-:B v+:B vss:B vdd:B iout:B vout:B
+XM4 vss net1 net3 vss sg13_lv_nmos w=720n l=9.75u ng=1 m=1 mm_ok=1
+XM3 vss net1 net1 vss sg13_lv_nmos w=720n l=9.75u ng=1 m=1 mm_ok=1
+XM1 net1 v- net2 vdd sg13_lv_pmos w=3.64u l=3.7u ng=1 m=2 mm_ok=1
+XM2 net3 v+ net2 vdd sg13_lv_pmos w=3.64u l=3.7u ng=1 m=2 mm_ok=1
+XM5 net2 iout vdd vdd sg13_lv_pmos w=5.3u l=1.95u ng=1 m=1 mm_ok=0
+XM7 vout iout vdd vdd sg13_lv_pmos w=75u l=2.08u ng=8 m=1 mm_ok=0
+XM6 vss net3 vout vss sg13_lv_nmos w=28.8u l=9.75u ng=4 m=1 mm_ok=0
+XM9 iout iout vdd vdd sg13_lv_pmos w=75u l=2.08u ng=8 m=1 mm_ok=0
+XC2 net3 vout cap_cmim w=22.295e-6 l=22.295e-6 m=1 mm_ok=1
+.ends

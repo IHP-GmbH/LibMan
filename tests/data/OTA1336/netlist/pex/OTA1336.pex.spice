@@ -1,0 +1,50 @@
+* NGSPICE file created from OTA1336.ext - technology: ihp-sg13g2
+
+.subckt OTA1336 VDD IOUT Vout V- V+ VSS
+X0 VDD Iout Iout VDD sg13_lv_pmos ad=1.78125p pd=9.755u as=1.78125p ps=9.755u w=9.375u l=2.08u
+X1 VOUT a_2728_10390# VSS VSS sg13_lv_nmos ad=1.368p pd=7.58u as=1.368p ps=7.58u w=7.2u l=9.75u
+X2 VDD Iout VOUT VDD sg13_lv_pmos ad=3.1875p pd=19.43u as=1.78125p ps=9.755u w=9.375u l=2.08u
+X3 VDD VDD a_778_10354# VDD sg13_lv_pmos ad=1.2376p pd=7.96u as=1.2376p ps=7.96u w=3.64u l=3.7u
+X4 Iout Iout VDD VDD sg13_lv_pmos ad=1.78125p pd=9.755u as=1.78125p ps=9.755u w=9.375u l=2.08u
+X5 a_1854_11704# VDD VDD VDD sg13_lv_pmos ad=1.2376p pd=7.96u as=1.2376p ps=7.96u w=3.64u l=3.7u
+X6 VOUT Iout VDD VDD sg13_lv_pmos ad=1.78125p pd=9.755u as=1.78125p ps=9.755u w=9.375u l=2.08u
+X7 VDD VDD a_778_10354# VDD sg13_lv_pmos ad=1.2376p pd=7.96u as=1.2376p ps=7.96u w=3.64u l=3.7u
+X8 VDD Iout Iout VDD sg13_lv_pmos ad=3.1875p pd=19.43u as=1.78125p ps=9.755u w=9.375u l=2.08u
+X9 a_2728_10390# VOUT cap_cmim l=22.295u w=22.295u
+X10 VDD Iout VOUT VDD sg13_lv_pmos ad=1.78125p pd=9.755u as=1.78125p ps=9.755u w=9.375u l=2.08u
+X11 a_2728_10390# V+ a_1854_11704# VDD sg13_lv_pmos ad=1.2376p pd=7.96u as=1.2376p ps=7.96u w=3.64u l=3.7u
+X12 Iout Iout VDD VDD sg13_lv_pmos ad=1.78125p pd=9.755u as=1.78125p ps=9.755u w=9.375u l=2.08u
+X13 VDD Iout VOUT VDD sg13_lv_pmos ad=1.78125p pd=9.755u as=1.78125p ps=9.755u w=9.375u l=2.08u
+X14 a_1854_11704# VDD VDD VDD sg13_lv_pmos ad=1.2376p pd=7.96u as=1.2376p ps=7.96u w=3.64u l=3.7u
+X15 VSS a_2728_10390# VOUT VSS sg13_lv_nmos ad=2.448p pd=15.08u as=1.368p ps=7.58u w=7.2u l=9.75u
+X16 VSS a_2728_10390# VOUT VSS sg13_lv_nmos ad=1.368p pd=7.58u as=1.368p ps=7.58u w=7.2u l=9.75u
+X17 VOUT Iout VDD VDD sg13_lv_pmos ad=1.78125p pd=9.755u as=1.78125p ps=9.755u w=9.375u l=2.08u
+X18 VDD Iout a_1854_11704# VDD sg13_lv_pmos ad=1.802p pd=11.28u as=1.802p ps=11.28u w=5.3u l=1.95u
+X19 VDD Iout Iout VDD sg13_lv_pmos ad=1.78125p pd=9.755u as=1.78125p ps=9.755u w=9.375u l=2.08u
+X20 a_2728_10390# V+ a_1854_11704# VDD sg13_lv_pmos ad=1.2376p pd=7.96u as=1.2376p ps=7.96u w=3.64u l=3.7u
+X21 VDD Iout Iout VDD sg13_lv_pmos ad=1.78125p pd=9.755u as=1.78125p ps=9.755u w=9.375u l=2.08u
+X22 VOUT Iout VDD VDD sg13_lv_pmos ad=1.78125p pd=9.755u as=3.1875p ps=19.43u w=9.375u l=2.08u
+X23 Iout Iout VDD VDD sg13_lv_pmos ad=1.78125p pd=9.755u as=1.78125p ps=9.755u w=9.375u l=2.08u
+X24 VDD VDD a_2728_10390# VDD sg13_lv_pmos ad=1.2376p pd=7.96u as=1.2376p ps=7.96u w=3.64u l=3.7u
+X25 VDD VDD a_2728_10390# VDD sg13_lv_pmos ad=1.2376p pd=7.96u as=1.2376p ps=7.96u w=3.64u l=3.7u
+X26 a_778_10354# a_778_10354# VSS VSS sg13_lv_nmos ad=0.2448p pd=2.12u as=0.2484p ps=2.13u w=0.72u l=9.75u
+X27 Iout Iout VDD VDD sg13_lv_pmos ad=1.78125p pd=9.755u as=3.1875p ps=19.43u w=9.375u l=2.08u
+X28 a_1854_11704# VDD VDD VDD sg13_lv_pmos ad=1.2376p pd=7.96u as=1.2376p ps=7.96u w=3.64u l=3.7u
+X29 a_2728_10390# a_778_10354# VSS VSS sg13_lv_nmos ad=0.2448p pd=2.12u as=0.2448p ps=2.12u w=0.72u l=9.75u
+X30 VDD Iout VOUT VDD sg13_lv_pmos ad=1.78125p pd=9.755u as=1.78125p ps=9.755u w=9.375u l=2.08u
+X31 VOUT a_2728_10390# VSS VSS sg13_lv_nmos ad=1.368p pd=7.58u as=2.448p ps=15.08u w=7.2u l=9.75u
+X32 a_778_10354# V- a_1854_11704# VDD sg13_lv_pmos ad=1.2376p pd=7.96u as=1.2376p ps=7.96u w=3.64u l=3.7u
+X33 VOUT Iout VDD VDD sg13_lv_pmos ad=1.78125p pd=9.755u as=1.78125p ps=9.755u w=9.375u l=2.08u
+X34 a_778_10354# V- a_1854_11704# VDD sg13_lv_pmos ad=1.2376p pd=7.96u as=1.2376p ps=7.96u w=3.64u l=3.7u
+X35 a_1854_11704# VDD VDD VDD sg13_lv_pmos ad=1.2376p pd=7.96u as=1.2376p ps=7.96u w=3.64u l=3.7u
+C0 VDD a_778_10354# 5.95617f
+C1 VDD Iout 56.3164f
+C2 VDD VOUT 5.4185f
+C3 a_2728_10390# VOUT 12.0212f
+C4 VDD V+ 5.86201f
+C5 VDD a_2728_10390# 7.52879f
+C6 VOUT VSS 11.4985f
+C7 VDD VSS 9.93157f
+C8 a_778_10354# VSS 6.3679f $ **FLOATING
+C9 a_2728_10390# VSS 51.152f $ **FLOATING
+.ends

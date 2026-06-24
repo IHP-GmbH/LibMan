@@ -15,7 +15,7 @@ LibMan - an easy way to manage your open source design flow
 | **Getting Started** | [Quick Start (5 min)](docs/getting-started/QUICK_START.md) |
 | **All Documentation** | [Documentation Index](docs/INDEX.md) |
 | **Setup Help** | [VS Code Setup](docs/setup/VSCODE_SETUP.md) |
-| **Project / libraries** | [Project Editor](docs/setup/PROJECT_EDITOR.md) |
+| **Project / libraries** | [Project Editor](docs/setup/PROJECT_EDITOR.md) · [Import](docs/setup/IMPORT.md) |
 | **Layout / CORE** | [KLayout](docs/setup/KLAYOUT_INTEGRATION.md) · [CORE](docs/setup/CORE_INTEGRATION.md) |
 | **Schematic (WSL)** | [Xschem integration](docs/setup/XSCHEM_INTEGRATION.md) |
 | **Troubleshooting** | [Common Issues](docs/reference/TROUBLESHOOTING.md) |

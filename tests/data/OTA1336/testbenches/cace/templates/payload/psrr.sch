@@ -1,0 +1,54 @@
+v {xschem version=3.4.8RC file_version=1.3}
+G {}
+V {}
+S {}
+E {}
+N 1620 -900 1620 -730 {lab=out}
+N 820 -940 1400 -940 {lab=inx}
+N 1400 -730 1620 -730 {lab=out}
+N 700 -1030 700 -830 {lab=vdd}
+N 820 -940 820 -640 {lab=inx}
+N 930 -810 1480 -810 {lab=#net1}
+N 680 -480 700 -480 {lab=VSUB}
+N 1400 -870 1400 -730 {lab=out}
+N 820 -580 820 -480 {lab=VSUB}
+N 1520 -860 1520 -770 {lab=vss}
+N 1520 -1030 1520 -940 {lab=vdd}
+N 1400 -930 1430 -930 {lab=inx}
+N 1400 -940 1400 -930 {lab=inx}
+N 1480 -840 1480 -810 {lab=#net1}
+N 1400 -870 1430 -870 {lab=out}
+N 1150 -770 1150 -540 {lab=vss}
+N 700 -480 820 -480 {lab=VSUB}
+N 1150 -770 1520 -770 {lab=vss}
+N 1600 -900 1620 -900 {lab=out}
+N 1620 -900 1990 -900 {lab=out}
+N 1790 -840 1970 -840 {lab=VSUB}
+N 700 -1030 1520 -1030 {lab=vdd}
+N 930 -810 930 -540 {lab=#net1}
+N 820 -480 1150 -480 {lab=VSUB}
+N 700 -770 700 -710 {lab=#net2}
+N 700 -650 700 -480 {lab=VSUB}
+T {Based on a template made by R. Timothy Edwards
+November 27, 2023
+Revision 0
+Open sourced under Apache 2.0 license} 1980 -1710 0 0 0.4 0.4 {}
+C {OTA1336.sym} 1510 -900 0 0 {name=x1}
+C {devices/code_shown.sym} 30 -1690 0 0 {name=SETUP only_toplevel=false value="* TEMP=CACE\{temperature\} warn=1}
+C {isource.sym} 930 -510 0 0 {name=Ibias value="DC}
+C {title-3.sym} 0 0 0 0 {name=l2 author="IHP-GmbH title="CACE rev=1.0 lock=true}
+C {devices/vsource.sym} 700 -680 0 0 {name=Vvdd value="DC savecurrent=false}
+C {devices/lab_pin.sym} 680 -480 0 0 {name=p1 sig_type=std_logic lab=VSUB}
+C {devices/vsource.sym} 1150 -510 0 0 {name=Vvss value="DC savecurrent=false}
+C {devices/lab_wire.sym} 1300 -1030 0 1 {name=p11 sig_type=std_logic lab=vdd}
+C {devices/lab_wire.sym} 1300 -770 0 1 {name=p24 sig_type=std_logic lab=vss}
+C {devices/lab_wire.sym} 1990 -900 0 0 {name=p25 sig_type=std_logic lab=out}
+C {devices/res.sym} 1790 -870 0 0 {name=Rout value=CACE\{Rout\} device=resistor}
+C {devices/capa.sym} 1930 -870 0 0 {name=Cout value=CACE\{Cout\}}
+C {devices/lab_pin.sym} 1970 -840 0 1 {name=p27 sig_type=std_logic lab=VSUB}
+C {devices/vsource.sym} 820 -610 0 0 {name=Vvcm value="DC savecurrent=false}
+C {devices/res.sym} 1000 -450 0 0 {name=RSUB value=0.01 device=resistor}
+C {devices/gnd.sym} 1000 -420 0 0 {name=l1 lab=GND}
+C {devices/lab_pin.sym} 820 -940 0 0 {name=p3 sig_type=std_logic lab=inx}
+C {devices/code_shown.sym} 30 -1410 0 0 {name=CONTROL only_toplevel=false value=".control =}
+C {devices/vsource.sym} 700 -800 0 0 {name=Vac value="DC savecurrent=false}

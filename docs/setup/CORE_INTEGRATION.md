@@ -91,4 +91,8 @@ Default `LayoutViews` property: `gds,oas,lstr,layout`.
 
 ## Project file and views
 
-View paths come from the project file (`define(library, path)`). Edit entries in **[Project Editor](PROJECT_EDITOR.md)** (**File → Edit Project...**, `Ctrl+E`). After Save, LibMan reloads libraries; removed views disappear from the tree and documentation for the selected library is refreshed.
+View paths come from the project file (`define(library, path)`). Edit entries in **[Project Editor](PROJECT_EDITOR.md)** (**File → Edit Project...**, `Ctrl+E`). Bulk-import from external formats via **[Import](IMPORT.md)** (**File → Import...**). After Save or import, LibMan reloads libraries; removed views disappear from the tree and documentation for the selected library is refreshed.
+
+## Converter tools
+
+With `CORE_BUILD_EXAMPLES=ON` (default in LibMan CMake / qmake fetch scripts), converter executables are deployed next to `libman.exe` for the Import dialog. See **[Import](IMPORT.md)** for formats, folder import, and `LIBMAN_CONVERTER_DIR`.

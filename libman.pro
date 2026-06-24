@@ -47,6 +47,8 @@ SOURCES += \
     gds/gdsreader.cpp \
     src/projectmanager.cpp \
     src/projecteditor.cpp \
+    src/importdialog.cpp \
+    src/core_import_service.cpp \
     lstream/lstrReadAsync.cpp \
     src/property.cpp \
     src/toolcustomtool.cpp \
@@ -59,7 +61,8 @@ SOURCES += \
     src/categorycontextmenu.cpp \
     src/about.cpp \
     src/newview.cpp \
-    core/core_path_utils.cpp
+    core/core_path_utils.cpp \
+    core/converter_paths.cpp
 
 contains(CONFIG, no_core) {
     DEFINES += LIBMAN_NO_CORE
@@ -94,18 +97,22 @@ HEADERS += \
     src/lstreamcellreader.h \
     src/projectmanager.h \
     src/projecteditor.h \
+    src/importdialog.h \
+    src/core_import_service.h \
     src/property.h \
     src/toolmanager.h \
     src/about.h \
     src/newview.h \
     core/corecellreader.h \
     core/coreKlayoutBridge.h \
-    core/core_path_utils.h
+    core/core_path_utils.h \
+    core/converter_paths.h
 
 FORMS += \
     src/mainwindow.ui \
     src/projectmanager.ui \
     src/projecteditor.ui \
+    src/importdialog.ui \
     src/toolmanager.ui \
     src/about.ui \
     src/newview.ui
@@ -152,4 +159,5 @@ HEADERS += \
 include(capnp_deps_finalize.pri)
 !contains(CONFIG, no_core) {
     include(core_deps_finalize.pri)
+    include(core_converter_deploy.pri)
 }

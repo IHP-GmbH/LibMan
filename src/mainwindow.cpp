@@ -36,6 +36,7 @@
 #include "libfileparser.h"
 #include "projectmanager.h"
 #include "projecteditor.h"
+#include "importdialog.h"
 #include "core/core_path_utils.h"
 
 /*!*******************************************************************************************************************
@@ -402,6 +403,16 @@ void MainWindow::on_actionEditProject_triggered()
 {
     ProjectEditor editor(this);
     editor.exec();
+}
+
+void MainWindow::on_actionImport_triggered()
+{
+#ifndef LIBMAN_NO_CORE
+    ImportDialog dialog(this);
+    dialog.exec();
+#else
+    error(tr("Import requires CORE support. Rebuild LibMan without CONFIG+=no_core."), false);
+#endif
 }
 
 /*!*******************************************************************************************************************
@@ -1212,24 +1223,27 @@ QString MainWindow::getCurrentProjectDirectory() const
 }
 
 /*!*******************************************************************************************************************
- * \brief Searches recursively for PDF documents inside the given project directory.
- * \param projectDir      Absolute path to the project directory.
+ * \brief Searches recursively for documentation files inside a library directory.
+ * \param libraryDir   Absolute path to the selected library root (Read Path).
  *
- * \return List of absolute PDF file paths.
+ * \return Sorted list of absolute file paths (pdf, htm, html, md).
  **********************************************************************************************************************/
-QStringList MainWindow::findProjectPdfDocuments(const QString &projectDir) const
+QStringList MainWindow::findLibraryDocuments(const QString &libraryDir) const
 {
     QStringList result;
 
-    if(projectDir.isEmpty() || !QFileInfo(projectDir).isDir()) {
+    if(libraryDir.isEmpty() || !QFileInfo(libraryDir).isDir()) {
         return result;
     }
 
-    QDirIterator it(projectDir,
-                    QStringList() << "*.pdf",
-                    QDir::Files,
-                    QDirIterator::Subdirectories);
+    static const QStringList kPatterns = {
+        QStringLiteral("*.pdf"),
+        QStringLiteral("*.htm"),
+        QStringLiteral("*.html"),
+        QStringLiteral("*.md")
+    };
 
+    QDirIterator it(libraryDir, kPatterns, QDir::Files, QDirIterator::Subdirectories);
     while(it.hasNext()) {
         const QString filePath = QDir::toNativeSeparators(it.next());
         if(!result.contains(filePath, Qt::CaseInsensitive)) {
@@ -1237,75 +1251,52 @@ QStringList MainWindow::findProjectPdfDocuments(const QString &projectDir) const
         }
     }
 
-    result.sort();
+    result.sort(Qt::CaseInsensitive);
     return result;
 }
 
 /*!*******************************************************************************************************************
- * \brief Adds documents for the given project (library) into the document tree widget.
- *        In addition to the local "doc" folder, PDF files are searched recursively
- *        inside the current project directory.
+ * \brief Adds documents for the given library into the document tree widget.
  *
- * \param libPath      Path to the library, where documentation is located.
+ * Recursively collects pdf/htm/html/md files under the library root (\p libPath).
+ * Other libraries in the same project are not scanned.
+ *
+ * \param libPath      Library root derived from the selected treeLibs item.
  **********************************************************************************************************************/
 void MainWindow::loadDocuments(const QString &libPath)
 {
     m_ui->listDocumentation->clear();
 
-    QSet<QString> addedPaths;
-
-    const QString docPath = QDir::toNativeSeparators(libPath + "/doc");
-    if(QFileInfo(docPath).isDir()) {
-        QStringList formats;
-        formats<<"*.pdf";
-
-        QDir docDir(docPath);
-        docDir.setNameFilters(formats);
-        docDir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
-
-        const QStringList fileList = docDir.entryList(QDir::Files, QDir::Name);
-        foreach(const QString &docName, fileList) {
-            const QString absPath = QDir::toNativeSeparators(docDir.absoluteFilePath(docName));
-            if(addedPaths.contains(absPath)) {
-                continue;
-            }
-
-            QTreeWidgetItem *docItem = new QTreeWidgetItem;
-            docItem->setText(0, docName);
-            docItem->setData(0, RoleDocumentPath, absPath);
-
-            const QString suffix = QFileInfo(absPath).suffix().toLower();
-            if(suffix == "pdf") {
-                docItem->setIcon(0, QIcon(":/icons/pdf.svg"));
-            }
-            else {
-                docItem->setIcon(0, QIcon(":/icons/info.svg"));
-            }
-
-            m_ui->listDocumentation->addTopLevelItem(docItem);
-        }
+    if(libPath.isEmpty() || !QFileInfo(libPath).isDir()) {
+        return;
     }
 
-    const QString projectDir = getCurrentProjectDirectory();
-    if (!libmanAutomatedTestRun()) {
-        const QStringList pdfFiles = findProjectPdfDocuments(projectDir);
+    if(libmanAutomatedTestRun()) {
+        return;
+    }
 
-        foreach(const QString &pdfPath, pdfFiles) {
-            if(addedPaths.contains(pdfPath)) {
-                continue;
-            }
+    const QStringList docFiles = findLibraryDocuments(libPath);
+    if(docFiles.isEmpty()) {
+        return;
+    }
 
-            QFileInfo fi(pdfPath);
+    foreach(const QString &absPath, docFiles) {
+        QFileInfo fi(absPath);
 
-            QTreeWidgetItem *docItem = new QTreeWidgetItem;
-            docItem->setText(0, fi.fileName());
-            docItem->setToolTip(0, pdfPath);
-            docItem->setData(0, RoleDocumentPath, pdfPath);
-            docItem->setIcon(0, QIcon(":/icons/pdf.svg"));
+        QTreeWidgetItem *docItem = new QTreeWidgetItem;
+        docItem->setText(0, fi.fileName());
+        docItem->setToolTip(0, absPath);
+        docItem->setData(0, RoleDocumentPath, absPath);
 
-            m_ui->listDocumentation->addTopLevelItem(docItem);
-            addedPaths.insert(pdfPath);
+        const QString suffix = fi.suffix().toLower();
+        if(suffix == QStringLiteral("pdf")) {
+            docItem->setIcon(0, QIcon(QStringLiteral(":/icons/pdf.svg")));
         }
+        else {
+            docItem->setIcon(0, QIcon(QStringLiteral(":/icons/info.svg")));
+        }
+
+        m_ui->listDocumentation->addTopLevelItem(docItem);
     }
 
 #if QT_VERSION >= 0x050000
@@ -1426,12 +1417,12 @@ void MainWindow::loadCategories(const QString &libPath)
     }
 
 #if QT_VERSION >= 0x050000
-    m_ui->listDocumentation->sortByColumn(0, Qt::AscendingOrder);
+    m_ui->listCategories->sortByColumn(0, Qt::AscendingOrder);
 #else
-    m_ui->listDocumentation->sortByColumn(0);
+    m_ui->listCategories->sortByColumn(0);
 #endif
 
-    m_ui->listDocumentation->resizeColumnToContents(0);
+    m_ui->listCategories->resizeColumnToContents(0);
 }
 
 /*!*******************************************************************************************************************
@@ -3118,6 +3109,53 @@ bool MainWindow::isSupportedViewDrop(const QMimeData *mimeData) const
     return false;
 }
 
+bool MainWindow::registerCellViewAtPath(const QString &libName,
+                                        const QString &cellName,
+                                        const QString &viewName,
+                                        const QString &filePath)
+{
+    if (libName.isEmpty() || cellName.isEmpty() || viewName.isEmpty() || filePath.isEmpty()) {
+        return false;
+    }
+
+    const QFileInfo fileInfo(filePath);
+    if (!fileInfo.exists() || !fileInfo.isFile()) {
+        error(QString("Cell view file does not exist: %1").arg(filePath), false);
+        return false;
+    }
+
+    const QStringList allViews = collectSupportedViewSuffixes();
+    if (!allViews.contains(viewName)) {
+        error(QString("View '%1' is not supported.").arg(viewName), false);
+        return false;
+    }
+
+    const QString key = getLibraryKeyPrefix() + libName + "/" + cellName + "/" + viewName;
+    m_properties->set(key, QDir::toNativeSeparators(fileInfo.absoluteFilePath()));
+
+    loadGroups(libName);
+
+    QList<QListWidgetItem*> items = m_ui->listGroups->findItems(cellName, Qt::MatchExactly);
+    if (items.count()) {
+        m_ui->listGroups->setCurrentItem(items.first());
+        on_listGroups_itemClicked(items.first());
+    }
+
+    updateLibraryActionStates();
+
+    if (!m_currentProjFile.isEmpty()) {
+        saveProjectFile(m_currentProjFile);
+    } else {
+        setStateChanged();
+    }
+
+    info(QString("Registered cell '%1' in library '%2'.")
+             .arg(cellName)
+             .arg(libName), false);
+
+    return true;
+}
+
 /*!*********************************************************************************************************************
  * \brief Imports an existing layout file into the given library as a new cell/view pair.
  **********************************************************************************************************************/
@@ -3194,31 +3232,7 @@ bool MainWindow::importCellViewFile(const QString &libName, const QString &srcFi
         return false;
     }
 
-    const QString key = getLibraryKeyPrefix() + libName + "/" + groupName + "/" + viewName;
-    m_properties->set(key, dstFilePath);
-
-    loadGroups(libName);
-
-    QList<QListWidgetItem*> items = m_ui->listGroups->findItems(groupName, Qt::MatchExactly);
-    if(items.count()) {
-        m_ui->listGroups->setCurrentItem(items.first());
-        on_listGroups_itemClicked(items.first());
-    }
-
-    updateLibraryActionStates();
-
-    if(!m_currentProjFile.isEmpty()) {
-        saveProjectFile(m_currentProjFile);
-    }
-    else {
-        setStateChanged();
-    }
-
-    info(QString("Added existing cell '%1' to library '%2'.")
-             .arg(groupName)
-             .arg(libName), false);
-
-    return true;
+    return registerCellViewAtPath(libName, groupName, viewName, dstFilePath);
 }
 
 /*!*********************************************************************************************************************

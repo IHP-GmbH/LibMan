@@ -49,9 +49,10 @@ cmake -S "$CORE_SRC" -B "$CORE_BUILD" \
     -DCAPNP_ROOT="$CAPNP_ROOT" \
     -DCORE_BUILD_TESTS=OFF \
     -DCORE_BUILD_OAS_TESTS=OFF \
-    -DCORE_BUILD_EXAMPLES=OFF
+    -DCORE_BUILD_EXAMPLES=ON
 
-cmake --build "$CORE_BUILD" --target core core_utils -j"$(nproc 2>/dev/null || echo 2)"
+cmake --build "$CORE_BUILD" --target core core_utils gds_to_core xschem_to_core qucs_to_core -j"$(nproc 2>/dev/null || echo 2)"
+cmake --build "$CORE_BUILD" --target oas_to_core -j"$(nproc 2>/dev/null || echo 2)" || true
 
 touch "$STAMP"
 echo "CORE built in ${CORE_BUILD}"

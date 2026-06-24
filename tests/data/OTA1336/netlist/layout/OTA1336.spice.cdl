@@ -1,0 +1,37 @@
+** sch_path: /home/herman/github/IHP-GmbH/IP/IHP__OTA1336/OTA1336-main/schematic/xschem/OTA1336.sch
+.subckt OTA1336 vdd iout vout v- v+ vss
+*.PININFO v-:B v+:B vss:B vdd:B iout:B vout:B
+MM4 net2 net1 vss sub! sg13_lv_nmos w=720n l=9.75u ng=1 m=1
+MM3 net1 net1 vss sub! sg13_lv_nmos w=720n l=9.75u ng=1 m=1
+MM5 net3 iout vdd net4 sg13_lv_pmos w=5.3u l=1.95u ng=1 m=1
+MM7 vout iout vdd well sg13_lv_pmos w=75u l=2.08u ng=8 m=1
+MM6 vout net2 vss sub! sg13_lv_nmos w=28.8u l=9.75u ng=4 m=1
+MM9 iout iout vdd well sg13_lv_pmos w=75u l=2.08u ng=8 m=1
+CC2 net2 vout cap_cmim w=22.295e-6 l=22.295e-6 m=1
+RR6 vdd well ntap1 A=6.52608e-11 P=0.00018128
+RR5 vss sub! ptap1 A=2.228674e-11 P=6.208e-05
+RR7 vss sub! ptap1 A=3.270718e-11 P=0.00020442
+RR1 vdd net4 ntap1 A=2.042641e-11 P=5.674e-05
+x1 vdd net3 v- v+ net1 net2 diff_pair
+.ends
+
+* expanding   symbol:  diff_pair.sym # of pins=6
+** sym_path: /home/herman/github/IHP-GmbH/IP/IHP__OTA1336/OTA1336-main/schematic/xschem/diff_pair.sym
+** sch_path: /home/herman/github/IHP-GmbH/IP/IHP__OTA1336/OTA1336-main/schematic/xschem/diff_pair.sch
+.subckt diff_pair vdd S G1 G2 D1 D2
+*.PININFO D1:B D2:B vdd:B S:B G1:B G2:B
+MM1 D2 G2 S b sg13_lv_pmos w=3.64u l=3.7u ng=1 m=1
+MM13 vdd vdd S b sg13_lv_pmos w=3.64u l=3.7u ng=1 m=1
+RR1 vdd b ntap1 A=3.309313e-11 P=0.00018384
+MM8 D2 vdd vdd b sg13_lv_pmos w=3.64u l=3.7u ng=1 m=1
+MM2 D1 G1 S b sg13_lv_pmos w=3.64u l=3.7u ng=1 m=1
+MM3 vdd vdd S b sg13_lv_pmos w=3.64u l=3.7u ng=1 m=1
+MM4 D1 vdd vdd b sg13_lv_pmos w=3.64u l=3.7u ng=1 m=1
+MM5 D1 G1 S b sg13_lv_pmos w=3.64u l=3.7u ng=1 m=1
+MM6 vdd vdd S b sg13_lv_pmos w=3.64u l=3.7u ng=1 m=1
+MM7 D1 vdd vdd b sg13_lv_pmos w=3.64u l=3.7u ng=1 m=1
+MM9 D2 G2 S b sg13_lv_pmos w=3.64u l=3.7u ng=1 m=1
+MM10 vdd vdd S b sg13_lv_pmos w=3.64u l=3.7u ng=1 m=1
+MM11 D2 vdd vdd b sg13_lv_pmos w=3.64u l=3.7u ng=1 m=1
+.ends
+

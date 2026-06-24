@@ -377,14 +377,36 @@ Corrupted `~/.xschem/geometry` with `1x1+` entries. See [Xschem integration — 
 
 ---
 
+### Import: converter not found
+
+**Symptoms:** Log shows `Converter 'xschem_to_core' was not found next to LibMan`.
+
+**Solution:**
+1. Rebuild with CORE enabled (not `CONFIG+=no_core`).
+2. Confirm converter `.exe` files sit next to `libman.exe` (CMake POST_BUILD or qmake `core_converter_deploy.pri`).
+3. Or set `LIBMAN_CONVERTER_DIR` to the tools directory.
+
+See [IMPORT.md](../setup/IMPORT.md).
+
+---
+
+### Import: project file not updated
+
+**Symptoms:** Views appear in LibMan but `.projects` has no new `define()` lines.
+
+**Solution:** Open the project first (**File → Open...**). Import auto-saves only when a project is loaded; otherwise **File → Save** after import.
+
+---
+
 ## ✅ Getting Help
 
 1. **Quick answers**: See [Quick Reference](QUICK_REFERENCE.md)
 2. **Setup help**: See [VS Code Setup](../setup/VSCODE_SETUP.md)
 3. **Project Editor**: See [PROJECT_EDITOR.md](../setup/PROJECT_EDITOR.md)
-4. **Xschem / WSL**: See [XSCHEM_INTEGRATION.md](../setup/XSCHEM_INTEGRATION.md)
-5. **Dependencies**: See [DEPENDENCIES.md](../getting-started/DEPENDENCIES.md)
-6. **All docs**: See [Documentation Index](../INDEX.md)
+4. **Import**: See [IMPORT.md](../setup/IMPORT.md)
+5. **Xschem / WSL**: See [XSCHEM_INTEGRATION.md](../setup/XSCHEM_INTEGRATION.md)
+6. **Dependencies**: See [DEPENDENCIES.md](../getting-started/DEPENDENCIES.md)
+7. **All docs**: See [Documentation Index](../INDEX.md)
 
 ---
 

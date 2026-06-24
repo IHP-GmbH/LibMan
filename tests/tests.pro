@@ -152,6 +152,10 @@ RESOURCES += \
 
 TESTDATA += \
     $$PWD/data/sg13g2.projects \
+    $$PWD/data/ota1336.projects \
+    $$PWD/data/OTA1336/schematic/xschem/OTA1336.schematic.core \
+    $$PWD/data/OTA1336/schematic/xschem/OTA1336.symbol.core \
+    $$PWD/data/OTA1336/testbenches/ac/xschem/OTA1336_tb.schematic.core \
     $$PWD/data/sample.gds \
     $$PWD/data/sg13g2_stdcell/Test/Test.gds \
     $$PWD/data/sg13g2_stdcell/Test/Test.oas \

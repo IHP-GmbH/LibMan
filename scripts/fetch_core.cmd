@@ -43,12 +43,14 @@ cmake -S "%CORE_SRC%" -B "%CORE_BUILD%" ^
     -DCAPNP_ROOT="%CAPNP_ROOT%" ^
     -DCORE_BUILD_TESTS=OFF ^
     -DCORE_BUILD_OAS_TESTS=OFF ^
-    -DCORE_BUILD_EXAMPLES=OFF ^
+    -DCORE_BUILD_EXAMPLES=ON ^
     -G "MinGW Makefiles"
 if errorlevel 1 exit /b 1
 
-cmake --build "%CORE_BUILD%" --target core core_utils -j
+cmake --build "%CORE_BUILD%" --target core core_utils gds_to_core xschem_to_core qucs_to_core -j
 if errorlevel 1 exit /b 1
+
+cmake --build "%CORE_BUILD%" --target oas_to_core -j 2>nul
 
 type nul > "%STAMP%"
 echo CORE built in %CORE_BUILD%

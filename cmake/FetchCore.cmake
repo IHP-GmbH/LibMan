@@ -20,7 +20,7 @@ function(_libman_configure_core_subproject)
     set(CORE_BOOTSTRAP_CAPNP OFF CACHE BOOL "CORE uses LibMan Cap'n Proto prefix" FORCE)
     set(CORE_BUILD_TESTS OFF CACHE BOOL "Do not build CORE tests inside LibMan" FORCE)
     set(CORE_BUILD_OAS_TESTS OFF CACHE BOOL "Do not build CORE OAS tests inside LibMan" FORCE)
-    set(CORE_BUILD_EXAMPLES OFF CACHE BOOL "Do not build CORE example tools inside LibMan" FORCE)
+    set(CORE_BUILD_EXAMPLES ON CACHE BOOL "Build CORE converter tools for LibMan Import" FORCE)
 endfunction()
 
 function(_libman_add_core_aliases)

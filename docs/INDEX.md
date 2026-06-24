@@ -17,6 +17,7 @@ Welcome! This is your central hub for all LibMan documentation. Use the sections
 | **Verify setup** | [Verification Checklist](getting-started/SETUP_VERIFICATION.md) (5 min) |
 | **File organization** | [Directory Structure](setup/DIRECTORY_STRUCTURE.md) (3 min) |
 | **Edit project file** | [Project Editor](setup/PROJECT_EDITOR.md) (5 min) |
+| **Import GDS/Xschem/Qucs/OAS** | [Import](setup/IMPORT.md) (5 min) |
 | **Schematic (Windows)** | [Xschem + WSL](setup/XSCHEM_INTEGRATION.md) (10 min) |
 
 ---
@@ -39,7 +40,8 @@ Detailed setup and configuration information:
 3. **[CORE integration](setup/CORE_INTEGRATION.md)** - Automatic fetch/build of CommonDB
 4. **[KLayout integration](setup/KLAYOUT_INTEGRATION.md)** - Layout views, server, root cell selection
 5. **[Project Editor](setup/PROJECT_EDITOR.md)** - Edit `define(library, path)` entries (`Ctrl+E`)
-6. **[Xschem integration](setup/XSCHEM_INTEGRATION.md)** - Schematic/symbol on Windows via WSL launchers
+6. **[Import](setup/IMPORT.md)** - Convert GDS, Xschem, Qucs, OAS into CORE views (`File → Import...`)
+7. **[Xschem integration](setup/XSCHEM_INTEGRATION.md)** - Schematic/symbol on Windows via WSL launchers
 
 ### 📖 Reference & Advanced
 Detailed reference and customization guides:
@@ -87,9 +89,9 @@ Ctrl+Shift+P → "Tasks: Run Task"
 
 ## 📊 Documentation Statistics
 
-- **Total Pages**: 11
+- **Total Pages**: 12
 - **Getting Started**: 3 pages
-- **Setup**: 5 pages
+- **Setup**: 6 pages
 - **Reference**: 3 pages
 - **Total Read Time**: ~50 minutes (if reading all)
 - **Quick Start Time**: ~5 minutes

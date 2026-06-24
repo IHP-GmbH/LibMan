@@ -255,6 +255,7 @@
     <addaction name="actionSave"/>
     <addaction name="actionSave_As"/>
     <addaction name="actionEditProject"/>
+    <addaction name="actionImport"/>
     <addaction name="separator"/>
     <addaction name="menuRecent_Projects"/>
     <addaction name="actionClear_Recent_File_Stack"/>
@@ -408,6 +409,11 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+E</string>
+   </property>
+  </action>
+  <action name="actionImport">
+   <property name="text">
+    <string>Import...</string>
    </property>
   </action>
   <action name="actionShow_Documents">
