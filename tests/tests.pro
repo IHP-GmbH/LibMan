@@ -123,6 +123,8 @@ HEADERS += \
     $$PWD/../src/projecteditor.h \
     $$PWD/../src/property.h \
     $$PWD/../src/toolmanager.h \
+    $$PWD/../src/viewtoolstablewidget.h \
+    $$PWD/../src/toolpickerdialog.h \
     $$PWD/../src/about.h \
     $$PWD/../src/newview.h \
     $$PWD/../core/corecellreader.h \
