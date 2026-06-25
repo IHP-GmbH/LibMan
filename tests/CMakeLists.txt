@@ -73,6 +73,9 @@ add_executable(tst_libman_gui
     ${LIBMAN_ROOT}/src/property.cpp
     ${LIBMAN_ROOT}/src/toolmanager.cpp
     ${LIBMAN_ROOT}/src/toolcustomtool.cpp
+    ${LIBMAN_ROOT}/src/view_tools.cpp
+    ${LIBMAN_ROOT}/src/viewtoolstablewidget.cpp
+    ${LIBMAN_ROOT}/src/toolpickerdialog.cpp
     ${LIBMAN_ROOT}/src/categories.cpp
     ${LIBMAN_ROOT}/src/viewcontextmenu.cpp
     ${LIBMAN_ROOT}/src/groupcontextmenu.cpp

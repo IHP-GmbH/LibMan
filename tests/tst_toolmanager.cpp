@@ -13,20 +13,8 @@
 #undef private
 
 #include "property.h"
-#include "extension/variantmanager.h"
-#include "extension/variantfactory.h"
-#include "QtPropertyBrowser/qttreepropertybrowser.h"
-
-template <typename Container>
-static QtProperty *findPropertyByName(const Container &props, const QString &name)
-{
-    for(QtProperty *prop : props) {
-        if(prop && prop->propertyName() == name) {
-            return prop;
-        }
-    }
-    return nullptr;
-}
+#include "view_tools.h"
+#include "viewtoolstablewidget.h"
 
 /*!*********************************************************************************************************************
  * \brief Verifies that addCustomTool() adds a new tab for a new tool.
@@ -92,47 +80,19 @@ void ToolManagerTest::addCustomTool_readsStoredValues()
 
     dlg.addCustomTool("MyTool");
 
-    QVERIFY2(dlg.m_custVariantMngrMap.contains("MyTool"),
-             "Variant manager for MyTool was not created");
+    QVERIFY2(dlg.m_custToolsTableMap.contains("MyTool"),
+             "Tool table for MyTool was not created");
+    QVERIFY2(dlg.m_custViewsEditMap.contains("MyTool"),
+             "View suffix editor for MyTool was not created");
 
-    QtVariantPropertyManager *vm = dlg.m_custVariantMngrMap.value("MyTool");
-    QVERIFY2(vm, "Variant manager is null");
+    QCOMPARE(dlg.m_custViewsEditMap.value("MyTool")->text(),
+             QString("gds,oas,lstr"));
 
-    const QSet<QtProperty*> propsSet = vm->properties();
-    QVERIFY2(!propsSet.isEmpty(), "No properties were created in the custom tool manager");
-
-    bool foundToolPath = false;
-    bool foundViews = false;
-
-    foreach(QtProperty *groupProp, propsSet) {
-        if(!groupProp) {
-            continue;
-        }
-
-        const QList<QtProperty*> subProps = groupProp->subProperties();
-        foreach(QtProperty *subProp, subProps) {
-            if(!subProp) {
-                continue;
-            }
-
-            const QString name = subProp->propertyName();
-
-            if(name == "MyTool") {
-                const QVariant v = vm->value(subProp);
-                QCOMPARE(v.toString(), QString("/usr/bin/mytool"));
-                foundToolPath = true;
-            }
-
-            if(name == "Name(s)") {
-                const QVariant v = vm->value(subProp);
-                QCOMPARE(v.toString(), QString("gds,oas,lstr"));
-                foundViews = true;
-            }
-        }
-    }
-
-    QVERIFY2(foundToolPath, "Stored tool path property was not found");
-    QVERIFY2(foundViews, "Stored tool views property was not found");
+    const QVector<ViewToolEntry> entries =
+        dlg.m_custToolsTableMap.value("MyTool")->entries();
+    QCOMPARE(entries.size(), 1);
+    QCOMPARE(entries.at(0).path, QString("/usr/bin/mytool"));
+    QVERIFY(entries.at(0).isDefault);
 }
 
 /*!*********************************************************************************************************************
@@ -163,30 +123,28 @@ void ToolManagerTest::on_btnOk_clicked_savesToolProperties()
 
     dlg.addCustomTool("MyTool");
 
-    QtProperty *toolsGroup = findPropertyByName(dlg.m_pbSettings->properties(), "Tools");
-    QVERIFY2(toolsGroup, "Tools group not found");
+    QVERIFY2(dlg.m_custViewsEditMap.contains("MyTool"), "View editor not found");
+    QVERIFY2(dlg.m_custToolsTableMap.contains("MyTool"), "Tool table not found");
 
-    QtProperty *myToolProperty = nullptr;
-    QtProperty *myToolViewsProperty = nullptr;
+    dlg.m_custViewsEditMap.value("MyTool")->setText("gds,oas");
 
-    QtVariantPropertyManager *customManager = dlg.m_custVariantMngrMap.value("MyTool");
-    QVERIFY2(customManager, "Custom tool manager not found");
-
-    QtProperty *viewGroup = findPropertyByName(customManager->properties(), "View");
-    QVERIFY2(viewGroup, "View group not found");
-
-    myToolProperty = findPropertyByName(viewGroup->subProperties(), "MyTool");
-    myToolViewsProperty = findPropertyByName(viewGroup->subProperties(), "Name(s)");
-    QVERIFY2(myToolProperty, "Custom tool path property not found");
-    QVERIFY2(myToolViewsProperty, "Custom tool names property not found");
-
-    customManager->setValue(myToolProperty, QVariant("/usr/bin/mytool"));
-    customManager->setValue(myToolViewsProperty, QVariant("gds,oas"));
+    QVector<ViewToolEntry> entries;
+    ViewToolEntry entry;
+    entry.name = "MyTool";
+    entry.path = "/usr/bin/mytool";
+    entry.isDefault = true;
+    entries.push_back(entry);
+    dlg.m_custToolsTableMap.value("MyTool")->setEntries(entries);
 
     dlg.on_btnOk_clicked();
 
     QStringList savedTools = props.get<QString>("ToolList").split(",", Qt::SkipEmptyParts);
     QVERIFY(savedTools.contains("MyTool"));
-    QCOMPARE(props.get<QString>("MyTool"), QString("/usr/bin/mytool"));
     QCOMPARE(props.get<QString>("MyToolViews"), QString("gds,oas"));
+
+    const QVector<ViewToolEntry> loaded = loadViewTools(&props, "MyTool");
+    QCOMPARE(loaded.size(), 1);
+    QCOMPARE(loaded.at(0).path, QString("/usr/bin/mytool"));
+    QCOMPARE(loaded.at(0).name, QString("MyTool"));
+    QVERIFY(loaded.at(0).isDefault);
 }

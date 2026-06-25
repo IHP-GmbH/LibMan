@@ -58,6 +58,9 @@ SOURCES += \
     $$PWD/../src/projecteditor.cpp \
     $$PWD/../src/property.cpp \
     $$PWD/../src/toolcustomtool.cpp \
+    $$PWD/../src/view_tools.cpp \
+    $$PWD/../src/viewtoolstablewidget.cpp \
+    $$PWD/../src/toolpickerdialog.cpp \
     $$PWD/../src/toolmanager.cpp \
     $$PWD/../src/projectfile.cpp \
     $$PWD/../src/categories.cpp \
