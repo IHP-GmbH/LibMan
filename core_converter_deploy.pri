@@ -9,7 +9,7 @@ CONVERTER_DST = $$OUT_PWD
 contains(CONFIG, release): CONVERTER_DST = $$OUT_PWD/release
 contains(CONFIG, debug): CONVERTER_DST = $$OUT_PWD/debug
 
-CORE_CONVERTERS = gds_to_core xschem_to_core qucs_to_core oas_to_core
+CORE_CONVERTERS = gds_to_core xschem_to_core qucs_to_core oas_to_core core_to_gds core_to_xschem core_to_qucs
 
 win32 {
     for(_tool, CORE_CONVERTERS) {

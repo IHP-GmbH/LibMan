@@ -2,10 +2,13 @@
 #define TOOLMANAGER_H
 
 #include <QDialog>
+#include <QLineEdit>
+#include <QMap>
 #include <QVariant>
 
 class Properties;
 class MainWindow;
+class ViewToolsTableWidget;
 
 class QtProperty;
 class QtTreePropertyBrowser;
@@ -96,8 +99,8 @@ private:
     QtTreePropertyBrowser*                      m_pbSettings; /*!< Property browser for editing tool settings. */
     QtVariantPropertyManager*                   m_vmSettings; /*!< Property manager for handling different property types and associated UI editors. */
 
-    QMap<QString, QtTreePropertyBrowser*>       m_custPropertyMap; /*!< Maps tool names to their respective property browsers. */
-    QMap<QString, QtVariantPropertyManager*>    m_custVariantMngrMap; /*!< Maps tool names to their variant property managers. */
+    QMap<QString, QLineEdit*>                   m_custViewsEditMap; /*!< View suffix editor per tool group tab. */
+    QMap<QString, ViewToolsTableWidget*>        m_custToolsTableMap; /*!< Multi-tool table per tool group tab. */
 };
 
 

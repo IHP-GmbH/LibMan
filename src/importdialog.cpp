@@ -7,6 +7,16 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QMessageBox>
+#include <QApplication>
+#include <QEventLoop>
+#include <QSettings>
+#include <QSet>
+
+namespace {
+
+constexpr auto kSettingsGroup = "Import";
+
+} // namespace
 
 ImportDialog::ImportDialog(MainWindow *parent)
     : QDialog(parent)
@@ -18,18 +28,12 @@ ImportDialog::ImportDialog(MainWindow *parent)
 
     populateFormats();
     populateLibraries();
-
-    if (m_mainWindow) {
-        const QString currentLibrary = m_mainWindow->getCurrentLibraryName();
-        const int index = m_ui->comboLibrary->findText(currentLibrary);
-        if (index >= 0) {
-            m_ui->comboLibrary->setCurrentIndex(index);
-        }
-    }
+    loadSettings();
 }
 
 ImportDialog::~ImportDialog()
 {
+    saveSettings();
     delete m_ui;
 }
 
@@ -53,16 +57,70 @@ void ImportDialog::populateLibraries()
         return;
     }
 
-    const QList<QPair<QString, QString>> entries = m_mainWindow->projectEntriesForEditor();
-    for (const auto &entry : entries) {
-        const QString libraryName = entry.first.trimmed();
-        if (libraryName.isEmpty()) {
+    QSet<QString> seen;
+    for (const QString &libraryName : m_mainWindow->registeredLibraryNames()) {
+        if (libraryName.isEmpty() || seen.contains(libraryName)) {
             continue;
         }
-        if (m_ui->comboLibrary->findText(libraryName) < 0) {
-            m_ui->comboLibrary->addItem(libraryName);
+        seen.insert(libraryName);
+        m_ui->comboLibrary->addItem(libraryName);
+    }
+}
+
+void ImportDialog::loadSettings()
+{
+    if (!m_mainWindow) {
+        return;
+    }
+
+    QSettings settings(m_mainWindow->getSettingsHeaderName());
+    settings.beginGroup(kSettingsGroup);
+
+    const int formatIndex = m_ui->comboFormat->findData(settings.value(QStringLiteral("Format")).toInt());
+    if (formatIndex >= 0) {
+        m_ui->comboFormat->setCurrentIndex(formatIndex);
+    }
+
+    const QString libraryName = settings.value(QStringLiteral("Library")).toString().trimmed();
+    if (!libraryName.isEmpty()) {
+        const int libraryIndex = m_ui->comboLibrary->findText(libraryName);
+        if (libraryIndex >= 0) {
+            m_ui->comboLibrary->setCurrentIndex(libraryIndex);
+        }
+    } else {
+        const QString currentLibrary = m_mainWindow->getCurrentLibraryName();
+        const int index = m_ui->comboLibrary->findText(currentLibrary);
+        if (index >= 0) {
+            m_ui->comboLibrary->setCurrentIndex(index);
         }
     }
+
+    if (settings.contains(QStringLiteral("FolderMode"))) {
+        const bool folderMode = settings.value(QStringLiteral("FolderMode")).toBool();
+        m_ui->radioFolder->setChecked(folderMode);
+        m_ui->radioSingleFile->setChecked(!folderMode);
+    }
+
+    m_ui->editSourcePath->setText(settings.value(QStringLiteral("SourcePath")).toString());
+    m_ui->checkOverwrite->setChecked(settings.value(QStringLiteral("OverwriteExisting"), false).toBool());
+
+    settings.endGroup();
+}
+
+void ImportDialog::saveSettings() const
+{
+    if (!m_mainWindow) {
+        return;
+    }
+
+    QSettings settings(m_mainWindow->getSettingsHeaderName());
+    settings.beginGroup(kSettingsGroup);
+    settings.setValue(QStringLiteral("Format"), m_ui->comboFormat->currentData().toInt());
+    settings.setValue(QStringLiteral("Library"), m_ui->comboLibrary->currentText().trimmed());
+    settings.setValue(QStringLiteral("FolderMode"), m_ui->radioFolder->isChecked());
+    settings.setValue(QStringLiteral("SourcePath"), m_ui->editSourcePath->text().trimmed());
+    settings.setValue(QStringLiteral("OverwriteExisting"), m_ui->checkOverwrite->isChecked());
+    settings.endGroup();
 }
 
 void ImportDialog::appendLogLine(const QString &line)
@@ -111,12 +169,13 @@ void ImportDialog::on_btnBrowse_clicked()
     const CoreImportService::Format format = currentFormat();
     const QStringList filters = CoreImportService::sourceNameFilters(format);
     const QString filterLine = filters.join(QStringLiteral(" "));
+    const QString startDir = m_ui->editSourcePath->text().trimmed();
 
     if (m_ui->radioSingleFile->isChecked()) {
         const QString filePath = QFileDialog::getOpenFileName(
             this,
             tr("Select source file"),
-            m_ui->editSourcePath->text(),
+            startDir,
             tr("Source files (%1);;All files (*)").arg(filterLine));
         if (!filePath.isEmpty()) {
             m_ui->editSourcePath->setText(QDir::toNativeSeparators(filePath));
@@ -127,7 +186,7 @@ void ImportDialog::on_btnBrowse_clicked()
     const QString dirPath = QFileDialog::getExistingDirectory(
         this,
         tr("Select source folder"),
-        m_ui->editSourcePath->text());
+        startDir);
     if (!dirPath.isEmpty()) {
         m_ui->editSourcePath->setText(QDir::toNativeSeparators(dirPath));
     }
@@ -147,6 +206,8 @@ void ImportDialog::on_btnImport_clicked()
         return;
     }
 
+    saveSettings();
+
     m_ui->btnImport->setEnabled(false);
     m_ui->plainLog->clear();
     appendLogLine(tr("Importing %1 file(s) into library '%2'...")
@@ -154,17 +215,22 @@ void ImportDialog::on_btnImport_clicked()
                       .arg(libraryName));
 
     CoreImportService service(m_mainWindow);
+    const CoreImportService::LogCallback logCallback = [this](const QString &line) {
+        appendLogLine(line);
+        QApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+    };
+
     const QVector<CoreImportService::ImportItemResult> results =
-        service.importFiles(currentFormat(), libraryName, sourceFiles);
+        service.importFiles(currentFormat(),
+                            libraryName,
+                            sourceFiles,
+                            m_ui->checkOverwrite->isChecked(),
+                            logCallback);
 
     int successCount = 0;
     for (const CoreImportService::ImportItemResult &result : results) {
-        const QString sourceName = QFileInfo(result.sourcePath).fileName();
         if (result.success) {
             ++successCount;
-            appendLogLine(tr("[OK] %1 — %2").arg(sourceName, result.message));
-        } else {
-            appendLogLine(tr("[FAIL] %1 — %2").arg(sourceName, result.message));
         }
     }
 
@@ -176,6 +242,7 @@ void ImportDialog::on_btnImport_clicked()
 
 void ImportDialog::on_btnClose_clicked()
 {
+    saveSettings();
     reject();
 }
 

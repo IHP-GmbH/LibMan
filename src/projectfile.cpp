@@ -12,6 +12,7 @@
 #include <QRegularExpression>
 #include <QFileSystemWatcher>
 #include <QTimer>
+#include <QSet>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -174,7 +175,13 @@ void MainWindow::loadProjectFile(const QString &fileName)
         QFileInfo fi(libPath);
 
         if(!fi.exists()) {
-            error(QString("Library file does not exist for '%1': %2").arg(libName, libPath));
+            error(QString("Library path does not exist for '%1': %2").arg(libName, libPath));
+            continue;
+        }
+
+        if (fi.isDir()) {
+            setLibraryRootDirectory(libName, libPath);
+            loadedLibraries.insert(libName);
             continue;
         }
 
@@ -327,6 +334,7 @@ QString MainWindow::findRepresentativeLibraryFile(const QString &libName) const
 QList<QPair<QString, QString>> MainWindow::getCurrentProjectEntries() const
 {
     QList<QPair<QString, QString>> entries;
+    QSet<QString> librariesWithViews;
 
     const QMap<QString, PropertyItem*> propItems = m_properties->getMap();
 
@@ -340,7 +348,11 @@ QList<QPair<QString, QString>> MainWindow::getCurrentProjectEntries() const
         tail.remove(getLibraryKeyPrefix());
 
         const int pos = tail.indexOf('/');
-        const QString libName = (pos >= 0) ? tail.left(pos).trimmed() : tail.trimmed();
+        if (pos < 0) {
+            continue;
+        }
+
+        const QString libName = tail.left(pos).trimmed();
         if(libName.isEmpty()) {
             continue;
         }
@@ -351,7 +363,34 @@ QList<QPair<QString, QString>> MainWindow::getCurrentProjectEntries() const
             continue;
         }
 
+        librariesWithViews.insert(libName);
         entries.append(qMakePair(libName, fi.absoluteFilePath()));
+    }
+
+    for(auto it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
+        const QString key = it.key();
+        if(!key.toUpper().startsWith(getLibraryKeyPrefix())) {
+            continue;
+        }
+
+        QString tail = key;
+        tail.remove(getLibraryKeyPrefix());
+        if (tail.contains(QLatin1Char('/'))) {
+            continue;
+        }
+
+        const QString libName = tail.trimmed();
+        if (libName.isEmpty() || librariesWithViews.contains(libName)) {
+            continue;
+        }
+
+        const QString rootPath = m_properties->get<QString>(key).trimmed();
+        const QFileInfo rootInfo(rootPath);
+        if (!rootInfo.exists() || !rootInfo.isDir()) {
+            continue;
+        }
+
+        entries.append(qMakePair(libName, rootInfo.absoluteFilePath()));
     }
 
     return entries;
@@ -359,25 +398,7 @@ QList<QPair<QString, QString>> MainWindow::getCurrentProjectEntries() const
 
 QList<QPair<QString, QString>> MainWindow::projectEntriesForEditor() const
 {
-    if (!m_currentProjFile.isEmpty()) {
-        LibFileParser parser;
-        if (parser.parseFile(m_currentProjFile)) {
-            QList<QPair<QString, QString>> rows;
-            for (const LibDefinition &def : parser.data().definitions) {
-                rows.append(qMakePair(def.name.trimmed(), def.path.trimmed()));
-            }
-            return rows;
-        }
-    }
-
-    QList<QPair<QString, QString>> rows;
-    const QList<QPair<QString, QString>> absoluteEntries = getCurrentProjectEntries();
-    for (const auto &entry : absoluteEntries) {
-        rows.append(qMakePair(entry.first,
-                              QDir::toNativeSeparators(QFileInfo(entry.second).absoluteFilePath())));
-    }
-
-    return rows;
+    return getCurrentProjectEntries();
 }
 
 bool MainWindow::saveProjectEntriesToFile(const QString &fileName,
@@ -427,15 +448,26 @@ bool MainWindow::saveProjectEntriesToFile(const QString &fileName,
             ? filePath
             : baseDir.absoluteFilePath(filePath);
         const QFileInfo fi(resolvedPath);
-        if (!fi.exists() || !fi.isFile()) {
-            error(QString("Skipping library entry '%1': file does not exist: %2")
+        if (!fi.exists()) {
+            error(QString("Skipping library entry '%1': path does not exist: %2")
                       .arg(libName, resolvedPath));
             continue;
         }
 
-        const QString storedPath = QDir::isAbsolutePath(filePath)
-            ? QDir::toNativeSeparators(baseDir.relativeFilePath(fi.absoluteFilePath()))
-            : QDir::toNativeSeparators(filePath);
+        QString storedPath;
+        if (fi.isDir()) {
+            storedPath = QDir::isAbsolutePath(filePath)
+                ? QDir::toNativeSeparators(baseDir.relativeFilePath(fi.absoluteFilePath()))
+                : QDir::toNativeSeparators(filePath);
+        }
+        else if (fi.isFile()) {
+            storedPath = QDir::isAbsolutePath(filePath)
+                ? QDir::toNativeSeparators(baseDir.relativeFilePath(fi.absoluteFilePath()))
+                : QDir::toNativeSeparators(filePath);
+        }
+        else {
+            continue;
+        }
 
         out << "define("
             << toLibStringLiteral(libName)

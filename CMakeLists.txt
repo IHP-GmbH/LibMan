@@ -169,11 +169,16 @@ set(SOURCES
     src/projectmanager.cpp
     src/projecteditor.cpp
     src/importdialog.cpp
+    src/exportdialog.cpp
     src/core_import_service.cpp
+    src/core_export_service.cpp
     lstream/lstrReadAsync.cpp
     src/property.cpp
     src/toolcustomtool.cpp
     src/toolmanager.cpp
+    src/view_tools.cpp
+    src/viewtoolstablewidget.cpp
+    src/toolpickerdialog.cpp
     src/projectfile.cpp
     src/categories.cpp
     src/viewcontextmenu.cpp
@@ -226,9 +231,14 @@ set(HEADERS
     src/projectmanager.h
     src/projecteditor.h
     src/importdialog.h
+    src/exportdialog.h
     src/core_import_service.h
+    src/core_export_service.h
     src/property.h
     src/toolmanager.h
+    src/view_tools.h
+    src/viewtoolstablewidget.h
+    src/toolpickerdialog.h
     src/about.h
     src/newview.h
 
@@ -249,6 +259,7 @@ set(FORMS
     src/projectmanager.ui
     src/projecteditor.ui
     src/importdialog.ui
+    src/exportdialog.ui
     src/toolmanager.ui
     src/about.ui
     src/newview.ui
@@ -296,7 +307,7 @@ target_link_libraries(libman PRIVATE
     CORE::core_utils
 )
 
-foreach(_converter gds_to_core xschem_to_core qucs_to_core oas_to_core)
+foreach(_converter gds_to_core xschem_to_core qucs_to_core oas_to_core core_to_gds core_to_xschem core_to_qucs)
     if(TARGET ${_converter})
         add_custom_command(TARGET libman POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different

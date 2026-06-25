@@ -350,10 +350,10 @@ LibMan picks a root cell by: group name (if present in file) → single top cell
 **Symptoms:** Double-click **schematic** does nothing or WSL error.
 
 **Check:**
-1. Tool Manager → schematic tool → path to `...\Xschem\integrations\open-xschem-wsl.bat`
+1. Tool Manager → schematic tool → path to `...\XSchem-coredb\integrations\open-xschem-wsl.bat`
 2. **Name(s)** = `schematic` (not `schematic.core`)
 3. WSL: `xschem --version` works; `build-core-tcl.sh` was run
-4. **CommonDB** is a sibling of **Xschem**, or set `COMMONDB_ROOT` in WSL (see [Xschem integration](../setup/XSCHEM_INTEGRATION.md))
+4. **CommonDB** is a sibling of **XSchem-coredb**, or set `COMMONDB_ROOT` in WSL (see [Xschem integration](../setup/XSCHEM_INTEGRATION.md))
 
 ---
 

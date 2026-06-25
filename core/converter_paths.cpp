@@ -29,6 +29,15 @@ QStringList coreImportConverterNames()
     };
 }
 
+QStringList coreExportConverterNames()
+{
+    return {
+        QStringLiteral("core_to_gds"),
+        QStringLiteral("core_to_xschem"),
+        QStringLiteral("core_to_qucs"),
+    };
+}
+
 QString findCoreConverterExecutable(const QString &baseName)
 {
     if (baseName.trimmed().isEmpty()) {

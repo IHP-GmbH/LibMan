@@ -32,13 +32,13 @@ LibMan (Windows)
 
 ### WSL
 
-Inside WSL (from your **Xschem** repo checkout):
+Inside WSL (from your **XSchem-coredb** checkout):
 
 1. **Xschem** built and on `PATH` (`xschem` command works in a WSL terminal)
 2. **coretcl.so** built for WSL (from CommonDB):
 
    ```bash
-   cd /path/to/Xschem
+   cd /path/to/XSchem-coredb
    bash build-core-tcl.sh
    ```
 
@@ -47,28 +47,30 @@ Inside WSL (from your **Xschem** repo checkout):
 3. Test manually:
 
    ```bash
-   xschem --rcfile /path/to/Xschem/xschemrc
+   xschem --rcfile /path/to/XSchem-coredb/xschemrc
    ```
 
 ### Recommended directory layout
 
 ```text
 parent/
-  Xschem/          ← this repo (launchers, xschemrc, core.tcl)
+  XSchem-coredb/   ← https://github.com/adatsuk/XSchem-coredb (launchers, xschemrc, core.tcl)
   CommonDB/        ← sibling checkout (coretcl.so build)
   LibMan/          ← optional; Windows app
+  KLayout-coredb/  ← optional; https://github.com/adatsuk/KLayout-coredb (mcore plugin)
+  Qucs-S-coredb/   ← optional; https://github.com/adatsuk/Qucs-S-coredb (CORE in Qucs-S)
 ```
 
 Paths are resolved from script locations — no editing required when clones stay siblings.
 
 ## Launcher scripts (Windows → WSL)
 
-Scripts live in the **Xschem** repo (not LibMan):
+Scripts live in the **XSchem-coredb** repo (not LibMan):
 
 | File | Role |
 |------|------|
-| `Xschem/integrations/open-xschem-wsl.bat` | Windows entry point for LibMan Tool Manager |
-| `Xschem/integrations/open-xschem-wsl.sh` | WSL wrapper: path conversion, env vars, starts `xschem` |
+| `XSchem-coredb/integrations/open-xschem-wsl.bat` | Windows entry point for LibMan Tool Manager |
+| `XSchem-coredb/integrations/open-xschem-wsl.sh` | WSL wrapper: path conversion, env vars, starts `xschem` |
 
 ### Path resolution (no hardcoded checkout paths)
 
@@ -86,7 +88,7 @@ Optional environment overrides (WSL / Tcl):
 | `XSCHEM_ROOT` / `XSCHEM_HOME` | Xschem repo root |
 | `XSCHEM_RC` | Alternate `xschemrc` file |
 | `COMMONDB_ROOT` / `CORE_ROOT` | CommonDB checkout (non-sibling layout) |
-| `XSCHEM_SRC` | Source tree for `build-xschem.sh` (default: `Xschem/xschem-src`) |
+| `XSCHEM_SRC` | Source tree for `build-xschem.sh` (default: `XSchem-coredb/xschem-src`) |
 
 LibMan Tool Manager still needs the **full Windows path** to `open-xschem-wsl.bat` on your machine (one-time setup in Settings → Tools).
 
@@ -114,7 +116,7 @@ Supported arguments: one file path only.
 Example (use your actual checkout path):
 
 ```text
-D:\work\Xschem\integrations\open-xschem-wsl.bat
+D:\work\XSchem-coredb\integrations\open-xschem-wsl.bat
 ```
 
 | Property | Typical value |
@@ -186,7 +188,7 @@ grep -v '1x1+' ~/.xschem/geometry > ~/.xschem/geometry.tmp && mv ~/.xschem/geome
 ### Manual test (same as LibMan)
 
 ```powershell
-D:\work\Xschem\integrations\open-xschem-wsl.bat ^
+D:\work\XSchem-coredb\integrations\open-xschem-wsl.bat ^
   D:\work\LibMan\tests\data\sg13g2_stdcell\sg13g2_stdcell\sg13g2_stdcell.schematic.core
 ```
 
@@ -195,4 +197,4 @@ D:\work\Xschem\integrations\open-xschem-wsl.bat ^
 - [CORE integration](CORE_INTEGRATION.md) — building CommonDB / CORE in LibMan
 - [KLayout integration](KLAYOUT_INTEGRATION.md) — layout views on Windows
 - [Project Editor](PROJECT_EDITOR.md) — adding `*.schematic.core` to the project file
-- Xschem repo: `integrations/core.tcl`, `integrations/open-xschem-wsl.*`, `xschemrc`
+- XSchem-coredb repo: `integrations/core.tcl`, `integrations/open-xschem-wsl.*`, `xschemrc` — [github.com/adatsuk/XSchem-coredb](https://github.com/adatsuk/XSchem-coredb)

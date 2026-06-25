@@ -21,7 +21,7 @@ Double-click **opens KLayout** and does **not** expand or collapse the tree node
 
 LibMan:
 
-1. Resolves the file path sent to KLayout (GDS/OAS/LStream directly; `*.layout.core` natively when the [mcore](https://github.com/IHP-GmbH/Xschem/tree/main/integrations/klayout/mcore) streamer is installed).
+1. Resolves the file path sent to KLayout (GDS/OAS/LStream directly; `*.layout.core` natively when the [mcore](https://github.com/adatsuk/KLayout-coredb) streamer is installed).
 2. Picks a **root cell** to activate (see [Root cell selection](#root-cell-selection)).
 3. Starts KLayout with the server script if needed, then sends an `open` command with the file and cell name.
 4. On a later double-click on the same layout root while KLayout is already running, sends a `select` command (file is not reloaded).
@@ -58,7 +58,7 @@ An `.alive` sidecar file reports the server PID for health checks.
 
 ## CORE layout files
 
-`*.layout.core` files are passed **directly** to KLayout (no temporary GDS export) when the mcore plugin is available. Install the plugin from the Xschem/CommonDB integration package and register it in KLayout's `streamers` folder.
+`*.layout.core` files are passed **directly** to KLayout (no temporary GDS export) when the mcore plugin is available. Build it from [KLayout-coredb](https://github.com/adatsuk/KLayout-coredb) (or link `integrations/klayout/mcore` from CommonDB into your KLayout tree).
 
 See also: [CORE integration](CORE_INTEGRATION.md).
 

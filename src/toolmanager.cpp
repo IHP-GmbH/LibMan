@@ -18,6 +18,8 @@
 
 #include "property.h"
 #include "mainwindow.h"
+#include "view_tools.h"
+#include "viewtoolstablewidget.h"
 
 /*!*********************************************************************************************************************
  * \brief Creates ToolManager object to give user an opportunity to choose tools for working with different view types.
@@ -191,34 +193,15 @@ void ToolManager::on_btnOk_clicked()
     QStringList tabNames = getTabNames();
     if(tabNames.count()) {
         m_properties->set("ToolList", tabNames.join(","));
-        foreach(const QString &name, tabNames) {
-            QtTreePropertyBrowser *m_pbCustTool = m_custPropertyMap.value(name);
-            if(m_pbCustTool) {
-                QList<QtProperty *> custProps = m_pbCustTool->properties();
-                QList<QtProperty *>::iterator it;
-                for( it = custProps.begin(); it != custProps.end(); ++it )
-                {
-                    QtProperty *q = *it;
+        for (const QString &name : tabNames) {
+            QLineEdit *viewsEdit = m_custViewsEditMap.value(name);
+            if (viewsEdit) {
+                m_properties->set(name + QStringLiteral("Views"), viewsEdit->text().trimmed());
+            }
 
-                    if( q->propertyName() == "View" )
-                    {
-                        QList<QtProperty *> l = q->subProperties();
-                        QList<QtProperty *>::iterator t;
-                        for( t = l.begin(); t != l.end(); ++t )
-                        {
-                            QtProperty *p = *t;
-
-                            QString toolName = p->propertyName();
-                            QString toolPath = p->valueText();
-
-                            if(toolName == "Name(s)") {
-                                toolName = name + "Views";
-                            }
-
-                            m_properties->set(toolName, toolPath);
-                        }
-                    }
-                }
+            ViewToolsTableWidget *table = m_custToolsTableMap.value(name);
+            if (table) {
+                saveViewTools(m_properties, name, table->entries());
             }
         }
     }
@@ -283,17 +266,15 @@ void ToolManager::on_btnDelete_clicked()
     if (m_properties->exists(toolName)) {
         m_properties->remove(toolName);
     }
-    if (m_properties->exists(toolName + "Sufixes")) {
-        m_properties->remove(toolName + "Sufixes");
+    if (m_properties->exists(toolName + "Views")) {
+        m_properties->remove(toolName + "Views");
+    }
+    if (m_properties->exists(viewToolsPropertyKey(toolName))) {
+        m_properties->remove(viewToolsPropertyKey(toolName));
     }
 
-    if (m_custPropertyMap.contains(toolName)) {
-        m_custPropertyMap.remove(toolName);
-    }
-
-    if (m_custVariantMngrMap.contains(toolName)) {
-        m_custVariantMngrMap.remove(toolName);
-    }
+    m_custViewsEditMap.remove(toolName);
+    m_custToolsTableMap.remove(toolName);
 
     m_ui->tabTools->removeTab(currentIndex);
 }

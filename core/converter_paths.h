@@ -5,5 +5,6 @@
 
 QString findCoreConverterExecutable(const QString &baseName);
 QStringList coreImportConverterNames();
+QStringList coreExportConverterNames();
 
 #endif // CONVERTER_PATHS_H

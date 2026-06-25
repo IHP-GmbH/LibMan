@@ -51,7 +51,7 @@ cmake -S "$CORE_SRC" -B "$CORE_BUILD" \
     -DCORE_BUILD_OAS_TESTS=OFF \
     -DCORE_BUILD_EXAMPLES=ON
 
-cmake --build "$CORE_BUILD" --target core core_utils gds_to_core xschem_to_core qucs_to_core -j"$(nproc 2>/dev/null || echo 2)"
+cmake --build "$CORE_BUILD" --target core core_utils gds_to_core xschem_to_core qucs_to_core core_to_gds core_to_xschem core_to_qucs -j"$(nproc 2>/dev/null || echo 2)"
 cmake --build "$CORE_BUILD" --target oas_to_core -j"$(nproc 2>/dev/null || echo 2)" || true
 
 touch "$STAMP"

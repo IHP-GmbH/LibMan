@@ -32,11 +32,13 @@
 #include "about.h"
 #include "newview.h"
 #include "property.h"
+#include "view_tools.h"
 #include "toolmanager.h"
 #include "libfileparser.h"
 #include "projectmanager.h"
 #include "projecteditor.h"
 #include "importdialog.h"
+#include "exportdialog.h"
 #include "core/core_path_utils.h"
 
 /*!*******************************************************************************************************************
@@ -222,6 +224,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
             if(m_properties->exists(name + "Views")) {
                 settings.setValue(name + "Views", m_properties->get<QString>(name + "Views"));
             }
+
+            const QString toolsKey = viewToolsPropertyKey(name);
+            if(m_properties->exists(toolsKey)) {
+                settings.setValue(toolsKey, m_properties->get<QString>(toolsKey));
+            }
         }
     }
 
@@ -315,12 +322,17 @@ void MainWindow::loadSettings()
         if(tools.count()) {
             m_properties->set("ToolList", tools.join(","));
             foreach(const QString name, tools) {
-                if(settings.contains(name)) {
-                    QString tool = settings.value(name).toString();
-                    QString views = settings.value(name + "Views").toString();
-
-                    m_properties->set(name, tool);
+                if(settings.contains(name + "Views")) {
+                    const QString views = settings.value(name + "Views").toString();
                     m_properties->set(name + "Views", views);
+                }
+                if(settings.contains(name)) {
+                    m_properties->set(name, settings.value(name).toString());
+                }
+
+                const QString toolsKey = viewToolsPropertyKey(name);
+                if(settings.contains(toolsKey)) {
+                    m_properties->set(toolsKey, settings.value(toolsKey).toString());
                 }
             }
         }
@@ -364,7 +376,18 @@ QMap<QString, QString> MainWindow::getCurrentLibraries() const
 
         const QString filePath = m_properties->get<QString>(key).trimmed();
         QFileInfo fi(filePath);
-        if(!fi.exists() || !fi.isFile()) {
+        if(!fi.exists()) {
+            continue;
+        }
+
+        if (fi.isDir()) {
+            if (!libMap.contains(libName)) {
+                libMap[libName] = QDir::toNativeSeparators(fi.absoluteFilePath());
+            }
+            continue;
+        }
+
+        if(!fi.isFile()) {
             continue;
         }
 
@@ -412,6 +435,16 @@ void MainWindow::on_actionImport_triggered()
     dialog.exec();
 #else
     error(tr("Import requires CORE support. Rebuild LibMan without CONFIG+=no_core."), false);
+#endif
+}
+
+void MainWindow::on_actionExport_triggered()
+{
+#ifndef LIBMAN_NO_CORE
+    ExportDialog dialog(this);
+    dialog.exec();
+#else
+    error(tr("Export requires CORE support. Rebuild LibMan without CONFIG+=no_core."), false);
 #endif
 }
 
@@ -673,17 +706,21 @@ QString MainWindow::getToolByView(const QString &viewName) const
         return QString();
     }
 
-    const QStringList tools = m_properties->get<QString>("ToolList").split(",", QString::SkipEmptyParts);
-    for(const QString &name : tools) {
-        const QString toolName = name.trimmed();
-        if(toolName.isEmpty()) {
+    const QStringList groups = m_properties->get<QString>("ToolList").split(",", QString::SkipEmptyParts);
+    for(const QString &groupName : groups) {
+        const QString group = groupName.trimmed();
+        if(group.isEmpty()) {
             continue;
         }
 
-        if(layoutViewsForTool(toolName).contains(view)) {
-            if(m_properties->exists(toolName)) {
-                return m_properties->get<QString>(toolName);
-            }
+        if(!layoutViewsForTool(group).contains(view)) {
+            continue;
+        }
+
+        const QVector<ViewToolEntry> tools = loadViewTools(m_properties, group);
+        const QString path = resolveViewToolPath(tools, const_cast<MainWindow*>(this));
+        if(!path.isEmpty()) {
+            return path;
         }
     }
 
@@ -1005,6 +1042,33 @@ QString MainWindow::getCurrentLibraryName() const
     projName = projId->text(0);
 
     return projName;
+}
+
+QStringList MainWindow::registeredLibraryNames() const
+{
+    QStringList names;
+
+    const QMap<QString, QString> libraries = getCurrentLibraries();
+    for (auto it = libraries.constBegin(); it != libraries.constEnd(); ++it) {
+        const QString libraryName = it.key().trimmed();
+        if (!libraryName.isEmpty() && !names.contains(libraryName)) {
+            names << libraryName;
+        }
+    }
+
+    for (int i = 0; i < m_ui->treeLibs->topLevelItemCount(); ++i) {
+        const QTreeWidgetItem *item = m_ui->treeLibs->topLevelItem(i);
+        if (!item) {
+            continue;
+        }
+        const QString libraryName = item->text(0).trimmed();
+        if (!libraryName.isEmpty() && !names.contains(libraryName)) {
+            names << libraryName;
+        }
+    }
+
+    names.sort();
+    return names;
 }
 
 /*!*******************************************************************************************************************
@@ -3133,12 +3197,20 @@ bool MainWindow::registerCellViewAtPath(const QString &libName,
     const QString key = getLibraryKeyPrefix() + libName + "/" + cellName + "/" + viewName;
     m_properties->set(key, QDir::toNativeSeparators(fileInfo.absoluteFilePath()));
 
+    for (int i = 0; i < m_ui->treeLibs->topLevelItemCount(); ++i) {
+        QTreeWidgetItem *libItem = m_ui->treeLibs->topLevelItem(i);
+        if (libItem && libItem->text(0) == libName) {
+            m_ui->treeLibs->setCurrentItem(libItem);
+            break;
+        }
+    }
+
     loadGroups(libName);
 
     QList<QListWidgetItem*> items = m_ui->listGroups->findItems(cellName, Qt::MatchExactly);
     if (items.count()) {
         m_ui->listGroups->setCurrentItem(items.first());
-        on_listGroups_itemClicked(items.first());
+        loadViews(libName, cellName);
     }
 
     updateLibraryActionStates();

@@ -47,7 +47,7 @@ cmake -S "%CORE_SRC%" -B "%CORE_BUILD%" ^
     -G "MinGW Makefiles"
 if errorlevel 1 exit /b 1
 
-cmake --build "%CORE_BUILD%" --target core core_utils gds_to_core xschem_to_core qucs_to_core -j
+cmake --build "%CORE_BUILD%" --target core core_utils gds_to_core xschem_to_core qucs_to_core core_to_gds core_to_xschem core_to_qucs -j
 if errorlevel 1 exit /b 1
 
 cmake --build "%CORE_BUILD%" --target oas_to_core -j 2>nul

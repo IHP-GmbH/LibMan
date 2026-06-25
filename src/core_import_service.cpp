@@ -8,7 +8,9 @@
 #include <QFileInfo>
 #include <QFile>
 #include <QProcess>
-
+#include <QCoreApplication>
+#include <QEventLoop>
+#include <QElapsedTimer>
 namespace {
 
 QString cellNameFromSource(const QString &sourcePath)
@@ -23,6 +25,23 @@ QString viewNameForXschemSource(const QString &sourcePath)
         return QStringLiteral("symbol");
     }
     return QStringLiteral("schematic");
+}
+
+void emitConverterOutput(QByteArray &buffer, const CoreImportService::LogCallback &logCallback)
+{
+    if (!logCallback) {
+        return;
+    }
+
+    int newlineIndex = buffer.indexOf('\n');
+    while (newlineIndex >= 0) {
+        const QString line = QString::fromUtf8(buffer.left(newlineIndex)).trimmed();
+        buffer.remove(0, newlineIndex + 1);
+        if (!line.isEmpty()) {
+            logCallback(line);
+        }
+        newlineIndex = buffer.indexOf('\n');
+    }
 }
 
 } // namespace
@@ -79,13 +98,29 @@ QString CoreImportService::converterBaseName(Format format)
 
 QVector<CoreImportService::ImportItemResult> CoreImportService::importFiles(Format format,
                                                                               const QString &libraryName,
-                                                                              const QStringList &sourceFiles) const
+                                                                              const QStringList &sourceFiles,
+                                                                              bool overwriteExisting,
+                                                                              const LogCallback &logCallback) const
 {
     QVector<ImportItemResult> results;
     results.reserve(sourceFiles.size());
 
     for (const QString &sourcePath : sourceFiles) {
-        results.push_back(importOne(format, libraryName, sourcePath));
+        if (logCallback) {
+            logCallback(QStringLiteral("Converting %1...").arg(QFileInfo(sourcePath).fileName()));
+        }
+
+        ImportItemResult result = importOne(format, libraryName, sourcePath, overwriteExisting, logCallback);
+        results.push_back(result);
+
+        if (logCallback) {
+            const QString sourceName = QFileInfo(result.sourcePath).fileName();
+            if (result.success) {
+                logCallback(QStringLiteral("[OK] %1 — %2").arg(sourceName, result.message));
+            } else {
+                logCallback(QStringLiteral("[FAIL] %1 — %2").arg(sourceName, result.message));
+            }
+        }
     }
 
     return results;
@@ -109,7 +144,9 @@ QString CoreImportService::destinationCorePath(const QString &libraryRoot,
 
 CoreImportService::ImportItemResult CoreImportService::importOne(Format format,
                                                                  const QString &libraryName,
-                                                                 const QString &sourcePath) const
+                                                                 const QString &sourcePath,
+                                                                 bool overwriteExisting,
+                                                                 const LogCallback &logCallback) const
 {
     ImportItemResult result;
     result.sourcePath = sourcePath;
@@ -181,9 +218,16 @@ CoreImportService::ImportItemResult CoreImportService::importOne(Format format,
 
     const QString destinationPath = destinationCorePath(libraryRoot, cellName, viewName);
     if (QFileInfo::exists(destinationPath)) {
-        result.destinationPath = destinationPath;
-        result.message = QStringLiteral("Cell view already exists.");
-        return result;
+        if (!overwriteExisting) {
+            result.destinationPath = destinationPath;
+            result.message = QStringLiteral("Cell view already exists.");
+            return result;
+        }
+        if (!QFile::remove(destinationPath)) {
+            result.destinationPath = destinationPath;
+            result.message = QStringLiteral("Failed to remove existing cell view file.");
+            return result;
+        }
     }
 
     const QString converterPath = findCoreConverterExecutable(converterBaseName(format));
@@ -211,7 +255,7 @@ CoreImportService::ImportItemResult CoreImportService::importOne(Format format,
         break;
     }
 
-    if (!runConverter(converterPath, arguments, &conversionError)) {
+    if (!runConverter(converterPath, arguments, &conversionError, logCallback)) {
         QFile::remove(destinationPath);
         result.message = conversionError;
         return result;
@@ -237,7 +281,8 @@ CoreImportService::ImportItemResult CoreImportService::importOne(Format format,
 
 bool CoreImportService::runConverter(const QString &program,
                                      const QStringList &arguments,
-                                     QString *errorMessage) const
+                                     QString *errorMessage,
+                                     const LogCallback &logCallback) const
 {
     QProcess process;
     process.setProgram(program);
@@ -252,18 +297,42 @@ bool CoreImportService::runConverter(const QString &program,
         return false;
     }
 
-    if (!process.waitForFinished(600000)) {
-        process.kill();
-        if (errorMessage) {
-            *errorMessage = QStringLiteral("Converter timed out.");
+    QByteArray outputBuffer;
+    QString capturedOutput;
+    QElapsedTimer timer;
+    timer.start();
+    constexpr qint64 kTimeoutMs = 600000;
+
+    auto drainOutput = [&]() {
+        const QByteArray chunk = process.readAllStandardOutput();
+        if (!chunk.isEmpty()) {
+            capturedOutput += QString::fromUtf8(chunk);
+            outputBuffer += chunk;
+            emitConverterOutput(outputBuffer, logCallback);
         }
-        return false;
+    };
+
+    while (!process.waitForFinished(100)) {
+        drainOutput();
+        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
+        if (timer.elapsed() > kTimeoutMs) {
+            process.kill();
+            if (errorMessage) {
+                *errorMessage = QStringLiteral("Converter timed out.");
+            }
+            return false;
+        }
     }
 
-    const QString output = QString::fromUtf8(process.readAllStandardOutput());
+    drainOutput();
+    if (!outputBuffer.trimmed().isEmpty() && logCallback) {
+        logCallback(QString::fromUtf8(outputBuffer).trimmed());
+    }
+
     if (process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0) {
         if (errorMessage) {
-            const QString details = output.trimmed();
+            const QString details = capturedOutput.trimmed();
             if (details.isEmpty()) {
                 *errorMessage = QStringLiteral("Converter failed with exit code %1.").arg(process.exitCode());
             } else {

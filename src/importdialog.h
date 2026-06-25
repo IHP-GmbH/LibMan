@@ -29,6 +29,8 @@ private slots:
 private:
     void populateLibraries();
     void populateFormats();
+    void loadSettings();
+    void saveSettings() const;
     void appendLogLine(const QString &line);
     CoreImportService::Format currentFormat() const;
     QStringList collectSourceFiles() const;

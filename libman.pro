@@ -48,11 +48,16 @@ SOURCES += \
     src/projectmanager.cpp \
     src/projecteditor.cpp \
     src/importdialog.cpp \
+    src/exportdialog.cpp \
     src/core_import_service.cpp \
+    src/core_export_service.cpp \
     lstream/lstrReadAsync.cpp \
     src/property.cpp \
     src/toolcustomtool.cpp \
     src/toolmanager.cpp \
+    src/view_tools.cpp \
+    src/viewtoolstablewidget.cpp \
+    src/toolpickerdialog.cpp \
     src/projectfile.cpp \
     src/categories.cpp \
     src/viewcontextmenu.cpp \
@@ -98,9 +103,14 @@ HEADERS += \
     src/projectmanager.h \
     src/projecteditor.h \
     src/importdialog.h \
+    src/exportdialog.h \
     src/core_import_service.h \
+    src/core_export_service.h \
     src/property.h \
     src/toolmanager.h \
+    src/view_tools.h \
+    src/viewtoolstablewidget.h \
+    src/toolpickerdialog.h \
     src/about.h \
     src/newview.h \
     core/corecellreader.h \
@@ -113,6 +123,7 @@ FORMS += \
     src/projectmanager.ui \
     src/projecteditor.ui \
     src/importdialog.ui \
+    src/exportdialog.ui \
     src/toolmanager.ui \
     src/about.ui \
     src/newview.ui

@@ -43,7 +43,9 @@ class MainWindow : public QMainWindow
     friend class ProjectManager;
     friend class ProjectEditor;
     friend class ImportDialog;
+    friend class ExportDialog;
     friend class CoreImportService;
+    friend class CoreExportService;
 #ifdef LIBMAN_TESTING
     friend class MainWindowTestHooks;
 #endif
@@ -237,6 +239,7 @@ private slots:
     void                                on_actionOpen_triggered();
     void                                on_actionEditProject_triggered();
     void                                on_actionImport_triggered();
+    void                                on_actionExport_triggered();
     void                                on_actionClear_Recent_File_Stack_triggered();
 
     void                                on_treeLibs_itemClicked(QTreeWidgetItem *item, int column);
@@ -402,6 +405,7 @@ private:
     QString                             getCurrentUnionName() const;
     QString                             getCurrentWorkingDir() const;
     QString                             getCurrentLibraryName() const;
+    QStringList                         registeredLibraryNames() const;
     QString                             getCurrentProjectFile() const;
     QString                             getCurrentLibraryPath() const;
     QString                             getCurrentCategoryName() const;

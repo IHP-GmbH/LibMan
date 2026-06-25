@@ -611,7 +611,11 @@ void MainWindow::addNewProject()
             m_ui->treeLibs->setCurrentItem(item);
             on_treeLibs_itemClicked(item, 0);
 
-            setStateChanged();
+            if (!m_currentProjFile.isEmpty()) {
+                saveProjectFile(m_currentProjFile);
+            } else {
+                setStateChanged();
+            }
         }
     }
 

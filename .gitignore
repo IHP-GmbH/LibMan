@@ -1,4 +1,13 @@
-# --- Build directories ---
+# --- qmake in-source build (do not commit) ---
+Makefile
+Makefile.*
+.qmake.stash
+object_script.*
+
+# --- Wrong Cap'n Proto generator output (use .capnp.cc in tree) ---
+capnp/*.capnp.c++
+capnp/schemas_built_stamp
+
 build/
 build-*/
 cmake-build-*/

@@ -5,6 +5,7 @@ LibMan can convert schematics and layouts from other EDA formats into **CORE** v
 | Menu | Description |
 |------|-------------|
 | **File → Import...** | Open the import dialog |
+| **File → Export...** | Export selected CORE views to GDS, Xschem, or Qucs |
 
 Import requires a **CORE-enabled** build (`CONFIG+=no_core` disables this menu).
 
@@ -18,7 +19,8 @@ Import requires a **CORE-enabled** build (`CONFIG+=no_core` disables this menu).
 | **Target library** | Library from the open `.projects` file (same names as in [Project Editor](PROJECT_EDITOR.md)) |
 | **Single file / Folder** | Import one file or every matching file in a directory |
 | **Path** | Source file or folder (Browse...) |
-| **Log** | Per-file success or failure after **Import** |
+| **Log** | Per-file success or failure after **Import** (updates progressively) |
+| **Overwrite existing cell views** | Replace `*.core` files that already exist for the same cell/view |
 
 The target library defaults to the library currently selected in the main window.
 
@@ -50,9 +52,9 @@ GDS import uses `--all-cells` so multi-cell libraries are preserved in one `.lay
 
 LibMan does not embed converters in-process. On build, these tools from [CommonDB](https://github.com/IHP-GmbH/CommonDB) are copied next to the executable:
 
-- `gds_to_core`
-- `xschem_to_core`
-- `qucs_to_core`
+- `gds_to_core`, `core_to_gds`
+- `xschem_to_core`, `core_to_xschem`
+- `qucs_to_core`, `core_to_qucs`
 - `oas_to_core` (when CORE is built with ZLIB)
 
 **Search order** (`core/converter_paths.cpp`):
@@ -76,6 +78,20 @@ $env:LIBMAN_CONVERTER_DIR = "C:\path\to\converters"
 | **qmake** | `scripts/fetch_core.cmd` / `fetch_core_linux.sh` build converter targets; `core_converter_deploy.pri` copies them after link |
 
 After changing CORE or fetch scripts, delete `.deps/core-build/libman_core_built.stamp` (qmake) or reconfigure CMake so converters are rebuilt.
+
+---
+
+## Export (File → Export...)
+
+Export CORE views from the current project to external formats:
+
+| Format | Result extensions | Converter |
+|--------|-------------------|-----------|
+| GDS | `.gds` | `core_to_gds` |
+| Xschem | `.sch` / `.sym` | `core_to_xschem` |
+| Qucs | `.sch` | `core_to_qucs` |
+
+Pick a destination folder and one or more `*.core` view files (or use the project tree selection). Converters are resolved the same way as import (`LIBMAN_CONVERTER_DIR`, directory next to `libman.exe`).
 
 ---
 
