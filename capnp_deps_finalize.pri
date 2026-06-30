@@ -14,8 +14,8 @@ isEmpty(LSTREAM_BUILD_PHONY) {
 for(_src, SOURCES) {
     _src_key = $$_src
     contains(_src, $$LIBMAN_ROOT): _src_key = $$relative_path($$LIBMAN_ROOT, $$_src)
-    _src_key = $$replace(_src_key, \\, /)
-    _src_esc = $$replace(_src_key, \\., \\.)
+    _src_key = $$replace(_src_key, \\\\, /)
+    _src_esc = $$replace(_src_key, \\\., \\.)
     eval($${_src_esc}.depends += $$CAPNP_BUILD_PHONY)
     contains(_src_key, /capnp/.*capnp\\.cc) {
         eval($${_src_esc}.depends += $$LSTREAM_BUILD_PHONY)
@@ -24,8 +24,8 @@ for(_src, SOURCES) {
 
 # GNU make on Windows often ignores source-level .depends; tie each object to the phony target.
 for(_obj, OBJECTS) {
-    _obj_key = $$replace(_obj, \\, /)
-    _obj_esc = $$replace(_obj_key, \\., \\.)
+    _obj_key = $$replace(_obj, \\\\, /)
+    _obj_esc = $$replace(_obj_key, \\\., \\.)
     eval($${_obj_esc}.depends += $$CAPNP_BUILD_PHONY)
     contains(_obj_key, /capnp/.*capnp\\.o) {
         eval($${_obj_esc}.depends += $$LSTREAM_BUILD_PHONY)
