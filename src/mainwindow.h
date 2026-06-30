@@ -377,7 +377,11 @@ private:
 
     bool                                askForFileReplacement() const;
     bool                                askForPermanentDelete() const;
+    bool                                promptDeleteChoice(bool *permanent) const;
     bool                                askUserForAction(const QString &title) const;
+
+    void                                removeLibraryPropertyKeys(const QString &libName);
+    void                                removeCellPropertyKeys(const QString &libName, const QString &groupName);
 
     bool                                removeDir(const QString &) const;
     void                                copyDir(const QString &, const QString &) const;

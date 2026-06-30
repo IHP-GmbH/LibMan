@@ -9,6 +9,7 @@
 #include <QFileDialog>
 #include <QGuiApplication>
 #include <QListWidgetItem>
+#include <QSet>
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -177,13 +178,13 @@ void MainWindow::addNewGroup()
  **********************************************************************************************************************/
 void MainWindow::removeSelectedGroup()
 {
-    QString groupName = getCurrentGroupName();
-    if(groupName.isEmpty()) {
+    const QString libName = getCurrentLibraryName();
+    if(libName.isEmpty()) {
         return;
     }
 
-    QString libPath = getCurrentLibraryPath();
-    if(!QFileInfo(libPath).isDir()) {
+    const QString libPath = getLibraryPath(libName);
+    if(libPath.isEmpty() || !QFileInfo(libPath).isDir()) {
         return;
     }
 
@@ -192,28 +193,59 @@ void MainWindow::removeSelectedGroup()
         return;
     }
 
-    bool deleteGroup = askForPermanentDelete();
+    bool deleteGroup = false;
+    if(!promptDeleteChoice(&deleteGroup)) {
+        return;
+    }
 
-    for(int i = 0; i < items.count(); ++i) {
-        QString refText = items[i]->text();
-        for(int j = 0; j < m_ui->listGroups->count(); ++j) {
-            QListWidgetItem *item = m_ui->listGroups->item(j);
-            if(refText == item->text()) {
-                if(deleteGroup) {
-                    QStringList views = getValidViewList();
-                    foreach(const QString viewName, views) {
-                        QString viewPath = getViewPath(libPath, groupName, viewName);
-                        if(QFileInfo(viewPath).exists()) {
-                            info(QString("Removing view '%1'").arg(viewPath), false);
-                            QFile::remove(viewPath);
-                        }
+    QSet<QString> deletedCells;
+    for(QListWidgetItem *item : items) {
+        if(!item) {
+            continue;
+        }
+
+        const QString groupName = item->text().trimmed();
+        if(groupName.isEmpty()) {
+            continue;
+        }
+
+        if(deleteGroup) {
+            const QString cellDir = QDir::toNativeSeparators(libPath + "/" + groupName);
+            if(QFileInfo(cellDir).isDir()) {
+                info(QString("Removing cell '%1'").arg(cellDir), false);
+                removeDir(cellDir);
+            }
+            else {
+                const QStringList views = getCurrentViews(libName, groupName);
+                foreach(const QString &viewName, views) {
+                    const QString viewPath = getViewPath(libName, groupName, viewName);
+                    if(QFileInfo(viewPath).exists()) {
+                        info(QString("Removing view '%1'").arg(viewPath), false);
+                        QFile::remove(viewPath);
                     }
                 }
-
-                m_ui->listGroups->takeItem(j);
-                break;
             }
         }
+
+        removeCellPropertyKeys(libName, groupName);
+        deletedCells.insert(groupName);
+    }
+
+    for(int j = m_ui->listGroups->count() - 1; j >= 0; --j) {
+        QListWidgetItem *item = m_ui->listGroups->item(j);
+        if(item && deletedCells.contains(item->text())) {
+            delete m_ui->listGroups->takeItem(j);
+        }
+    }
+
+    if(!m_itemText.isEmpty() && deletedCells.contains(m_itemText)) {
+        m_ui->listViews->clear();
+        m_itemText.clear();
+    }
+
+    setStateChanged();
+    if(!m_currentProjFile.isEmpty()) {
+        saveProjectFile(m_currentProjFile);
     }
 }
 

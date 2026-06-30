@@ -10,6 +10,9 @@
 #include <QFileDialog>
 #include <QGuiApplication>
 #include <QListWidgetItem>
+#include <QCheckBox>
+#include <QMessageBox>
+#include <QSet>
 
 #if QT_VERSION >= 0x050000
 #include <QScreen>
@@ -133,12 +136,60 @@ bool MainWindow::askForFileReplacement() const
 }
 
 /*!*******************************************************************************************************************
+ * \brief Displays delete confirmation with optional permanent removal from disk.
+ * \param permanent  Set to true when the user checks "Permanent".
+ * \return True if the user confirmed, false on Cancel.
+ ********************************************************************************************************************/
+bool MainWindow::promptDeleteChoice(bool *permanent) const
+{
+    QMessageBox msgBox;
+    msgBox.setWindowTitle(tr("Delete"));
+    msgBox.setText(tr("Remove selected item(s) from the project?"));
+    msgBox.setInformativeText(tr("Without Permanent, entries are removed from the project file only."));
+    msgBox.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Cancel);
+
+    QCheckBox *permanentCheck = new QCheckBox(tr("Permanent (delete from disk)"));
+    permanentCheck->setChecked(false);
+    msgBox.setCheckBox(permanentCheck);
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QScreen *pScreen = QGuiApplication::screenAt(this->mapToGlobal(QPoint(this->width() / 2, 0)));
+    QRect screenRect = pScreen ? pScreen->availableGeometry() : QRect();
+#elif QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    QScreen *pScreen = QGuiApplication::screenAt(this->mapToGlobal(QPoint(this->width() / 2, 0)));
+    QRect screenRect = pScreen ? pScreen->availableGeometry() : QRect();
+#elif QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    QDesktopWidget desktop;
+    QRect screenRect = desktop.screenGeometry(this);
+#else
+    QRect screenRect = QDesktopWidget().screen()->rect();
+#endif
+
+    msgBox.move(QPoint(screenRect.width() / 2, screenRect.height() / 2));
+
+    if(msgBox.exec() != QMessageBox::Ok) {
+        return false;
+    }
+
+    if(permanent) {
+        *permanent = permanentCheck->isChecked();
+    }
+
+    return true;
+}
+
+/*!*******************************************************************************************************************
  * \brief Displays a dialog box to confirm permanent removing of file.
- * \return
  ********************************************************************************************************************/
 bool MainWindow::askForPermanentDelete() const
 {
-    return(askUserForAction("Would you like to delete it permanently?"));
+    bool permanent = false;
+    if(!promptDeleteChoice(&permanent)) {
+        return false;
+    }
+
+    return permanent;
 }
 
 /*!*******************************************************************************************************************
@@ -636,47 +687,67 @@ void MainWindow::removeSelectedProject()
         return;
     }
 
-    bool deleteProject = askForPermanentDelete();
+    bool deleteProject = false;
+    if(!promptDeleteChoice(&deleteProject)) {
+        return;
+    }
 
-    for(int i = 0; i < items.count(); ++i) {
-        QString refText = items[i]->text(0);
+    QSet<QString> libNames;
+    for(QTreeWidgetItem *item : items) {
+        if(!item || item->childCount()) {
+            continue;
+        }
+
+        const QString libName = item->text(0).trimmed();
+        if(!libName.isEmpty()) {
+            libNames.insert(libName);
+        }
+    }
+
+    if(libNames.isEmpty()) {
+        return;
+    }
+
+    bool changed = false;
+    for(const QString &libName : libNames) {
+        const QString libPath = getLibraryPath(libName);
+
         for(int j = 0; j < m_ui->treeLibs->topLevelItemCount(); ++j) {
             QTreeWidgetItem *item = m_ui->treeLibs->topLevelItem(j);
-            if(refText == item->text(0)) {
-                m_ui->treeLibs->takeTopLevelItem(j);
+            if(!item) {
+                continue;
+            }
 
-                QString key = getLibraryKeyPrefix() + refText;
-                if(m_properties->exists(key)) {
-                    QString libPath = m_properties->get<QString>(key);
-                    m_properties->remove(key);
-                    if(deleteProject) {
-                        removeDir(libPath);
-                    }
-                }
-
-                setStateChanged();
+            if(item->text(0) == libName && !item->childCount()) {
+                delete m_ui->treeLibs->takeTopLevelItem(j);
                 break;
             }
-            else if(item->childCount()) {
+
+            if(item->childCount()) {
                 for(int k = 0; k < item->childCount(); ++k) {
                     QTreeWidgetItem *child = item->child(k);
-                    if(refText == child->text(0)) {
-                        item->takeChild(k);
-
-                        QString key = getLibraryKeyPrefix() + refText;
-                        if(m_properties->exists(key)) {
-                            QString libPath = m_properties->get<QString>(key);
-                            m_properties->remove(key);
-                            if(deleteProject) {
-                                removeDir(libPath);
-                            }
-                        }
-
-                        setStateChanged();
+                    if(child && child->text(0) == libName) {
+                        delete item->takeChild(k);
                         break;
                     }
                 }
             }
+        }
+
+        removeLibraryPropertyKeys(libName);
+
+        if(deleteProject && !libPath.isEmpty()) {
+            info(QString("Removing library '%1'").arg(libPath), false);
+            removeDir(libPath);
+        }
+
+        changed = true;
+    }
+
+    if(changed) {
+        setStateChanged();
+        if(!m_currentProjFile.isEmpty()) {
+            saveProjectFile(m_currentProjFile);
         }
     }
 

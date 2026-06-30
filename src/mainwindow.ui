@@ -159,7 +159,7 @@
            <item>
             <widget class="QListWidget" name="listGroups">
              <property name="selectionMode">
-              <enum>QAbstractItemView::SingleSelection</enum>
+              <enum>QAbstractItemView::ExtendedSelection</enum>
              </property>
             </widget>
            </item>
@@ -190,6 +190,9 @@
            </item>
            <item>
             <widget class="QTreeWidget" name="listViews">
+             <property name="selectionMode">
+              <enum>QAbstractItemView::ExtendedSelection</enum>
+             </property>
              <column>
               <property name="text">
                <string notr="true">1</string>

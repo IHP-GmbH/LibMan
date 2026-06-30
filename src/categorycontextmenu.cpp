@@ -113,7 +113,10 @@ void MainWindow::removeSelectedCategory()
         return;
     }
 
-    bool deleteCats = askForPermanentDelete();
+    bool deleteCats = false;
+    if(!promptDeleteChoice(&deleteCats)) {
+        return;
+    }
 
     for(int i = 0; i < items.count(); ++i) {
         QTreeWidgetItem *catId = items[i];

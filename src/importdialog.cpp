@@ -53,6 +53,7 @@ void ImportDialog::populateFormats()
 void ImportDialog::populateLibraries()
 {
     m_ui->comboLibrary->clear();
+    m_ui->comboLibrary->addItem(QString());
     if (!m_mainWindow) {
         return;
     }
@@ -65,6 +66,8 @@ void ImportDialog::populateLibraries()
         seen.insert(libraryName);
         m_ui->comboLibrary->addItem(libraryName);
     }
+
+    m_ui->comboLibrary->setCurrentIndex(0);
 }
 
 void ImportDialog::loadSettings()
@@ -86,13 +89,11 @@ void ImportDialog::loadSettings()
         const int libraryIndex = m_ui->comboLibrary->findText(libraryName);
         if (libraryIndex >= 0) {
             m_ui->comboLibrary->setCurrentIndex(libraryIndex);
+        } else {
+            m_ui->comboLibrary->setCurrentIndex(0);
         }
     } else {
-        const QString currentLibrary = m_mainWindow->getCurrentLibraryName();
-        const int index = m_ui->comboLibrary->findText(currentLibrary);
-        if (index >= 0) {
-            m_ui->comboLibrary->setCurrentIndex(index);
-        }
+        m_ui->comboLibrary->setCurrentIndex(0);
     }
 
     if (settings.contains(QStringLiteral("FolderMode"))) {

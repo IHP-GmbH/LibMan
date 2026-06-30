@@ -79,6 +79,9 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     setWindowIcon(QIcon(":logo"));
     initIcons();
 
+    m_ui->listGroups->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    m_ui->listViews->setSelectionMode(QAbstractItemView::ExtendedSelection);
+
     m_ui->treeLibs->setContextMenuPolicy(Qt::CustomContextMenu);
     m_ui->listViews->setContextMenuPolicy(Qt::CustomContextMenu);
     m_ui->listGroups->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -635,6 +638,57 @@ void MainWindow::setLibraryRootDirectory(const QString &libName, const QString &
 
     const QString key = getLibraryKeyPrefix() + libName;
     m_properties->set(key, QDir::toNativeSeparators(dirPath));
+}
+
+/*!*******************************************************************************************************************
+ * \brief Removes all project properties for a library (root path and cell views).
+ ********************************************************************************************************************/
+void MainWindow::removeLibraryPropertyKeys(const QString &libName)
+{
+    if(libName.isEmpty()) {
+        return;
+    }
+
+    const QString rootKey = getLibraryKeyPrefix() + libName;
+    const QString prefix = rootKey + "/";
+    QStringList keysToRemove;
+
+    const QMap<QString, PropertyItem*> propItems = m_properties->getMap();
+    for(auto it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
+        const QString key = it.key();
+        if(key == rootKey || key.startsWith(prefix)) {
+            keysToRemove << key;
+        }
+    }
+
+    for(const QString &key : keysToRemove) {
+        m_properties->remove(key);
+    }
+}
+
+/*!*******************************************************************************************************************
+ * \brief Removes all project properties for a cell.
+ ********************************************************************************************************************/
+void MainWindow::removeCellPropertyKeys(const QString &libName, const QString &groupName)
+{
+    if(libName.isEmpty() || groupName.isEmpty()) {
+        return;
+    }
+
+    const QString prefix = getLibraryKeyPrefix() + libName + "/" + groupName + "/";
+    QStringList keysToRemove;
+
+    const QMap<QString, PropertyItem*> propItems = m_properties->getMap();
+    for(auto it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
+        const QString key = it.key();
+        if(key.startsWith(prefix)) {
+            keysToRemove << key;
+        }
+    }
+
+    for(const QString &key : keysToRemove) {
+        m_properties->remove(key);
+    }
 }
 
 /*!*******************************************************************************************************************
@@ -1664,6 +1718,10 @@ void MainWindow::on_treeLibs_itemClicked(QTreeWidgetItem *item, int)
         return;
     }
 
+    if(m_ui->treeLibs->selectedItems().count() > 1) {
+        return;
+    }
+
     m_itemText = item->text(0);
 
     m_ui->txtLibSearch->clear();
@@ -1681,6 +1739,10 @@ void MainWindow::on_treeLibs_itemClicked(QTreeWidgetItem *item, int)
 void MainWindow::on_listGroups_itemClicked(QListWidgetItem *item)
 {
     if(!item) {
+        return;
+    }
+
+    if(m_ui->listGroups->selectedItems().count() > 1) {
         return;
     }
 

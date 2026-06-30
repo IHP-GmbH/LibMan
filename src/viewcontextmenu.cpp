@@ -694,19 +694,29 @@ void MainWindow::removeSelectedView()
         return;
     }
 
-    const bool deleteFiles = askForPermanentDelete();
+    bool deleteFiles = false;
+    if(!promptDeleteChoice(&deleteFiles)) {
+        return;
+    }
 
-    for(int i = 0; i < items.count(); ++i) {
-        QTreeWidgetItem *item = items[i];
-        if(!item) {
+    QStringList viewNames;
+    for(QTreeWidgetItem *item : items) {
+        if(!item || item->parent()) {
             continue;
         }
 
         const QString viewName = item->text(0).trimmed();
-        if(viewName.isEmpty()) {
-            continue;
+        if(!viewName.isEmpty() && !viewNames.contains(viewName)) {
+            viewNames << viewName;
         }
+    }
 
+    if(viewNames.isEmpty()) {
+        return;
+    }
+
+    bool changed = false;
+    for(const QString &viewName : viewNames) {
         const QString key = getLibraryKeyPrefix() + libName + "/" + groupName + "/" + viewName;
         const QString viewPath = getViewPath(libName, groupName, viewName);
 
@@ -719,24 +729,23 @@ void MainWindow::removeSelectedView()
             m_properties->remove(key);
         }
 
-        QTreeWidgetItem *parent = item->parent();
-        if(parent) {
-            parent->removeChild(item);
-            delete item;
-        }
-        else {
-            int idx = m_ui->listViews->indexOfTopLevelItem(item);
-            if(idx >= 0) {
-                QTreeWidgetItem *taken = m_ui->listViews->takeTopLevelItem(idx);
-                delete taken;
-            }
-            else {
-                delete item;
+        for(int idx = 0; idx < m_ui->listViews->topLevelItemCount(); ++idx) {
+            QTreeWidgetItem *viewItem = m_ui->listViews->topLevelItem(idx);
+            if(viewItem && viewItem->text(0).trimmed() == viewName) {
+                delete m_ui->listViews->takeTopLevelItem(idx);
+                break;
             }
         }
+
+        changed = true;
     }
 
-    saveProjectFile(m_currentProjFile);
+    if(changed) {
+        setStateChanged();
+        if(!m_currentProjFile.isEmpty()) {
+            saveProjectFile(m_currentProjFile);
+        }
+    }
 
     m_ui->listViews->sortItems(0, Qt::AscendingOrder);
 }
