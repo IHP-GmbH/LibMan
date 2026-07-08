@@ -15,6 +15,7 @@ void LibFileParser::clear()
 {
     m_data.definitions.clear();
     m_data.includes.clear();
+    m_data.attaches.clear();
     m_errorString.clear();
     m_activeFiles.clear();
     m_parsedFiles.clear();
@@ -189,6 +190,10 @@ bool LibFileParser::parseStatement(const Statement& stmt, const QString& fileNam
 
     if(funcName == "define") {
         return parseDefineCall(argsText, fileName, stmt.lineNumber);
+    }
+
+    if(funcName == "attach") {
+        return parseAttachCall(argsText, fileName, stmt.lineNumber);
     }
 
     setError(fileName, stmt.lineNumber,
@@ -397,6 +402,47 @@ bool LibFileParser::parseDefineCall(const QString& argsText,
     }
 
     m_data.definitions.append(def);
+    return true;
+}
+
+/*!******************************************************************************************************************
+ * \brief Parses attach(designLibrary, techLibrary) function call.
+ *******************************************************************************************************************/
+bool LibFileParser::parseAttachCall(const QString& argsText,
+                                    const QString& fileName,
+                                    int lineNumber)
+{
+    const QStringList args = splitTopLevel(argsText, ',');
+    if(args.size() != 2) {
+        setError(fileName, lineNumber,
+                 QString("attach() expects exactly 2 arguments, got %1.").arg(args.size()));
+        return false;
+    }
+
+    QString designLib;
+    QString techLib;
+    if(!parseStringLiteral(args[0].trimmed(), designLib)) {
+        setError(fileName, lineNumber,
+                 QString("attach() first argument must be a string literal (design library name)."));
+        return false;
+    }
+    if(!parseStringLiteral(args[1].trimmed(), techLib)) {
+        setError(fileName, lineNumber,
+                 QString("attach() second argument must be a string literal (tech library name)."));
+        return false;
+    }
+
+    if(designLib.trimmed().isEmpty() || techLib.trimmed().isEmpty()) {
+        setError(fileName, lineNumber, QString("attach() library names must not be empty."));
+        return false;
+    }
+
+    LibAttach attach;
+    attach.libraryName = designLib.trimmed();
+    attach.techLibraryName = techLib.trimmed();
+    attach.sourceFile = fileName;
+    attach.sourceLine = lineNumber;
+    m_data.attaches.append(attach);
     return true;
 }
 

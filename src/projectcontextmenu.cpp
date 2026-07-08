@@ -13,6 +13,7 @@
 #include <QCheckBox>
 #include <QMessageBox>
 #include <QSet>
+#include <QInputDialog>
 
 #if QT_VERSION >= 0x050000
 #include <QScreen>
@@ -323,6 +324,29 @@ void MainWindow::showLibraryMenu(const QPoint &pos)
         addExisting->setStatusTip(tr("Add existing supported cell view."));
         connect(addExisting, &QAction::triggered, this, &MainWindow::addExistingCell);
         menu->addAction(addExisting);
+
+        menu->addSeparator();
+
+        const QString attachedTech = getTechLibraryAttach(getCurrentLibraryName());
+        if(attachedTech.isEmpty()) {
+            QAction *attachTech = new QAction(tr("Attach Tech Library..."), this);
+            attachTech->setStatusTip(tr("Link a tech/primitive CORE library for schematic tools."));
+            connect(attachTech, &QAction::triggered, this, &MainWindow::attachTechLibrary);
+            menu->addAction(attachTech);
+        }
+        else {
+            QAction *techInfo = new QAction(tr("Tech library: %1").arg(attachedTech), this);
+            techInfo->setEnabled(false);
+            menu->addAction(techInfo);
+
+            QAction *attachTech = new QAction(tr("Change Tech Library..."), this);
+            connect(attachTech, &QAction::triggered, this, &MainWindow::attachTechLibrary);
+            menu->addAction(attachTech);
+
+            QAction *detachTech = new QAction(tr("Detach Tech Library"), this);
+            connect(detachTech, &QAction::triggered, this, &MainWindow::detachTechLibrary);
+            menu->addAction(detachTech);
+        }
 
         QMap<QString, QString> projects = getCurrentLibraries();
         if(projects.count() && currentItem && !currentItem->parent()) {
@@ -765,7 +789,7 @@ void MainWindow::removeSelectedProject()
  * \param folderPath  Path to the folder which is requested for printing its information.
  * \param clear       Clears MainWindow output window before printing message.
  **********************************************************************************************************************/
-void MainWindow::showFolderInfo(const QString &title, const QString &alias, const QString &folderPath, bool clear)
+void MainWindow::showFolderInfo(const QString &title, const QString &alias, const QString &folderPath, bool clear, const QString &extraLines)
 {
     if(!QFileInfo(folderPath).exists()) {
         return;
@@ -804,6 +828,9 @@ void MainWindow::showFolderInfo(const QString &title, const QString &alias, cons
     msg += "\tGroup: " + group + "\n";
     msg += "\tLast Modify: " + lastModify + "\n";
     msg += "\tPermissions: " + permissions + "\n";
+    if(!extraLines.isEmpty()) {
+        msg += extraLines;
+    }
 
     info(msg, clear);
 }
@@ -829,7 +856,34 @@ void MainWindow::showProjectInfo()
         return;
     }
 
-    showFolderInfo("Project", projName, libPath);
+    QString extra;
+    const QString techLib = getTechLibraryAttach(projName);
+    if(!techLib.isEmpty()) {
+        extra += QStringLiteral("\tTech library: ") + techLib + QLatin1Char('\n');
+        const QString corePath = resolveTechLibraryCorePath(techLib);
+        if(!corePath.isEmpty()) {
+            extra += QStringLiteral("\tTech CORE path: ") + corePath + QLatin1Char('\n');
+        }
+        else {
+            extra += QStringLiteral("\tTech CORE path: (not found)\n");
+        }
+    }
+    else {
+        const QStringList usedBy = getDesignLibrariesUsingTech(projName);
+        if(!usedBy.isEmpty()) {
+            extra += QStringLiteral("\tRole: tech library (primitives)\n");
+            extra += QStringLiteral("\tAttached to: ") + usedBy.join(QStringLiteral(", ")) + QLatin1Char('\n');
+            const QString corePath = resolveTechLibraryCorePath(projName);
+            if(!corePath.isEmpty()) {
+                extra += QStringLiteral("\tSymbol cores: ") + corePath + QLatin1Char('\n');
+            }
+        }
+        else {
+            extra += QStringLiteral("\tTech library: (none)\n");
+        }
+    }
+
+    showFolderInfo(QStringLiteral("Project"), projName, libPath, true, extra);
 }
 
 /*!******************************************************************************************************************
@@ -1009,4 +1063,79 @@ void MainWindow::removeGroupUnion()
 #else
     m_ui->treeLibs->sortByColumn(0);
 #endif
+}
+
+/*!******************************************************************************************************************
+ * \brief Attaches a tech/primitive library from this project to the selected design library.
+ *******************************************************************************************************************/
+void MainWindow::attachTechLibrary()
+{
+    const QString designLib = getCurrentLibraryName();
+    if(designLib.isEmpty()) {
+        error(tr("Select a project library first."));
+        return;
+    }
+
+    QStringList candidates = registeredLibraryNames();
+    candidates.removeAll(designLib);
+    candidates.sort(Qt::CaseInsensitive);
+
+    if(candidates.isEmpty()) {
+        QMessageBox::information(this,
+                                 tr("Attach Tech Library"),
+                                 tr("No other libraries in this project.\n"
+                                    "Add a tech library (e.g. sg13g2_pr) via define() first."));
+        return;
+    }
+
+    const QString current = getTechLibraryAttach(designLib);
+    int currentIndex = current.isEmpty() ? 0 : candidates.indexOf(current);
+    if(currentIndex < 0) {
+        currentIndex = 0;
+    }
+
+    bool ok = false;
+    const QString techLib = QInputDialog::getItem(this,
+                                                  tr("Attach Tech Library"),
+                                                  tr("Tech library for '%1':").arg(designLib),
+                                                  candidates,
+                                                  currentIndex,
+                                                  false,
+                                                  &ok);
+    if(!ok || techLib.trimmed().isEmpty()) {
+        return;
+    }
+
+    setTechLibraryAttach(designLib, techLib.trimmed());
+    setStateChanged();
+
+    if(!m_currentProjFile.isEmpty()) {
+        saveProjectFile(m_currentProjFile);
+    }
+
+    info(tr("Attached tech library '%1' to '%2'.").arg(techLib.trimmed(), designLib));
+}
+
+/*!******************************************************************************************************************
+ * \brief Removes tech library attachment from the selected design library.
+ *******************************************************************************************************************/
+void MainWindow::detachTechLibrary()
+{
+    const QString designLib = getCurrentLibraryName();
+    if(designLib.isEmpty()) {
+        return;
+    }
+
+    if(getTechLibraryAttach(designLib).isEmpty()) {
+        return;
+    }
+
+    clearTechLibraryAttach(designLib);
+    setStateChanged();
+
+    if(!m_currentProjFile.isEmpty()) {
+        saveProjectFile(m_currentProjFile);
+    }
+
+    info(tr("Detached tech library from '%1'.").arg(designLib));
 }

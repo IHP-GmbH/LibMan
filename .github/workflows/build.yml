@@ -15,6 +15,55 @@ env:
 jobs:
 
   # ============================================================
+  # Public build without CommonDB (no secrets required)
+  # ============================================================
+
+  build-linux-no-core:
+    name: build-linux-no-core
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          host: 'linux'
+          target: 'desktop'
+          arch: 'gcc_64'
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            libgl1-mesa-dev \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config
+
+      - name: Configure (qmake, no CORE)
+        run: |
+          mkdir -p build
+          cd build
+          qmake ../libman.pro
+
+      - name: Build
+        run: |
+          cd build
+          make -j1 capnp_install
+          make -j1 lstream_schemas
+          make -j"$(nproc)"
+
+      - name: Verify LIBMAN_NO_CORE build
+        run: |
+          test -f build/libman
+
+  # ============================================================
   # Linux build (stage 1)
   # ============================================================
 
@@ -63,20 +112,14 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          EXTRA=""
-          if [ -z "$LIBMAN_CORE_GIT_TOKEN" ]; then
-            EXTRA="CONFIG+=no_core"
-          fi
-          qmake $EXTRA ../libman.pro
+          qmake ../libman.pro
 
       - name: Build
         run: |
           cd build
           make -j1 capnp_install
           make -j1 lstream_schemas
-          if [ -n "$LIBMAN_CORE_GIT_TOKEN" ]; then
-            make -j1 core_fetch
-          fi
+          make -qp 2>/dev/null | grep -q '^core_fetch:' && make -j1 core_fetch || true
           make -j"$(nproc)"
 
       - name: Package Linux bundle (tar.gz)
@@ -162,20 +205,14 @@ jobs:
         run: |
           mkdir -p build-tests
           cd build-tests
-          EXTRA=""
-          if [ -z "$LIBMAN_CORE_GIT_TOKEN" ]; then
-            EXTRA="CONFIG+=no_core"
-          fi
-          qmake CONFIG+=debug $EXTRA ../tests/tests.pro
+          qmake CONFIG+=debug ../tests/tests.pro
 
       - name: Build tests
         run: |
           cd build-tests
           make -j1 capnp_install
           make -j1 lstream_schemas
-          if [ -n "$LIBMAN_CORE_GIT_TOKEN" ]; then
-            make -j1 core_fetch
-          fi
+          make -qp 2>/dev/null | grep -q '^core_fetch:' && make -j1 core_fetch || true
           make -j"$(nproc)"
 
       - name: Export Cap'n Proto runtime path
@@ -254,20 +291,14 @@ jobs:
         run: |
           mkdir -p build-tests
           cd build-tests
-          EXTRA=""
-          if [ -z "$LIBMAN_CORE_GIT_TOKEN" ]; then
-            EXTRA="CONFIG+=no_core"
-          fi
-          qmake CONFIG+=debug CONFIG+=coverage $EXTRA ../tests/tests.pro
+          qmake CONFIG+=debug CONFIG+=coverage ../tests/tests.pro
 
       - name: Build tests
         run: |
           cd build-tests
           make -j1 capnp_install
           make -j1 lstream_schemas
-          if [ -n "$LIBMAN_CORE_GIT_TOKEN" ]; then
-            make -j1 core_fetch
-          fi
+          make -qp 2>/dev/null | grep -q '^core_fetch:' && make -j1 core_fetch || true
           make -j"$(nproc)"
 
       - name: Export Cap'n Proto runtime path
@@ -340,27 +371,19 @@ jobs:
             exit /b 1
           )
 
-      - name: Build CORE (CommonDB)
-        if: ${{ env.LIBMAN_CORE_GIT_TOKEN != '' }}
-        shell: cmd
-        run: call scripts\fetch_core.cmd
-
       - name: Configure (qmake)
         shell: bash
         run: |
           mkdir -p build
           cd build
-          EXTRA=""
-          if [ -z "$LIBMAN_CORE_GIT_TOKEN" ]; then
-            EXTRA="CONFIG+=no_core"
-          fi
-          qmake CONFIG+=release $EXTRA ../libman.pro
+          qmake CONFIG+=release ../libman.pro
           bash ../scripts/patch_capnp_makefile.sh
 
       - name: Build (mingw32-make)
         shell: bash
         run: |
           cd build
+          mingw32-make -qp 2>/dev/null | grep -q '^core_fetch:' && mingw32-make -j1 core_fetch || true
           mingw32-make -j"$(nproc)"
 
       - name: Deploy Qt runtime and resources
@@ -443,20 +466,14 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          EXTRA=""
-          if [ -z "$LIBMAN_CORE_GIT_TOKEN" ]; then
-            EXTRA="CONFIG+=no_core"
-          fi
-          qmake CONFIG+=release $EXTRA ../libman.pro
+          qmake CONFIG+=release ../libman.pro
 
       - name: Build
         run: |
           cd build
           make -j1 capnp_install
           make -j1 lstream_schemas
-          if [ -n "$LIBMAN_CORE_GIT_TOKEN" ]; then
-            make -j1 core_fetch
-          fi
+          make -qp 2>/dev/null | grep -q '^core_fetch:' && make -j1 core_fetch || true
           make -j"$(nproc)"
 
       - name: Install linuxdeployqt

@@ -69,6 +69,9 @@ SOURCES += \
     core/core_path_utils.cpp \
     core/converter_paths.cpp
 
+LIBMAN_ROOT = $$dirname(_PRO_FILE_)
+include(core_build_config.pri)
+
 contains(CONFIG, no_core) {
     DEFINES += LIBMAN_NO_CORE
     SOURCES += core/libman_no_core_stubs.cpp

@@ -149,6 +149,7 @@ void MainWindow::loadProjectFile(const QString &fileName)
     m_ui->txtViewSearch->clear();
 
     clearLibraryViewProperties();
+    clearAllTechLibraryAttaches();
 
     QSet<QString> loadedLibraries;
 
@@ -206,6 +207,10 @@ void MainWindow::loadProjectFile(const QString &fileName)
         m_properties->set(key, fi.absoluteFilePath());
 
         loadedLibraries.insert(libName);
+    }
+
+    for(const LibAttach &attach : data.attaches) {
+        setTechLibraryAttach(attach.libraryName, attach.techLibraryName);
     }
 
     loadLibraries();
@@ -476,6 +481,18 @@ bool MainWindow::saveProjectEntriesToFile(const QString &fileName,
             << ");\n";
     }
 
+    const QList<QPair<QString, QString>> attaches = getTechLibraryAttaches();
+    if(!attaches.isEmpty()) {
+        out << '\n';
+        for(const QPair<QString, QString> &attach : attaches) {
+            out << "attach("
+                << toLibStringLiteral(attach.first)
+                << ", "
+                << toLibStringLiteral(attach.second)
+                << ");\n";
+        }
+    }
+
     file.close();
 
     if (m_projFileWatcher && QFileInfo(absFileName).exists()) {
@@ -537,6 +554,259 @@ QString MainWindow::toLibStringLiteral(const QString& value)
     s.replace("\t", "\\t");
 
     return "\"" + s + "\"";
+}
+
+namespace {
+
+QString techAttachKey(const QString &libraryName)
+{
+    return QStringLiteral("TechAttach_") + libraryName;
+}
+
+} // namespace
+
+QString MainWindow::techAttachPropertyKey(const QString &libraryName) const
+{
+    return techAttachKey(libraryName);
+}
+
+void MainWindow::clearAllTechLibraryAttaches()
+{
+    if(!m_properties) {
+        return;
+    }
+
+    const QString prefix = QStringLiteral("TechAttach_");
+    QStringList keysToRemove;
+    const QMap<QString, PropertyItem *> props = m_properties->getMap();
+    for(auto it = props.constBegin(); it != props.constEnd(); ++it) {
+        if(it.key().startsWith(prefix)) {
+            keysToRemove.append(it.key());
+        }
+    }
+
+    for(const QString &key : keysToRemove) {
+        m_properties->remove(key);
+    }
+}
+
+QString MainWindow::getTechLibraryAttach(const QString &libraryName) const
+{
+    if(libraryName.isEmpty() || !m_properties) {
+        return QString();
+    }
+
+    const QString key = techAttachKey(libraryName);
+    if(!m_properties->exists(key)) {
+        return QString();
+    }
+
+    return m_properties->get<QString>(key).trimmed();
+}
+
+void MainWindow::setTechLibraryAttach(const QString &libraryName, const QString &techLibraryName)
+{
+    if(libraryName.isEmpty() || !m_properties) {
+        return;
+    }
+
+    const QString tech = techLibraryName.trimmed();
+    if(tech.isEmpty()) {
+        clearTechLibraryAttach(libraryName);
+        return;
+    }
+
+    m_properties->set(techAttachKey(libraryName), tech);
+}
+
+void MainWindow::clearTechLibraryAttach(const QString &libraryName)
+{
+    if(libraryName.isEmpty() || !m_properties) {
+        return;
+    }
+
+    m_properties->remove(techAttachKey(libraryName));
+}
+
+QList<QPair<QString, QString>> MainWindow::getTechLibraryAttaches() const
+{
+    QList<QPair<QString, QString>> attaches;
+    if(!m_properties) {
+        return attaches;
+    }
+
+    const QString prefix = QStringLiteral("TechAttach_");
+    const QMap<QString, PropertyItem *> props = m_properties->getMap();
+    for(auto it = props.constBegin(); it != props.constEnd(); ++it) {
+        if(!it.key().startsWith(prefix)) {
+            continue;
+        }
+
+        const QString libName = it.key().mid(prefix.size());
+        const QString techLib = m_properties->get<QString>(it.key()).trimmed();
+        if(!libName.isEmpty() && !techLib.isEmpty()) {
+            attaches.append(qMakePair(libName, techLib));
+        }
+    }
+
+    return attaches;
+}
+
+QStringList MainWindow::getDesignLibrariesUsingTech(const QString &techLibraryName) const
+{
+    QStringList designLibs;
+    if(techLibraryName.isEmpty()) {
+        return designLibs;
+    }
+
+    for(const QPair<QString, QString> &attach : getTechLibraryAttaches()) {
+        if(attach.second == techLibraryName) {
+            designLibs.append(attach.first);
+        }
+    }
+
+    designLibs.sort();
+    designLibs.removeDuplicates();
+    return designLibs;
+}
+
+QStringList MainWindow::resolveTechLibraryCorePaths(const QString &techLibraryName) const
+{
+    QStringList paths;
+    if(techLibraryName.isEmpty() || !m_properties) {
+        return paths;
+    }
+
+    const QString rootKey = getLibraryKeyPrefix() + techLibraryName;
+    QString rootPath;
+    if(m_properties->exists(rootKey)) {
+        rootPath = m_properties->get<QString>(rootKey).trimmed();
+    }
+    const QFileInfo rootInfo(rootPath);
+    if(rootInfo.isFile() && rootInfo.suffix().compare(QStringLiteral("core"), Qt::CaseInsensitive) == 0) {
+        paths.append(rootInfo.absoluteFilePath());
+        return paths;
+    }
+
+    if(rootInfo.isDir()) {
+        QDir dir(rootInfo.absoluteFilePath());
+        const QString preferred = dir.filePath(techLibraryName + QStringLiteral(".core"));
+        if(QFileInfo::exists(preferred)) {
+            paths.append(QFileInfo(preferred).absoluteFilePath());
+            return paths;
+        }
+
+        const QStringList cores = dir.entryList(QStringList() << QStringLiteral("*.core"),
+                                                QDir::Files,
+                                                QDir::Name);
+        if(cores.size() == 1) {
+            paths.append(QFileInfo(dir.filePath(cores.first())).absoluteFilePath());
+            return paths;
+        }
+
+        for(const QString &name : cores) {
+            paths.append(QFileInfo(dir.filePath(name)).absoluteFilePath());
+        }
+        if(!paths.isEmpty()) {
+            paths.sort();
+            return paths;
+        }
+    }
+
+    const QString prefix = getLibraryKeyPrefix() + techLibraryName + QLatin1Char('/');
+    const QMap<QString, PropertyItem *> props = m_properties->getMap();
+    for(auto it = props.constBegin(); it != props.constEnd(); ++it) {
+        if(!it.key().startsWith(prefix)) {
+            continue;
+        }
+
+        const QString path = m_properties->get<QString>(it.key()).trimmed();
+        if(path.endsWith(QStringLiteral(".core"), Qt::CaseInsensitive)) {
+            paths.append(path);
+        }
+    }
+
+    paths.sort();
+    paths.removeDuplicates();
+    return paths;
+}
+
+QString MainWindow::resolveTechLibraryCorePath(const QString &techLibraryName) const
+{
+    const QStringList paths = resolveTechLibraryCorePaths(techLibraryName);
+    if(paths.isEmpty()) {
+        return QString();
+    }
+    if(paths.size() == 1) {
+        return paths.first();
+    }
+
+    return QStringLiteral("(%1 symbol cores)").arg(paths.size());
+}
+
+bool MainWindow::isSchematicLikeView(const QString &viewName) const
+{
+    const QString view = viewName.trimmed().toLower();
+    if(view == QStringLiteral("schematic") || view == QStringLiteral("symbol")) {
+        return true;
+    }
+    if(view == QStringLiteral("sch") || view == QStringLiteral("sym")) {
+        return true;
+    }
+    if(view.endsWith(QStringLiteral(".core"))) {
+        return view.contains(QStringLiteral("schematic")) || view.contains(QStringLiteral("symbol"));
+    }
+
+    return false;
+}
+
+void MainWindow::launchSchematicTool(const QString &tool, const QString &viewPath) const
+{
+    if(tool.isEmpty() || viewPath.isEmpty()) {
+        return;
+    }
+
+    QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+    const QString libName = getCurrentLibraryName();
+    QString techLib = getTechLibraryAttach(libName);
+    if(techLib.isEmpty() && !resolveTechLibraryCorePaths(libName).isEmpty()) {
+        techLib = libName;
+    }
+    if(!techLib.isEmpty()) {
+        const QStringList corePaths = resolveTechLibraryCorePaths(techLib);
+        if(!corePaths.isEmpty()) {
+            QStringList nativePaths;
+            for(const QString &path : corePaths) {
+                nativePaths.append(QDir::toNativeSeparators(path));
+            }
+            env.insert(QStringLiteral("CORE_PRIMITIVE_LIBS"), nativePaths.join(QLatin1Char(';')));
+            env.insert(QStringLiteral("CORE_PRIMITIVE_LIB"), nativePaths.first());
+            env.insert(QStringLiteral("LIBMAN_TECH_LIBRARY"), techLib);
+            env.insert(QStringLiteral("QUCS_PRIMITIVE_LIB"), QStringLiteral("IHP_PDK_nonlinear_components"));
+        }
+    }
+
+    QProcess proc;
+#ifdef Q_OS_WIN
+    QString program = tool;
+    QStringList arguments;
+    arguments << viewPath;
+    if(tool.endsWith(QStringLiteral(".bat"), Qt::CaseInsensitive)
+       || tool.endsWith(QStringLiteral(".cmd"), Qt::CaseInsensitive)) {
+        program = QStringLiteral("cmd.exe");
+        arguments = QStringList() << QStringLiteral("/c") << QDir::toNativeSeparators(tool) << viewPath;
+    }
+    proc.setProgram(program);
+    proc.setArguments(arguments);
+#else
+    proc.setProgram(tool);
+    proc.setArguments(QStringList() << viewPath);
+#endif
+    proc.setProcessEnvironment(env);
+    proc.setWorkingDirectory(QDir::currentPath());
+
+    qint64 pid = 0;
+    proc.startDetached(&pid);
 }
 
 /*!******************************************************************************************************************

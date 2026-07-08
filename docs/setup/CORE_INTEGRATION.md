@@ -1,19 +1,73 @@
 # CORE (CommonDB) integration
 
-LibMan automatically downloads and builds [CORE](https://github.com/IHP-GmbH/CommonDB) during the first CMake configure. CORE shares LibMan's Cap'n Proto prefix (`capnp-install/`).
+LibMan can optionally link [CORE](https://github.com/IHP-GmbH/CommonDB). CommonDB is a **private** repository. At configure time LibMan probes GitHub API access to `IHP-GmbH/CommonDB` (`curl` + `LIBMAN_CORE_GIT_TOKEN` / `GITHUB_TOKEN` if set). If the repo is reachable — CORE is enabled; otherwise stub implementations are used (`LIBMAN_NO_CORE`).
 
 ## Default behaviour
 
-On `cmake -B build`:
+**qmake** — `core_build_config.pri` runs `scripts/probe_core_access.sh` (or `.cmd` on Windows):
 
-1. Cap'n Proto is bootstrapped into `capnp-install/` if missing (same as LStream schemas).
-2. CORE is cloned to `.deps/CommonDB/` from GitHub (`main` by default).
-3. Static libraries `CORE::core` and `CORE::core_utils` are built and linked into `libman`.
+```bash
+mkdir -p build && cd build
+qmake ../libman.pro
+make -j1 capnp_install
+make -j1 lstream_schemas
+make -j"$(nproc)"
+```
+
+Without access you will see: `LibMan: building without CORE (CommonDB not available)`.
+
+**CMake** — same probe via `cmake/ProbeCoreAccess.cmake`:
+
+```bash
+cmake -B build
+cmake --build build -j
+```
+
+### Enable CORE access
+
+| Method | When |
+|--------|------|
+| `export LIBMAN_CORE_GIT_TOKEN=ghp_...` | PAT with `repo` read on `IHP-GmbH/CommonDB` |
+| `export GITHUB_TOKEN=...` | Same (fallback env var) |
+| Clone to `.deps/CommonDB` | Local checkout (no probe needed) |
+| `LIBMAN_CORE_SOURCE_DIR=/path/to/CommonDB` | Side-by-side development tree |
+
+After a successful probe, qmake builds fetch CORE on `make core_fetch` (or automatically when the target exists in CI).
+
+### Force overrides
+
+| qmake | CMake |
+|-------|-------|
+| `CONFIG+=no_core` | `-DLIBMAN_FORCE_NO_CORE=ON` |
+| `CONFIG+=core` | `-DLIBMAN_FORCE_CORE=ON` |
+
+## Full CORE build (with access)
+
+### qmake
+
+```bash
+export LIBMAN_CORE_GIT_TOKEN=ghp_...
+qmake ../libman.pro
+make -j1 capnp_install
+make -j1 lstream_schemas
+make -j1 core_fetch
+make -j"$(nproc)"
+```
+
+### CMake
+
+```bash
+export LIBMAN_CORE_GIT_TOKEN=ghp_...
+cmake -B build
+cmake --build build -j
+```
+
+FetchContent clones CORE to `.deps/CommonDB/` and links `CORE::core` / `CORE::core_utils`.
 
 Re-configure after changing the CORE revision:
 
 ```powershell
-Remove-Item -Recurse -Force .deps\CommonDB
+Remove-Item -Recurse -Force .deps/CommonDB
 cmake -B build
 ```
 
@@ -25,15 +79,11 @@ cmake -B build -DCORE_GIT_TAG=91705d7
 
 ## Local CORE checkout (development)
 
-When working on CORE and LibMan side by side, skip the git fetch:
-
 ```powershell
 cmake -B build -DLIBMAN_CORE_SOURCE_DIR=C:/path/to/CommonDB
 ```
 
 ## Installed CORE (advanced)
-
-Disable automatic fetch and use a pre-installed package:
 
 ```powershell
 cmake -B build -DLIBMAN_FETCH_CORE=OFF -DCORE_DIR=...
@@ -45,7 +95,9 @@ cmake -B build -DLIBMAN_FETCH_CORE=OFF -DCORE_DIR=...
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LIBMAN_FETCH_CORE` | `ON` | Fetch CORE from GitHub |
+| `LIBMAN_FORCE_CORE` | `OFF` | Enable CORE even if GitHub probe fails |
+| `LIBMAN_FORCE_NO_CORE` | `OFF` | Disable CORE even if probe succeeds |
+| `LIBMAN_FETCH_CORE` | `ON` | Fetch CORE from GitHub (when CORE enabled) |
 | `CORE_GIT_URL` | `https://github.com/IHP-GmbH/CommonDB.git` | Repository URL |
 | `CORE_GIT_TAG` | `main` | Branch, tag, or commit |
 | `LIBMAN_CORE_SOURCE_DIR` | *(empty)* | Local tree instead of fetch |
@@ -63,19 +115,18 @@ Link targets are already set in `CMakeLists.txt` (`CORE::core`, `CORE::core_util
 
 ## CI (GitHub Actions)
 
-CommonDB is a private repository. For full CORE linkage in CI, add a repository secret:
+| Job | CORE |
+|-----|------|
+| `build-linux-no-core` | No token — probe fails, stubs only |
+| `build-linux`, `tests-linux`, `build-windows`, `build-rhel8` | `LIBMAN_CORE_GIT_TOKEN` secret — probe succeeds |
+
+Add repository secret:
 
 | Secret | Description |
 |--------|-------------|
 | `LIBMAN_CORE_GIT_TOKEN` | PAT with `repo` read access to `IHP-GmbH/CommonDB` |
 
-Without this secret, CI builds with `CONFIG+=no_core` (stub implementations; layout UI still compiles).
-
-Local qmake without CORE:
-
-```bash
-qmake CONFIG+=no_core ../libman.pro
-```
+`qmake` / `cmake` auto-detect access; no manual `CONFIG+=core` required in CI.
 
 ## Layout view in LibMan
 

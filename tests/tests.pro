@@ -73,6 +73,9 @@ SOURCES += \
     $$PWD/../core/core_path_utils.cpp \
     main.cpp \
 
+LIBMAN_ROOT = $$dirname(_PRO_FILE_)/..
+include($$LIBMAN_ROOT/core_build_config.pri)
+
 contains(CONFIG, no_core) {
     DEFINES += LIBMAN_NO_CORE
     SOURCES += $$PWD/../core/libman_no_core_stubs.cpp

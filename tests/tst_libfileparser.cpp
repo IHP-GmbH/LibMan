@@ -420,3 +420,36 @@ void LibFileParserTest::parseFile_includeWrongArgCount_returnsError()
     QVERIFY(!parser.parseFile(libFile));
     QVERIFY(parser.errorString().contains("include() expects"));
 }
+
+void LibFileParserTest::parseFile_attach_parsesTechLibraryLink()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+
+    const QString libFile = dir.path() + "/attach.lib";
+    QVERIFY(writeTextFile(libFile,
+                          "define(\"design\", \"cell/layout.gds\");\n"
+                          "attach(\"design\", \"sg13g2_pr\");\n"));
+
+    LibFileParser parser;
+    QVERIFY2(parser.parseFile(libFile), qPrintable(parser.errorString()));
+    QCOMPARE(parser.data().definitions.size(), 1);
+    QCOMPARE(parser.data().attaches.size(), 1);
+
+    const LibAttach &attach = parser.data().attaches.first();
+    QCOMPARE(attach.libraryName, QString("design"));
+    QCOMPARE(attach.techLibraryName, QString("sg13g2_pr"));
+}
+
+void LibFileParserTest::parseFile_attachWrongArgCount_returnsError()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+
+    const QString libFile = dir.path() + "/bad_attach.lib";
+    QVERIFY(writeTextFile(libFile, "attach(\"only_one\");\n"));
+
+    LibFileParser parser;
+    QVERIFY(!parser.parseFile(libFile));
+    QVERIFY(parser.errorString().contains("attach() expects"));
+}

@@ -122,10 +122,34 @@ add_custom_target(prepare_libman_deps
 )
 
 # -----------------------------------------------------------------------------
-# CORE (CommonDB) — fetched from GitHub on first configure
+# CORE (CommonDB) — optional; private repository (auto-detected via GitHub probe)
 # -----------------------------------------------------------------------------
 
-include("${CMAKE_SOURCE_DIR}/cmake/FetchCore.cmake")
+include("${CMAKE_SOURCE_DIR}/cmake/ProbeCoreAccess.cmake")
+
+option(LIBMAN_FORCE_CORE "Build with CORE even if GitHub probe fails" OFF)
+option(LIBMAN_FORCE_NO_CORE "Build without CORE even if GitHub probe succeeds" OFF)
+
+libman_probe_core_access(LIBMAN_CORE_ACCESSIBLE
+    FORCE_CORE ${LIBMAN_FORCE_CORE}
+    FORCE_NO_CORE ${LIBMAN_FORCE_NO_CORE}
+)
+
+set(LIBMAN_USE_CORE ${LIBMAN_CORE_ACCESSIBLE})
+
+set(LIBMAN_CORE_SOURCES)
+set(LIBMAN_CORE_LINK_LIBS)
+if(LIBMAN_USE_CORE)
+    include("${CMAKE_SOURCE_DIR}/cmake/FetchCore.cmake")
+    list(APPEND LIBMAN_CORE_SOURCES
+        core/corecellreader.cpp
+        core/coreKlayoutBridge.cpp
+        core/coreReadAsync.cpp
+    )
+    list(APPEND LIBMAN_CORE_LINK_LIBS CORE::core CORE::core_utils)
+else()
+    message(STATUS "LibMan: building without CORE (CommonDB not reachable). Set LIBMAN_CORE_GIT_TOKEN for access.")
+endif()
 
 # -----------------------------------------------------------------------------
 # Sources
@@ -134,9 +158,6 @@ include("${CMAKE_SOURCE_DIR}/cmake/FetchCore.cmake")
 set(SOURCES
     core/core_path_utils.cpp
     core/converter_paths.cpp
-    core/corecellreader.cpp
-    core/coreKlayoutBridge.cpp
-    core/coreReadAsync.cpp
     lstream/lstreamcellwriter.cpp
     oas/oasCreate.cpp
     src/main.cpp
@@ -199,6 +220,12 @@ set(SOURCES
     capnp/repetition.capnp.cc
     capnp/variant.capnp.cc
 )
+
+list(APPEND SOURCES ${LIBMAN_CORE_SOURCES})
+
+if(NOT LIBMAN_USE_CORE)
+    list(APPEND SOURCES core/libman_no_core_stubs.cpp)
+endif()
 
 set(HEADERS
     core/core_path_utils.h
@@ -281,6 +308,10 @@ if(TARGET core)
     add_dependencies(libman core)
 endif()
 
+if(NOT LIBMAN_USE_CORE)
+    target_compile_definitions(libman PRIVATE LIBMAN_NO_CORE)
+endif()
+
 target_include_directories(libman PRIVATE
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src
@@ -303,10 +334,10 @@ target_link_libraries(libman PRIVATE
     ZLIB::ZLIB
     capnp
     kj
-    CORE::core
-    CORE::core_utils
+    ${LIBMAN_CORE_LINK_LIBS}
 )
 
+if(LIBMAN_USE_CORE)
 foreach(_converter gds_to_core xschem_to_core qucs_to_core oas_to_core core_to_gds core_to_xschem core_to_qucs)
     if(TARGET ${_converter})
         add_custom_command(TARGET libman POST_BUILD
@@ -317,4 +348,4 @@ foreach(_converter gds_to_core xschem_to_core qucs_to_core oas_to_core core_to_g
         )
     endif()
 endforeach()
-
+endif()

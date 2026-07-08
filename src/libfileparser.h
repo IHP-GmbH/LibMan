@@ -35,11 +35,21 @@ struct LibInclude
     int                             sourceLine = -1;
 };
 
+// attach(designLibrary, techLibrary) — tech primitive CORE library name in the same project
+struct LibAttach
+{
+    QString                         libraryName;
+    QString                         techLibraryName;
+    QString                         sourceFile;
+    int                             sourceLine = -1;
+};
+
 // Result of parsing a .lib file tree
 struct LibFileData
 {
     QList<LibDefinition>            definitions;
     QList<LibInclude>               includes;
+    QList<LibAttach>                attaches;
 };
 
 class LibFileParser
@@ -69,6 +79,9 @@ private:
                           const QString& fileName,
                           int lineNumber);
     bool                    parseDefineCall(const QString& argsText,
+                         const QString& fileName,
+                         int lineNumber);
+    bool                    parseAttachCall(const QString& argsText,
                          const QString& fileName,
                          int lineNumber);
 

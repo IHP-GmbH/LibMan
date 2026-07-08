@@ -28,6 +28,8 @@ private slots:
     void parseFile_replicateFalse_parses();
     void parseFile_sg13g2_projects_fixture_pathsExist();
     void parseFile_includeWrongArgCount_returnsError();
+    void parseFile_attach_parsesTechLibraryLink();
+    void parseFile_attachWrongArgCount_returnsError();
 };
 
 #endif // TST_LIBFILEPARSER_H

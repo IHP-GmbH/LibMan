@@ -169,6 +169,8 @@ private slots:
     void                                on_viewItemExpanded(QTreeWidgetItem *item);
     void                                renameSelectedLibrary();
     void                                addExistingCell();
+    void                                attachTechLibrary();
+    void                                detachTechLibrary();
 
     void                                addNewGdsView();
     void                                addNewOasView();
@@ -196,7 +198,7 @@ private slots:
 
     void                                removeFromGroup();
     void                                removeGroupUnion();
-    void                                showFolderInfo(const QString &, const QString &, const QString &, bool clear = true);
+    void                                showFolderInfo(const QString &, const QString &, const QString &, bool clear = true, const QString &extraLines = QString());
     void                                mergeProjectIntoGroup();
 
     void                                pasteSelectedData();
@@ -434,6 +436,18 @@ private:
     QTreeWidgetItem*                    getTreeItemByName(const QString &name);
 
     QMap<QString, QString>              getCurrentLibraries() const;
+
+    QString                             techAttachPropertyKey(const QString &libraryName) const;
+    QString                             getTechLibraryAttach(const QString &libraryName) const;
+    void                                setTechLibraryAttach(const QString &libraryName, const QString &techLibraryName);
+    void                                clearTechLibraryAttach(const QString &libraryName);
+    QList<QPair<QString, QString>>      getTechLibraryAttaches() const;
+    QStringList                         getDesignLibrariesUsingTech(const QString &techLibraryName) const;
+    void                                clearAllTechLibraryAttaches();
+    QStringList                         resolveTechLibraryCorePaths(const QString &techLibraryName) const;
+    QString                             resolveTechLibraryCorePath(const QString &techLibraryName) const;
+    bool                                isSchematicLikeView(const QString &viewName) const;
+    void                                launchSchematicTool(const QString &tool, const QString &viewPath) const;
 
     bool                                ensureKLayoutServerRunning(const QString &tool);
     bool                                isKLayoutServerRunning() const;

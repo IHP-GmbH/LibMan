@@ -100,12 +100,17 @@ See [Quick Start](getting-started/QUICK_START.md) and [Dependencies](getting-sta
 
 ## GitHub Actions (`.github/workflows/build.yml`)
 
-| Job | Build system | Cap'n Proto |
-|-----|--------------|-------------|
-| `build-linux` | qmake + make (Ubuntu) | `make -j1 capnp_install` then parallel make |
+| Job | Build system | CORE |
+|-----|--------------|------|
+| `build-linux-no-core` | qmake + make (Ubuntu) | **No** CommonDB; verifies public build |
+| `build-linux` | qmake + make (Ubuntu) | Full CORE when `LIBMAN_CORE_GIT_TOKEN` is set |
 | `build-rhel8` | qmake + make (Rocky Linux 8 container) | Same; artifact `libman-rhel8.tar.gz` for RHEL 8.10 |
-| `build-windows` | qmake + mingw32-make | `mkcapnp.cmd` before qmake; `patch_capnp_makefile.sh` after qmake |
+| `build-windows` | qmake + mingw32-make | Same |
 | `tests-linux` | qmake tests + `run_tests.sh` | Same stamp step in `build-tests/` |
+
+Cap'n Proto: `make -j1 capnp_install` then parallel make on Linux jobs.
+
+**Without CommonDB** (customer / fork CI): `qmake` probes GitHub access and falls back to stubs when the private repo is unreachable. See [CORE integration](setup/CORE_INTEGRATION.md).
 
 ### RHEL 8 artifact (`build-rhel8`)
 

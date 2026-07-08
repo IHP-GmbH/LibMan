@@ -1,0 +1,10 @@
+v {xschem version=3.4.6 file_version=1.2}
+G {}
+K {type=annotator template="name=annot1 ref=Q1"}
+V {}
+S {}
+E {}
+L 4 0 0 10 0 {}
+L 4 0 0 0 10 {}
+T {tcleval([display_bip_params @ref ])} 5 5 0 0 0.2 0.2 {}
+T {@ref} 0 0 2 1 0.2 0.2 {}

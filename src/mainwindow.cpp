@@ -664,6 +664,15 @@ void MainWindow::removeLibraryPropertyKeys(const QString &libName)
     for(const QString &key : keysToRemove) {
         m_properties->remove(key);
     }
+
+    clearTechLibraryAttach(libName);
+
+    const QList<QPair<QString, QString>> attaches = getTechLibraryAttaches();
+    for(const QPair<QString, QString> &attach : attaches) {
+        if(attach.second == libName) {
+            clearTechLibraryAttach(attach.first);
+        }
+    }
 }
 
 /*!*******************************************************************************************************************
@@ -2197,7 +2206,12 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
     // ------------------------------------------------------------
     // Non-layout views: original behavior
     // ------------------------------------------------------------
-    QProcess::startDetached(tool, QStringList() << viewPath);
+    if(isSchematicLikeView(viewName)) {
+        launchSchematicTool(tool, viewPath);
+    }
+    else {
+        QProcess::startDetached(tool, QStringList() << viewPath);
+    }
 }
 
 /*!*******************************************************************************************************************

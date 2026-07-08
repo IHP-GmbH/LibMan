@@ -363,6 +363,30 @@ Corrupted `~/.xschem/geometry` with `1x1+` entries. See [Xschem integration — 
 
 ---
 
+## 🔴 Build errors
+
+### `core_paths.h: No such file` / `can't find file core_paths.h`
+
+**Symptoms:** qmake build fails in `core/corecellreader.cpp` because CommonDB headers are missing.
+
+**Cause:** LibMan was configured for full CORE linkage but [CommonDB](https://github.com/IHP-GmbH/CommonDB) is not checked out (private repo).
+
+**Solution (public build, no CORE):** plain `qmake` auto-disables CORE when GitHub probe fails (no `LIBMAN_CORE_GIT_TOKEN`):
+
+```bash
+cd build
+qmake ../libman.pro
+make -j1 capnp_install
+make -j1 lstream_schemas
+make -j"$(nproc)"
+```
+
+Or force stubs: `qmake CONFIG+=no_core ../libman.pro`.
+
+**Solution (full CORE):** set `LIBMAN_CORE_GIT_TOKEN` (or clone `.deps/CommonDB`), re-run `qmake`, then `make -j1 core_fetch`. See [CORE integration](../setup/CORE_INTEGRATION.md).
+
+---
+
 ## 🟡 Qt/GUI Issues
 
 ### GUI doesn't appear correctly
