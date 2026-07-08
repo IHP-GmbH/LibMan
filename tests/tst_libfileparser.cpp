@@ -408,9 +408,20 @@ void LibFileParserTest::parseFile_sg13g2_projects_fixture_pathsExist()
         if(!def.path.startsWith(dataDir, Qt::CaseInsensitive)) {
             continue;
         }
-        QVERIFY2(QFileInfo::exists(def.path),
-                 qPrintable(QStringLiteral("missing view file for library '%1': %2")
+
+        const QFileInfo fi(def.path);
+        QVERIFY2(fi.exists(),
+                 qPrintable(QStringLiteral("missing library entry for '%1': %2")
                                 .arg(def.name, def.path)));
+
+        if(def.path.endsWith(QLatin1String(".core"))
+           || def.path.endsWith(QLatin1String(".gds"))
+           || def.path.endsWith(QLatin1String(".oas"))
+           || def.path.endsWith(QLatin1String(".lstr"))) {
+            QVERIFY2(fi.isFile(),
+                     qPrintable(QStringLiteral("expected file for library '%1': %2")
+                                    .arg(def.name, def.path)));
+        }
     }
 }
 
