@@ -107,7 +107,8 @@ QString MainWindow::expandShellVariables(const QString& path) const
  *******************************************************************************************************************/
 QString MainWindow::resolveProjectPath(const QString& projectsFile, const QString& rawPath)
 {
-    const QString p = QDir::fromNativeSeparators(rawPath);
+    QString p = rawPath;
+    p.replace('\\', '/');
 
     if (QDir::isAbsolutePath(p)) {
         return QDir::toNativeSeparators(p);
@@ -156,7 +157,8 @@ void MainWindow::loadProjectFile(const QString &fileName)
     for(const LibDefinition& def : data.definitions) {
 
         const QString libName = def.name.trimmed();
-        QString libPath = expandShellVariables(QDir::fromNativeSeparators(def.path.trimmed()));
+        QString libPath = expandShellVariables(def.path.trimmed());
+        libPath.replace('\\', '/');
 
         if (!QDir::isAbsolutePath(libPath)) {
             const QDir projectDir = QFileInfo(fileName).absoluteDir();

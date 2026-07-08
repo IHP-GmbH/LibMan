@@ -872,7 +872,8 @@ bool LibFileParser::parseValueLiteral(const QString& text, QVariant& value) cons
 QString LibFileParser::resolvePathRelativeToFile(const QString& currentFile,
                                                  const QString& rawPath) const
 {
-    const QString p = QDir::fromNativeSeparators(rawPath);
+    QString p = rawPath;
+    p.replace('\\', '/');
 
     if(QDir::isAbsolutePath(p)) {
         return QDir::toNativeSeparators(QFileInfo(p).absoluteFilePath());
