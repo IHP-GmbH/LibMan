@@ -9,6 +9,7 @@
 #include <QTextStream>
 
 #define private public
+#include "src/klayout_tools.h"
 #include "src/mainwindow.h"
 #include "tst_klayout_requests.h"
 #undef private
@@ -21,7 +22,7 @@
 void KLayoutRequestsTest::sendKLayoutOpenRequest_emptyCommandFile_returnsFalse()
 {
     MainWindow w(QString(), QDir::currentPath());
-    w.m_klayoutCmdFile.clear();
+    w.m_klayoutTools.m_cmdFile.clear();
 
     QVERIFY(!w.sendKLayoutOpenRequest("dummy.gds", "TOP"));
 }
@@ -45,7 +46,7 @@ void KLayoutRequestsTest::sendKLayoutOpenRequest_writesJsonCommand()
     }
 
     const QString cmdFile = dir.filePath("klayout_cmd.json");
-    w.m_klayoutCmdFile = cmdFile;
+    w.m_klayoutTools.m_cmdFile = cmdFile;
 
     QVERIFY(w.sendKLayoutOpenRequest(gdsPath, "TOP"));
 
@@ -72,7 +73,7 @@ void KLayoutRequestsTest::sendKLayoutOpenRequest_writesJsonCommand()
 void KLayoutRequestsTest::sendKLayoutSelectRequest_emptyCommandFile_returnsFalse()
 {
     MainWindow w(QString(), QDir::currentPath());
-    w.m_klayoutCmdFile.clear();
+    w.m_klayoutTools.m_cmdFile.clear();
 
     QVERIFY(!w.sendKLayoutSelectRequest("dummy.gds", "TOP"));
 }
@@ -96,7 +97,7 @@ void KLayoutRequestsTest::sendKLayoutSelectRequest_writesJsonCommand()
     }
 
     const QString cmdFile = dir.filePath("klayout_cmd.json");
-    w.m_klayoutCmdFile = cmdFile;
+    w.m_klayoutTools.m_cmdFile = cmdFile;
 
     QVERIFY(w.sendKLayoutSelectRequest(gdsPath, "MY_CELL"));
 
@@ -118,7 +119,7 @@ void KLayoutRequestsTest::sendKLayoutSelectRequest_writesJsonCommand()
 }
 
 /*!*********************************************************************************************************************
- * \brief Verifies that createKLayoutServerScript() creates a Python file with expected content.
+ * \brief Verifies that createServerScript() creates a Python file with expected content.
  **********************************************************************************************************************/
 void KLayoutRequestsTest::createKLayoutServerScript_createsPythonFile()
 {
@@ -128,7 +129,7 @@ void KLayoutRequestsTest::createKLayoutServerScript_createsPythonFile()
     QVERIFY2(dir.isValid(), "Failed to create temporary directory");
 
     const QString cmdFile = dir.filePath("server_cmd.json");
-    const QString scriptPath = w.createKLayoutServerScript(cmdFile);
+    const QString scriptPath = w.m_klayoutTools.createServerScript(cmdFile);
 
     QVERIFY2(!scriptPath.isEmpty(), "Script path is empty");
     QVERIFY2(QFileInfo(scriptPath).exists(), "Script file was not created");

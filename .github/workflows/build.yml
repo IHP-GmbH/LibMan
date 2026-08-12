@@ -370,6 +370,11 @@ jobs:
             echo ERROR: capnp headers missing after install
             exit /b 1
           )
+          call scripts\mklstream.cmd
+          if not exist capnp\schemas_built_stamp (
+            echo ERROR: LStream schemas were not regenerated
+            exit /b 1
+          )
 
       - name: Configure (qmake)
         shell: bash

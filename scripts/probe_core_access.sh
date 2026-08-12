@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # Exit 0 if CommonDB (CORE) is available for this build, 1 otherwise.
 set -euo pipefail
 
