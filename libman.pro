@@ -85,6 +85,7 @@ contains(CONFIG, no_core) {
 HEADERS += \
     lstream/lstreamcellwriter.h \
     src/mainwindow.h \
+    src/klayout_tools.h \
     extension/variantmanager.h \
     extension/variantfactory.h \
     extension/qlineeditd2.h \

@@ -1,4 +1,4 @@
-﻿#include <QMenu>
+#include <QMenu>
 #include <QFile>
 #include <QDebug>
 #include <QScreen>
@@ -903,7 +903,7 @@ QString MainWindow::getToolByView(const QString &viewName) const
         return QString();
     }
 
-    const QStringList groups = m_properties->get<QString>("ToolList").split(",", QString::SkipEmptyParts);
+    const QStringList groups = m_properties->get<QString>("ToolList").split(",", Qt::SkipEmptyParts);
     for(const QString &groupName : groups) {
         const QString group = groupName.trimmed();
         if(group.isEmpty()) {
@@ -933,7 +933,7 @@ QStringList MainWindow::layoutViewsForTool(const QString &toolName) const
     }
 
     QStringList views =
-        m_properties->get<QString>(key).remove(QLatin1Char(' ')).split(QLatin1Char(','), QString::SkipEmptyParts);
+        m_properties->get<QString>(key).remove(QLatin1Char(' ')).split(QLatin1Char(','), Qt::SkipEmptyParts);
 
     for(QString &view : views) {
         view = view.trimmed().toLower();
@@ -3055,7 +3055,7 @@ QMap<QString, QStringList> MainWindow::getSupportedViewsByTool() const
     QStringList tools;
 
     if(m_properties->exists("ToolList")) {
-        tools = m_properties->get<QString>("ToolList").split(",", QString::SkipEmptyParts);
+        tools = m_properties->get<QString>("ToolList").split(",", Qt::SkipEmptyParts);
     }
 
     for(QString toolName : tools) {
@@ -3070,7 +3070,7 @@ QMap<QString, QStringList> MainWindow::getSupportedViewsByTool() const
         }
 
         QStringList views =
-            m_properties->get<QString>(key).remove(QLatin1Char(' ')).split(QLatin1Char(','), QString::SkipEmptyParts);
+            m_properties->get<QString>(key).remove(QLatin1Char(' ')).split(QLatin1Char(','), Qt::SkipEmptyParts);
         for(QString &view : views) {
             view = view.trimmed().toLower();
         }

@@ -104,6 +104,7 @@ SOURCES += \
 HEADERS += \
     $$PWD/tst_libman_gui.h \
     $$PWD/../src/mainwindow.h \
+    $$PWD/../src/klayout_tools.h \
     $$PWD/../src/libfileparser.h \
     $$PWD/../src/lstreamcellreader.h \
     $$PWD/../extension/variantmanager.h \

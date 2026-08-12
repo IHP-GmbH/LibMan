@@ -64,7 +64,7 @@ ToolCommand splitToolCommand(const QString &tool)
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     QStringList parts = QProcess::splitCommand(trimmed);
 #else
-    QStringList parts = trimmed.split(QLatin1Char(' '), QString::SkipEmptyParts);
+    QStringList parts = trimmed.split(QLatin1Char(' '), Qt::SkipEmptyParts);
 #endif
     if(parts.isEmpty()) {
         return out;
@@ -764,7 +764,7 @@ QString resolveToolExecutable(const QString &tool)
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     const QStringList parts = QProcess::splitCommand(tool.trimmed());
 #else
-    const QStringList parts = tool.trimmed().split(QLatin1Char(' '), QString::SkipEmptyParts);
+    const QStringList parts = tool.trimmed().split(QLatin1Char(' '), Qt::SkipEmptyParts);
 #endif
     if(parts.isEmpty()) {
         return QString();
@@ -819,7 +819,7 @@ void KLayoutTools::openLayoutFile(const QString &tool,
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     const QStringList parts = QProcess::splitCommand(tool.trimmed());
 #else
-    const QStringList parts = tool.trimmed().split(QLatin1Char(' '), QString::SkipEmptyParts);
+    const QStringList parts = tool.trimmed().split(QLatin1Char(' '), Qt::SkipEmptyParts);
 #endif
     if(parts.isEmpty()) {
         emit error(QObject::tr("Invalid Layout tool command."));
@@ -1142,7 +1142,7 @@ void KLayoutTools::logXorProcessOutput(const QString &text)
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
                                           Qt::SkipEmptyParts);
 #else
-                                          QString::SkipEmptyParts);
+                                          Qt::SkipEmptyParts);
 #endif
     for(const QString &line : lines) {
         if(isKLayoutXorStartupNoise(line)) {

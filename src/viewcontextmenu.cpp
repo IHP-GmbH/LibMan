@@ -1225,7 +1225,7 @@ void MainWindow::runXorWithSelectedLayout()
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     const QStringList parts = QProcess::splitCommand(tool.trimmed());
 #else
-    const QStringList parts = tool.trimmed().split(QLatin1Char(' '), QString::SkipEmptyParts);
+    const QStringList parts = tool.trimmed().split(QLatin1Char(' '), Qt::SkipEmptyParts);
 #endif
     if(parts.isEmpty()) {
         error(tr("XOR: invalid Layout tool command."), false);

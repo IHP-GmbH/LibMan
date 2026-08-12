@@ -44,11 +44,7 @@ QStringList MainWindow::readLibraryCategories(const QString &libPath, const QStr
     QTextStream in(&file);
     while (!in.atEnd()) {
         QString line = in.readLine().remove("^\\s+").remove("\\s+$");
-        #if QT_VERSION >= 0x050000
-            QStringList words = line.split(" ", Qt::SkipEmptyParts);
-        #else
-            QStringList words = line.split(" ", QString::SkipEmptyParts);
-        #endif
+        QStringList words = line.split(" ", Qt::SkipEmptyParts);
         foreach(const QString catName, words) {
             categories<<catName;
         }

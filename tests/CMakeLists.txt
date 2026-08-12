@@ -86,6 +86,7 @@ add_executable(tst_libman_gui
     ${LIBMAN_ROOT}/src/about.cpp
     ${LIBMAN_ROOT}/src/newview.cpp
     ${LIBMAN_ROOT}/src/klayout_tools.cpp
+    ${LIBMAN_ROOT}/src/klayout_tools.h
     ${LIBMAN_ROOT}/src/klayoutCellResolver.cpp
     ${LIBMAN_ROOT}/src/lstreamcellreader.cpp
 
