@@ -1,4 +1,4 @@
-#include <QMenu>
+﻿#include <QMenu>
 #include <QFile>
 #include <QDebug>
 #include <QScreen>
@@ -17,6 +17,12 @@
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QMimeData>
+#include <QUrl>
+#include <QTextCursor>
+#include <QTextCharFormat>
+#include <QTextEdit>
+#include <QStandardPaths>
+#include <QRegularExpression>
 
 #include <QListWidgetItem>
 
@@ -28,6 +34,32 @@
 #include "ui_mainwindow.h"
 
 #include "libman_test_mode.h"
+
+namespace {
+
+QTextCharFormat logPlainCharFormat()
+{
+    QTextCharFormat fmt;
+    fmt.setForeground(QBrush(Qt::black));
+    fmt.setFontUnderline(false);
+    fmt.setAnchor(false);
+    fmt.setAnchorHref(QString());
+    return fmt;
+}
+
+QTextCursor logCursorAtEnd(QTextEdit *textEdit, bool clear)
+{
+    if(clear) {
+        textEdit->clear();
+    }
+
+    QTextCursor cursor = textEdit->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    cursor.setCharFormat(logPlainCharFormat());
+    return cursor;
+}
+
+} // namespace
 
 #include "about.h"
 #include "newview.h"
@@ -62,6 +94,16 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
 
     m_ui->actionProjects->setVisible(false);
     m_ui->textMessages->setReadOnly(true);
+    m_ui->textMessages->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
+    m_ui->textMessages->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_ui->textMessages, &QTextEdit::customContextMenuRequested, this, &MainWindow::showMessagesMenu);
+    m_ui->textMessages->viewport()->setMouseTracking(true);
+    m_ui->textMessages->viewport()->setAttribute(Qt::WA_Hover, true);
+    m_ui->textMessages->viewport()->installEventFilter(this);
+
+    connect(&m_klayoutTools, &KLayoutTools::info, this, [this](const QString &msg) { info(msg, false); });
+    connect(&m_klayoutTools, &KLayoutTools::error, this, [this](const QString &msg) { error(msg, false); });
+    connect(&m_klayoutTools, &KLayoutTools::fileLink, this, &MainWindow::appendLogFileLink);
 
     m_ui->groupCats->setVisible(false);
     m_ui->groupDocs->setVisible(false);
@@ -723,13 +765,10 @@ void MainWindow::on_actionOpen_triggered()
  **********************************************************************************************************************/
 void MainWindow::info(const QString &msg, bool clear)
 {
-    if(clear) {
-        m_ui->textMessages->clear();
-    }
-
-    m_ui->textMessages->setTextColor(Qt::black);
-    m_ui->textMessages->insertPlainText("[INFO] " + msg + "\n");
-    m_ui->textMessages->setTextColor(Qt::black);
+    QTextCursor cursor = logCursorAtEnd(m_ui->textMessages, clear);
+    const QTextCharFormat fmt = logPlainCharFormat();
+    cursor.insertText(QStringLiteral("[INFO] ") + msg + QLatin1Char('\n'), fmt);
+    m_ui->textMessages->setTextCursor(cursor);
 }
 
 /*!*******************************************************************************************************************
@@ -739,13 +778,108 @@ void MainWindow::info(const QString &msg, bool clear)
  **********************************************************************************************************************/
 void MainWindow::error(const QString &msg, bool clear)
 {
-    if(clear) {
-        m_ui->textMessages->clear();
+    QTextCursor cursor = logCursorAtEnd(m_ui->textMessages, clear);
+    QTextCharFormat fmt = logPlainCharFormat();
+    fmt.setForeground(QBrush(Qt::red));
+    cursor.insertText(QStringLiteral("[ERROR] ") + msg, fmt);
+    cursor.setCharFormat(logPlainCharFormat());
+    m_ui->textMessages->setTextCursor(cursor);
+}
+
+/*!*******************************************************************************************************************
+ * \brief Appends a clickable file link to the message log (opens in KLayout on click).
+ **********************************************************************************************************************/
+void MainWindow::appendLogFileLink(const QString &filePath, const QString &label)
+{
+    const QString absPath = QFileInfo(filePath).absoluteFilePath();
+    if(absPath.isEmpty() || !QFileInfo::exists(absPath)) {
+        return;
     }
 
-    m_ui->textMessages->setTextColor(Qt::red);
-    m_ui->textMessages->insertPlainText("[ERROR] " + msg);
-    m_ui->textMessages->setTextColor(Qt::black);
+    const QString display = label.isEmpty() ? absPath : label;
+    const QString href = QUrl::fromLocalFile(absPath).toString(QUrl::FullyEncoded);
+    const QString html = QStringLiteral("<a href=\"%1\" style=\"color:#0645ad;text-decoration:underline;\">%2</a>")
+                             .arg(href, display.toHtmlEscaped());
+
+    QTextCursor cursor = logCursorAtEnd(m_ui->textMessages, false);
+    const QTextCharFormat plainFmt = logPlainCharFormat();
+    cursor.insertText(QStringLiteral("[INFO] "), plainFmt);
+    cursor.insertHtml(html);
+    cursor.insertText(QStringLiteral("\n"), plainFmt);
+    cursor.setCharFormat(plainFmt);
+    m_ui->textMessages->setTextCursor(cursor);
+}
+
+/*!*******************************************************************************************************************
+ * \brief Clears the message log widget.
+ **********************************************************************************************************************/
+void MainWindow::clearMessages()
+{
+    m_ui->textMessages->clear();
+}
+
+/*!*******************************************************************************************************************
+ * \brief Context menu for the message log.
+ **********************************************************************************************************************/
+void MainWindow::showMessagesMenu(const QPoint &pos)
+{
+    QMenu *menu = m_ui->textMessages->createStandardContextMenu(pos);
+    if(!menu) {
+        return;
+    }
+
+    for(QAction *action : menu->actions()) {
+        if(action->text().contains(QStringLiteral("Paste"), Qt::CaseInsensitive)) {
+            menu->removeAction(action);
+        }
+    }
+
+    menu->addSeparator();
+    menu->addAction(tr("Clear"), this, &MainWindow::clearMessages);
+    menu->exec(m_ui->textMessages->mapToGlobal(pos));
+    delete menu;
+}
+
+/*!*******************************************************************************************************************
+ * \brief Opens a layout file in KLayout when the user clicks a log link.
+ **********************************************************************************************************************/
+void MainWindow::onLogAnchorClicked(const QUrl &url)
+{
+    const QString path = url.toLocalFile();
+    if(path.isEmpty() || !QFileInfo::exists(path)) {
+        error(tr("File not found: %1").arg(url.toString()), false);
+        return;
+    }
+
+    openLayoutFileInKLayout(path);
+}
+
+/*!*******************************************************************************************************************
+ * \brief Opens a layout file in KLayout (server or one-shot script).
+ **********************************************************************************************************************/
+void MainWindow::openLayoutFileInKLayout(const QString &layoutPath, const QString &cellName)
+{
+    m_klayoutTools.openLayoutFile(getToolByView(QStringLiteral("gds")), layoutPath, cellName, m_currentProjFile);
+}
+
+bool MainWindow::isKLayoutServerRunning() const
+{
+    return m_klayoutTools.isServerRunning();
+}
+
+bool MainWindow::ensureKLayoutServerRunning(const QString &tool)
+{
+    return m_klayoutTools.ensureServerRunning(tool, m_currentProjFile);
+}
+
+bool MainWindow::sendKLayoutOpenRequest(const QString &gdsPath, const QString &cellName)
+{
+    return m_klayoutTools.sendOpenRequest(gdsPath, cellName);
+}
+
+bool MainWindow::sendKLayoutSelectRequest(const QString &gdsPath, const QString &cellName)
+{
+    return m_klayoutTools.sendSelectRequest(gdsPath, cellName);
 }
 
 /*!*******************************************************************************************************************
@@ -1816,241 +1950,6 @@ void MainWindow::on_listCategories_itemDoubleClicked(QTreeWidgetItem *item, int 
     proc.startDetached(tool, args);
 }
 
-/*!*******************************************************************************************************************
- * \brief Creates a temporary KLayout python script and opens a given cell from a GDS file.
- *        The script also performs delayed "zoom fit" (GUI ready check) using a timer.
- * \param gdsPath     Absolute path to the GDS file.
- * \param cellName    Cell name to open (top cell).
- * \return Absolute path to created script file, or empty string on failure.
- **********************************************************************************************************************/
-QString MainWindow::createKLayoutOpenScript(const QString &gdsPath,
-                                            const QString &cellName) const
-{
-    auto pyRaw = [](const QString &s) -> QString {
-        QString t = QDir::toNativeSeparators(s);
-        t.replace("\\", "\\\\");
-        t.replace("'", "\\'");
-        return QString("r'%1'").arg(t);
-    };
-
-    QTemporaryFile tf(QDir::tempPath() + QDir::separator() + "libman_klayout_open_cell_XXXXXX.py");
-    tf.setAutoRemove(false);
-
-    if(!tf.open()) {
-        return QString();
-    }
-
-    QTextStream out(&tf);
-#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    out.setCodec("UTF-8");
-#else
-    out.setEncoding(QStringConverter::Utf8);
-#endif
-
-    out <<
-        R"(# -*- coding: utf-8 -*-
-import pya
-import os
-import os.path
-
-_app = pya.Application.instance()
-_mw  = _app.main_window() if _app is not None else None
-
-
-#==============================================================================
-def libman_cmp_paths(p1, p2):
-    p1 = os.path.normcase(os.path.normpath(p1))
-    p2 = os.path.normcase(os.path.normpath(p2))
-    return p1 == p2
-
-
-#==============================================================================
-# Delayed zoom_fit (wait until the view is fully ready)
-def libman_fit_view_to_window():
-    global _app, _mw
-    if _app is None:
-        _app = pya.Application.instance()
-    if _mw is None and _app is not None:
-        _mw = _app.main_window()
-    if _mw is None:
-        return
-
-    global _libman_fit_timer
-    try:
-        _libman_fit_timer
-    except NameError:
-        _libman_fit_timer = None
-
-    if _libman_fit_timer is None:
-        t = pya.QTimer(_mw)
-        t.setSingleShot(True)
-
-        def _on_timeout():
-            app2 = pya.Application.instance()
-            mw2  = app2.main_window() if app2 is not None else None
-            lv2  = mw2.current_view() if mw2 is not None else None
-
-            ready = (lv2 is not None) and (lv2.cellviews() > 0) and (lv2.active_cellview() is not None)
-
-            if ready:
-                try:
-                    lv2.zoom_fit()
-                except Exception:
-                    pass
-            else:
-                t.start(200)
-
-        t.timeout(_on_timeout)
-        _libman_fit_timer = t
-
-    if _libman_fit_timer.isActive():
-        _libman_fit_timer.stop()
-    _libman_fit_timer.start(200)
-
-
-#==============================================================================
-class LibManRequest:
-    def open_cell(self, file_name, cell_name):
-        if _mw is None:
-            return
-
-        # Ensure layout is loaded
-        if not os.path.exists(file_name):
-            # Only meaningful to create a layout when a cell name is given
-            if not cell_name:
-                return
-            (lv, cv, lv_idx, cv_idx, need_save) = self.libman_create_layout(file_name, cell_name)
-        else:
-            (lv, cv, lv_idx, cv_idx, need_save) = self.libman_open_layout(file_name)
-
-        if lv is None or cv is None or cv_idx < 0:
-            return
-
-        _mw.select_view(lv_idx)
-
-        # If no cell requested: just open file (zoom_fit will be applied later)
-        if not cell_name:
-            return
-
-        # Select requested cell if it exists
-        try:
-            top_cell = cv.layout().cell_by_name(cell_name)
-            if top_cell is not None:
-                lv.select_cell(top_cell, cv_idx)
-        except Exception:
-            pass
-
-
-    def libman_create_layout(self, file_name, cell_name):
-        # Create a new layout in a new view.
-        cv = _mw.create_layout(1)
-
-        # Add cell.
-        cv.layout().add_cell(cell_name)
-
-        # Save file.
-        (lv, cv_idx) = self.libman_get_view_and_index(cv)
-        lv.save_as(cv_idx, file_name, False, pya.SaveLayoutOptions())
-
-        (lv, cv, lv_idx, cv_idx) = self.libman_find_view_for_file(file_name)
-        return (lv, cv, lv_idx, cv_idx, False)  # do not save
-
-
-    def libman_open_layout(self, file_name):
-        (lv, cv, lv_idx, cv_idx) = self.libman_find_view_for_file(file_name)
-        if cv_idx == -1:
-            # Load into existing view (same-view mode)
-            _mw.load_layout(file_name, 1)
-            (lv, cv, lv_idx, cv_idx) = self.libman_find_view_for_file(file_name)
-        return (lv, cv, lv_idx, cv_idx, False)
-
-
-    def libman_get_view_and_index(self, cell_view):
-        num_views = _mw.views()
-        for lv_idx in range(num_views):
-            lv = _mw.view(lv_idx)
-            cv_idx = self.libman_cellview_index(lv, cell_view)
-            if cv_idx != -1:
-                return (lv, cv_idx)
-        return (None, -1)
-
-
-    def libman_cellview_index(self, layout_view, cell_view):
-        n = layout_view.cellviews()
-        for i in range(n):
-            cv = layout_view.cellview(i)
-            if cv == cell_view:
-                return i
-        return -1
-
-
-    def libman_find_view_for_file(self, file_name):
-        num_views = _mw.views()
-        for lv_idx in range(num_views):
-            lv = _mw.view(lv_idx)
-            (cv, cv_idx) = self.libman_find_cellview(lv, file_name)
-            if cv_idx != -1:
-                return (lv, cv, lv_idx, cv_idx)
-        return (None, None, -1, -1)
-
-
-    def libman_find_cellview(self, layout_view, file_name):
-        n = layout_view.cellviews()
-        for i in range(n):
-            cv = layout_view.cellview(i)
-            fn = cv.filename()
-            if libman_cmp_paths(fn, file_name):
-                return (cv, i)
-        return (None, -1)
-
-
-#==============================================================================
-# Call
-req = LibManRequest()
-)";
-
-    out << "req.open_cell(" << pyRaw(gdsPath) << ", " << pyRaw(cellName) << ")\n";
-    out << "libman_fit_view_to_window()\n";
-
-    out.flush();
-    tf.close();
-
-    return tf.fileName();
-}
-
-/*!*******************************************************************************************************************
- * \brief Starts external tool with a temporary script file and removes the script after the tool finishes.
- * \param tool        Tool executable (e.g. "klayout").
- * \param args        Arguments for the tool.
- * \param scriptPath  Temporary script file to remove after tool exit.
- **********************************************************************************************************************/
-void MainWindow::startToolWithTempScript(const QString &tool, const QStringList &args, const QString &scriptPath)
-{
-    QProcess *p = new QProcess(this);
-
-    connect(p,
-            QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            this,
-            [p, scriptPath](int, QProcess::ExitStatus)
-            {
-                if(!scriptPath.isEmpty() && QFileInfo(scriptPath).exists()) {
-                    QFile::remove(scriptPath);
-                }
-                p->deleteLater();
-            });
-
-    connect(p,
-            &QProcess::errorOccurred,
-            this,
-            [scriptPath](QProcess::ProcessError)
-            {
-                if(!scriptPath.isEmpty() && QFileInfo(scriptPath).exists()) {
-                    QFile::remove(scriptPath);
-                }
-            });
-
-    p->start(tool, args);
-}
 
 /*!*******************************************************************************************************************
  * \brief Opens selected view using configured external tool.
@@ -2229,6 +2128,25 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
  **********************************************************************************************************************/
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
+    if(obj == m_ui->textMessages->viewport()) {
+        if(event->type() == QEvent::MouseMove || event->type() == QEvent::HoverMove) {
+            auto *mouseEvent = static_cast<QMouseEvent *>(event);
+            const QString anchor = m_ui->textMessages->anchorAt(mouseEvent->pos());
+            m_ui->textMessages->viewport()->setCursor(anchor.isEmpty() ? Qt::IBeamCursor : Qt::PointingHandCursor);
+        }
+        else if(event->type() == QEvent::Leave) {
+            m_ui->textMessages->viewport()->unsetCursor();
+        }
+        else if(event->type() == QEvent::MouseButtonRelease) {
+            auto *mouseEvent = static_cast<QMouseEvent *>(event);
+            const QString anchor = m_ui->textMessages->anchorAt(mouseEvent->pos());
+            if(!anchor.isEmpty()) {
+                onLogAnchorClicked(QUrl(anchor));
+                return true;
+            }
+        }
+    }
+
     if (obj == m_ui->listViews->viewport() && event->type() == QEvent::MouseButtonDblClick) {
         auto *mouseEvent = static_cast<QMouseEvent*>(event);
         QTreeWidgetItem *item = m_ui->listViews->itemAt(mouseEvent->pos());

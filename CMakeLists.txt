@@ -165,7 +165,7 @@ set(SOURCES
     src/libfileparser.cpp
     oas/oasReadAsync.cpp
     oas/oasReader.cpp
-    src/klayoutServer.cpp
+    src/klayout_tools.cpp
     src/klayoutCellResolver.cpp
     src/lstreamcellreader.cpp
     src/mainwindow.cpp

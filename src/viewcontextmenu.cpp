@@ -4,6 +4,7 @@
 #include <QScreen>
 #include <QProcess>
 #include <QDateTime>
+#include <QDir>
 #include <QFileInfo>
 #include <QSettings>
 #include <QMouseEvent>
@@ -12,6 +13,7 @@
 #include <QInputDialog>
 #include <QGuiApplication>
 #include <QListWidgetItem>
+#include <QStandardPaths>
 
 #include "property.h"
 #include "mainwindow.h"
@@ -110,6 +112,43 @@ void MainWindow::showViewMenu(const QPoint &pos)
         connect(viewInfo, &QAction::triggered, this, &MainWindow::showViewInfo);
         menu->addAction(viewInfo);
         addAction(viewInfo);
+
+        if(isLayoutXorMenuCandidate(items.first())) {
+            menu->addSeparator();
+
+            QAction *xorMark = new QAction(tr("XOR..."), this);
+            xorMark->setIcon(QIcon(":/icons/layout.svg"));
+            xorMark->setStatusTip(tr("Mark this layout as the first XOR operand."));
+            connect(xorMark, &QAction::triggered, this, &MainWindow::markXorFirstLayout);
+            menu->addAction(xorMark);
+
+            if(!m_xorFirst.klayoutPath.isEmpty()) {
+                QString curView;
+                QString curPath;
+                QString curKlayout;
+                QString curCell;
+                QStringList ignoreErrors;
+                const bool resolved = resolveSelectedLayoutForXor(&curView, &curPath, &curKlayout, &curCell, &ignoreErrors);
+                const bool sameAsFirst = resolved
+                        && !curKlayout.isEmpty()
+                        && (QFileInfo(curKlayout).absoluteFilePath()
+                            == QFileInfo(m_xorFirst.klayoutPath).absoluteFilePath());
+
+                if(resolved && !sameAsFirst) {
+                    QAction *xorWith = new QAction(
+                                tr("XOR with %1").arg(m_xorFirst.displayLabel), this);
+                    xorWith->setIcon(QIcon(":/icons/layout.svg"));
+                    xorWith->setStatusTip(tr("Compare this layout with the previously marked XOR layout via KLayout."));
+                    connect(xorWith, &QAction::triggered, this, &MainWindow::runXorWithSelectedLayout);
+                    menu->addAction(xorWith);
+                }
+
+                QAction *xorClear = new QAction(tr("Clear XOR selection"), this);
+                xorClear->setStatusTip(tr("Clear the pending first XOR layout."));
+                connect(xorClear, &QAction::triggered, this, &MainWindow::clearXorSelection);
+                menu->addAction(xorClear);
+            }
+        }
     }
 
     menu->addSeparator();
@@ -941,4 +980,293 @@ void MainWindow::gitCheckout()
 
     QString output = git.readAllStandardOutput() + git.readAllStandardError();
     info(output, true);
+}
+
+/*!*********************************************************************************************************************
+ * \brief True when the selected views-tree item is a layout root suitable for XOR (gds/oas/lstr/layout).
+ **********************************************************************************************************************/
+bool MainWindow::isLayoutXorMenuCandidate(QTreeWidgetItem *item) const
+{
+    if(!item) {
+        return false;
+    }
+
+    QTreeWidgetItem *root = item;
+    while(root->parent()) {
+        root = root->parent();
+    }
+
+    return isLayoutViewTreeItem(root);
+}
+
+/*!*********************************************************************************************************************
+ * \brief Resolves the currently selected layout view file and preferred cell for XOR / KLayout.
+ **********************************************************************************************************************/
+bool MainWindow::resolveSelectedLayoutForXor(QString *viewName,
+                                             QString *viewPath,
+                                             QString *klayoutPath,
+                                             QString *cellName,
+                                             QStringList *errors) const
+{
+    if(viewName) {
+        viewName->clear();
+    }
+    if(viewPath) {
+        viewPath->clear();
+    }
+    if(klayoutPath) {
+        klayoutPath->clear();
+    }
+    if(cellName) {
+        cellName->clear();
+    }
+
+    QList<QTreeWidgetItem *> items = m_ui->listViews->selectedItems();
+    if(items.isEmpty()) {
+        if(errors) {
+            *errors << tr("No view selected.");
+        }
+        return false;
+    }
+
+    QTreeWidgetItem *item = items.first();
+    if(!item) {
+        return false;
+    }
+
+    QString resolvedView;
+    QString resolvedPath;
+    QString resolvedCell;
+
+    const int type = item->data(0, RoleType).toInt();
+    if(type == ItemViewGds) {
+        resolvedView = QStringLiteral("gds");
+        resolvedPath = item->data(0, RoleGdsPath).toString();
+    }
+    else if(type == ItemViewOas) {
+        resolvedView = QStringLiteral("oas");
+        resolvedPath = item->data(0, RoleOasPath).toString();
+    }
+    else if(type == ItemViewLStream) {
+        resolvedView = QStringLiteral("lstr");
+        resolvedPath = item->data(0, RoleLStreamPath).toString();
+    }
+    else if(type == ItemViewCore && isLayoutCoreViewName(item->text(0))) {
+        resolvedView = item->text(0);
+        resolvedPath = item->data(0, RoleCorePath).toString();
+    }
+    else if(type == ItemCell) {
+        QTreeWidgetItem *p = item->parent();
+        while(p && p->parent()) {
+            p = p->parent();
+        }
+        if(!p) {
+            if(errors) {
+                *errors << tr("Cannot resolve layout root for selected cell.");
+            }
+            return false;
+        }
+
+        const QString rootName = p->text(0);
+        if(rootName == QLatin1String("gds")) {
+            resolvedView = QStringLiteral("gds");
+            resolvedPath = p->data(0, RoleGdsPath).toString();
+        }
+        else if(rootName == QLatin1String("oas") || rootName == QLatin1String("oasis")) {
+            resolvedView = QStringLiteral("oas");
+            resolvedPath = p->data(0, RoleOasPath).toString();
+        }
+        else if(rootName == QLatin1String("lstr") || rootName == QLatin1String("lstream")) {
+            resolvedView = QStringLiteral("lstr");
+            resolvedPath = p->data(0, RoleLStreamPath).toString();
+        }
+        else if(p->data(0, RoleType).toInt() == ItemViewCore) {
+            resolvedView = rootName;
+            resolvedPath = p->data(0, RoleCorePath).toString();
+        }
+        else {
+            if(errors) {
+                *errors << tr("Selected cell is not under a layout view.");
+            }
+            return false;
+        }
+
+        resolvedCell = item->data(0, RoleCellName).toString();
+    }
+    else {
+        if(errors) {
+            *errors << tr("Selected item is not a layout view (gds/oas/lstr/layout).");
+        }
+        return false;
+    }
+
+    if(resolvedPath.isEmpty() || !QFileInfo::exists(resolvedPath)) {
+        if(errors) {
+            *errors << tr("Layout file does not exist: %1").arg(resolvedPath);
+        }
+        return false;
+    }
+
+    QStringList bridgeErrors;
+    const QString kPath = layoutPathForKLayout(resolvedView, resolvedPath, &bridgeErrors);
+    if(kPath.isEmpty()) {
+        if(errors) {
+            if(!bridgeErrors.isEmpty()) {
+                *errors << bridgeErrors;
+            }
+            else {
+                *errors << tr("Failed to prepare layout for KLayout: %1").arg(resolvedPath);
+            }
+        }
+        return false;
+    }
+
+    if(resolvedCell.isEmpty()) {
+        resolvedCell = preferredKLayoutCellForRoot(kPath, getCurrentGroupName());
+    }
+
+    if(viewName) {
+        *viewName = resolvedView;
+    }
+    if(viewPath) {
+        *viewPath = resolvedPath;
+    }
+    if(klayoutPath) {
+        *klayoutPath = kPath;
+    }
+    if(cellName) {
+        *cellName = resolvedCell;
+    }
+    return true;
+}
+
+/*!*********************************************************************************************************************
+ * \brief Marks the current layout view as the first XOR operand.
+ **********************************************************************************************************************/
+void MainWindow::markXorFirstLayout()
+{
+    QString viewName;
+    QString viewPath;
+    QString klayoutPath;
+    QString cellName;
+    QStringList errors;
+    if(!resolveSelectedLayoutForXor(&viewName, &viewPath, &klayoutPath, &cellName, &errors)) {
+        error(errors.isEmpty() ? tr("Cannot mark layout for XOR.") : errors.join(QLatin1Char('\n')), false);
+        return;
+    }
+
+    const QString libName = getCurrentLibraryName();
+    const QString groupName = getCurrentGroupName();
+    const QString label = QStringLiteral("%1/%2/%3").arg(libName, groupName, viewName);
+
+    m_xorFirst.libName = libName;
+    m_xorFirst.groupName = groupName;
+    m_xorFirst.viewName = viewName;
+    m_xorFirst.displayLabel = label;
+    m_xorFirst.viewPath = viewPath;
+    m_xorFirst.klayoutPath = klayoutPath;
+    m_xorFirst.cellName = cellName;
+
+    info(tr("XOR: '%1' selected for XOR. Choose a second layout view and use \"XOR with %1\".")
+             .arg(label),
+         false);
+}
+
+/*!*********************************************************************************************************************
+ * \brief Clears the pending first XOR layout selection.
+ **********************************************************************************************************************/
+void MainWindow::clearXorSelection()
+{
+    if(m_xorFirst.klayoutPath.isEmpty()) {
+        return;
+    }
+
+    const QString label = m_xorFirst.displayLabel;
+    m_xorFirst = XorSelection();
+    info(tr("XOR: cleared selection '%1'.").arg(label), false);
+}
+
+/*!*********************************************************************************************************************
+ * \brief Runs KLayout batch XOR between the pending first layout and the currently selected layout.
+ **********************************************************************************************************************/
+void MainWindow::runXorWithSelectedLayout()
+{
+    if(m_xorFirst.klayoutPath.isEmpty()) {
+        error(tr("XOR: no first layout selected. Use \"XOR...\" first."), false);
+        return;
+    }
+
+    QString viewName;
+    QString viewPath;
+    QString klayoutPath;
+    QString cellName;
+    QStringList errors;
+    if(!resolveSelectedLayoutForXor(&viewName, &viewPath, &klayoutPath, &cellName, &errors)) {
+        error(errors.isEmpty() ? tr("Cannot resolve second layout for XOR.") : errors.join(QLatin1Char('\n')), false);
+        return;
+    }
+
+    if(QFileInfo(klayoutPath).absoluteFilePath()
+       == QFileInfo(m_xorFirst.klayoutPath).absoluteFilePath()) {
+        error(tr("XOR: choose a different layout as the second operand."), false);
+        return;
+    }
+
+    const QString libName = getCurrentLibraryName();
+    const QString groupName = getCurrentGroupName();
+    const QString labelB = QStringLiteral("%1/%2/%3").arg(libName, groupName, viewName);
+
+    const QString tool = getToolByView(viewName);
+    if(tool.isEmpty()) {
+        error(tr("XOR: please configure the Layout tool in Tool Manager first."), false);
+        return;
+    }
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    const QStringList parts = QProcess::splitCommand(tool.trimmed());
+#else
+    const QStringList parts = tool.trimmed().split(QLatin1Char(' '), QString::SkipEmptyParts);
+#endif
+    if(parts.isEmpty()) {
+        error(tr("XOR: invalid Layout tool command."), false);
+        return;
+    }
+
+    QString program = parts.first();
+    const QFileInfo fi(program);
+    if(!(fi.isAbsolute() && fi.exists())) {
+        const QString found = QStandardPaths::findExecutable(program);
+        if(!found.isEmpty()) {
+            program = found;
+        }
+    }
+
+    QStringList args = parts.mid(1);
+    args << QStringLiteral("-b")
+         << QStringLiteral("-r");
+
+    const QString outputPath = QDir(QDir::tempPath()).filePath(
+        QStringLiteral("libman_xor_%1.gds")
+            .arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_HHmmss"))));
+
+    const QString scriptPath = m_klayoutTools.createXorScript(m_xorFirst.klayoutPath,
+                                                              m_xorFirst.cellName,
+                                                              klayoutPath,
+                                                              cellName,
+                                                              outputPath);
+    if(scriptPath.isEmpty()) {
+        error(tr("XOR: failed to create KLayout XOR script."), false);
+        return;
+    }
+    args << scriptPath;
+
+    info(tr("XOR: starting KLayout XOR\n  A: %1 (%2)\n  B: %3 (%4)")
+             .arg(m_xorFirst.displayLabel,
+                  m_xorFirst.klayoutPath,
+                  labelB,
+                  klayoutPath),
+         false);
+
+    m_klayoutTools.startXorProcess(program, args, scriptPath, outputPath);
+    m_xorFirst = XorSelection();
 }

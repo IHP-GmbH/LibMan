@@ -62,6 +62,21 @@ An `.alive` sidecar file reports the server PID for health checks.
 
 See also: [CORE integration](CORE_INTEGRATION.md).
 
+## Layout XOR
+
+Compare two layout views (`gds`, `oas`, `lstr`, `layout`) from the views context menu — same two-step flow as copy/paste:
+
+1. Right-click the **first** layout view (or a cell under it) → **XOR...**  
+   LibMan remembers `library/cell/view` and logs:  
+   `XOR: 'lib/group/view' selected for XOR. Choose a second layout...`
+2. Right-click the **second** layout view → **XOR with &lt;first&gt;**  
+   LibMan starts a separate KLayout batch process (`klayout -b -r &lt;script&gt;`), not the interactive server.
+3. Per-layer XOR counts and the summary are streamed into the LibMan log (`textMessages`).
+
+**Clear XOR selection** cancels a pending first operand. After a successful start, the pending selection is cleared.
+
+Cell resolution matches open-layout rules (selected hierarchy cell, else preferred root cell for the group).
+
 ## Troubleshooting
 
 | Symptom | Check |
@@ -71,5 +86,8 @@ See also: [CORE integration](CORE_INTEGRATION.md).
 | `*.layout.core` not recognized | mcore streamer not installed in KLayout |
 | Second double-click does nothing | KLayout server died; close KLayout and double-click again to restart |
 | Double-click expands tree instead of opening | Expected: only **child cells** expand; layout **root** opens KLayout. Use the disclosure arrow to expand |
+| XOR menu missing | Select a layout view (`gds`/`oas`/`lstr`/`layout`) or a cell under it |
+| XOR fails to start | Same Layout tool as open; `klayout -b` must be available |
+| XOR on `*.layout.core` fails | mcore plugin required in the same KLayout used by the Layout tool |
 
 More: [Troubleshooting](../reference/TROUBLESHOOTING.md).

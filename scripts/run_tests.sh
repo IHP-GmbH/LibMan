@@ -151,7 +151,7 @@ python -m gcovr -j 1 \
   --exclude "$ROOT_FWD/src/projectcontextmenu.cpp" \
   --exclude "$ROOT_FWD/src/categorycontextmenu.cpp" \
   --exclude "$ROOT_FWD/src/mainwindow.cpp" \
-  --exclude "$ROOT_FWD/src/klayoutServer.cpp" \
+  --exclude "$ROOT_FWD/src/klayout_tools.cpp" \
   --exclude "$ROOT_FWD/src/projectmanager.cpp" \
   --exclude ".*moc_.*" \
   --exclude ".*qrc_.*" \

@@ -7,6 +7,7 @@
 #include "core/coreKlayoutBridge.h"
 #include "core/core_path_utils.h"
 #include "src/klayoutCellResolver.h"
+#include "src/klayout_tools.h"
 
 #include <QProcess>
 #include <QMainWindow>
@@ -154,6 +155,18 @@ public:
         int                                 angleDeg = 0;        /*!< Current rotation angle (0..359). */
     };
 
+    /*! Pending first layout for two-step XOR (empty klayoutPath = none). */
+    struct XorSelection
+    {
+        QString                             libName;
+        QString                             groupName;
+        QString                             viewName;
+        QString                             displayLabel;
+        QString                             viewPath;
+        QString                             klayoutPath;
+        QString                             cellName;
+    };
+
 private slots:
     void                                closeEvent(QCloseEvent *event) override;
     bool                                eventFilter(QObject *obj, QEvent *event) override;
@@ -165,6 +178,10 @@ private slots:
     void                                showGroupMenu(const QPoint &pos);
     void                                showLibraryMenu(const QPoint &pos);
     void                                showCategoryMenu(const QPoint &pos);
+    void                                showMessagesMenu(const QPoint &pos);
+
+    void                                clearMessages();
+    void                                onLogAnchorClicked(const QUrl &url);
 
     void                                on_viewItemExpanded(QTreeWidgetItem *item);
     void                                renameSelectedLibrary();
@@ -230,6 +247,10 @@ private slots:
     void                                gitPush();
     void                                gitCheckout();
 
+    void                                markXorFirstLayout();
+    void                                runXorWithSelectedLayout();
+    void                                clearXorSelection();
+
     void                                on_actionSave_triggered();
     void                                on_actionSave_As_triggered();
     void                                on_actionExit_triggered();
@@ -271,6 +292,8 @@ private:
 
     void                                info(const QString &msg, bool clear = true);
     void                                error(const QString &msg, bool clear = true);
+    void                                appendLogFileLink(const QString &filePath, const QString &label = QString());
+    void                                openLayoutFileInKLayout(const QString &layoutPath, const QString &cellName = QString());
 
     void                                initIcons();
 
@@ -452,13 +475,14 @@ private:
     bool                                ensureKLayoutServerRunning(const QString &tool);
     bool                                isKLayoutServerRunning() const;
     bool                                sendKLayoutOpenRequest(const QString &gdsPath, const QString &cellName);
-    QString                             createKLayoutServerScript(const QString &cmdFile) const;
     bool                                sendKLayoutSelectRequest(const QString &gdsPath, const QString &cellName);
 
-    QString                             createKLayoutOpenScript(const QString &gdsPath, const QString &cellName) const;
-    void                                startToolWithTempScript(const QString &tool,
-                                                                const QStringList &args,
-                                                                const QString &scriptPath);
+    bool                                resolveSelectedLayoutForXor(QString *viewName,
+                                                                    QString *viewPath,
+                                                                    QString *klayoutPath,
+                                                                    QString *cellName,
+                                                                    QStringList *errors) const;
+    bool                                isLayoutXorMenuCandidate(QTreeWidgetItem *item) const;
 
     QMap<QString, QStringList>          getSupportedViewsByTool() const;
     QStringList                         layoutViewsForTool(const QString &toolName) const;
@@ -486,9 +510,9 @@ private:
     QStringList                         m_copyData;                        /*!< Copy buffer: [name, path, ...] depending on COPY_STATE. */
     COPY_STATE                          m_currentCopyState     = NONE;     /*!< Current copy state (project/group/view). */
 
-    qint64                              m_klayoutServerPid      = 0;       /*!< PID of detached KLayout server process. */
-    QString                             m_klayoutCmdFile;                  /*!< Path to KLayout JSON command file. */
-    QString                             m_klayoutServerScript;             /*!< Path to generated KLayout server script. */
+    XorSelection                        m_xorFirst;                        /*!< First layout picked for XOR comparison. */
+
+    KLayoutTools                        m_klayoutTools;                    /*!< KLayout server, open scripts, and XOR. */
 
     QHash<QTreeWidgetItem*, SpinnerState> m_spinnerStates;                 /*!< Spinner animation state per tree item. */
 

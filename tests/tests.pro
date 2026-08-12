@@ -35,7 +35,7 @@ SOURCES += \
     $$PWD/../lstream/lstreamcellwriter.cpp \
     $$PWD/../lstream/lstrReadAsync.cpp \
     $$PWD/../src/libfileparser.cpp \
-    $$PWD/../src/klayoutServer.cpp \
+    $$PWD/../src/klayout_tools.cpp \
     $$PWD/../src/klayoutCellResolver.cpp \
     $$PWD/../src/lstreamcellreader.cpp \
     $$PWD/../src/mainwindow.cpp \
