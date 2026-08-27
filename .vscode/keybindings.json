@@ -1,0 +1,12 @@
+[
+  {
+    "key": "f8",
+    "command": "workbench.action.tasks.showTasks",
+    "when": "true"
+  },
+  {
+    "key": "f9",
+    "command": "workbench.action.tasks.runTask",
+    "when": "true"
+  }
+]

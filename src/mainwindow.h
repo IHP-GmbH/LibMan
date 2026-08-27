@@ -470,7 +470,7 @@ private:
     QStringList                         resolveTechLibraryCorePaths(const QString &techLibraryName) const;
     QString                             resolveTechLibraryCorePath(const QString &techLibraryName) const;
     bool                                isSchematicLikeView(const QString &viewName) const;
-    void                                launchSchematicTool(const QString &tool, const QString &viewPath) const;
+    void                                launchSchematicTool(const QString &tool, const QString &viewPath);
 
     bool                                ensureKLayoutServerRunning(const QString &tool);
     bool                                isKLayoutServerRunning() const;

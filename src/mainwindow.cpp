@@ -851,6 +851,14 @@ void MainWindow::onLogAnchorClicked(const QUrl &url)
         return;
     }
 
+    // New XOR outputs embed master + XOR_DIFF under cell COMPARE (one file).
+    const QString baseName = QFileInfo(path).fileName();
+    if(baseName.startsWith(QStringLiteral("libman_xor_"), Qt::CaseInsensitive)) {
+        info(tr("Opening XOR compare view (master + differences): %1").arg(path), false);
+        openLayoutFileInKLayout(path, QStringLiteral("COMPARE"));
+        return;
+    }
+
     openLayoutFileInKLayout(path);
 }
 

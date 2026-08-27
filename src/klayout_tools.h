@@ -18,6 +18,10 @@ public:
     bool isServerRunning() const;
     bool ensureServerRunning(const QString &tool, const QString &projectFile);
     bool sendOpenRequest(const QString &gdsPath, const QString &cellName);
+    bool sendOpenOverlayRequest(const QString &masterPath,
+                                const QString &masterCell,
+                                const QString &overlayPath,
+                                const QString &overlayCell);
     bool sendSelectRequest(const QString &gdsPath, const QString &cellName);
 
     void openLayoutFile(const QString &tool,
@@ -25,7 +29,19 @@ public:
                         const QString &cellName,
                         const QString &projectFile);
 
+    /*! Open master layout and XOR/diff overlay in one KLayout view. */
+    void openLayoutWithOverlay(const QString &tool,
+                               const QString &masterPath,
+                               const QString &masterCell,
+                               const QString &overlayPath,
+                               const QString &overlayCell,
+                               const QString &projectFile);
+
     QString createOpenScript(const QString &gdsPath, const QString &cellName) const;
+    QString createOpenWithOverlayScript(const QString &masterPath,
+                                        const QString &masterCell,
+                                        const QString &overlayPath,
+                                        const QString &overlayCell) const;
     QString createXorScript(const QString &pathA,
                             const QString &cellA,
                             const QString &pathB,
@@ -35,7 +51,14 @@ public:
     void startXorProcess(const QString &program,
                          const QStringList &args,
                          const QString &scriptPath,
-                         const QString &outputPath);
+                         const QString &outputPath,
+                         const QString &masterPath = QString(),
+                         const QString &masterCell = QString());
+
+    /*! Reads sidecar written next to XOR output GDS (master path for overlay open). */
+    static bool readXorMeta(const QString &xorOutputPath,
+                            QString *masterPath,
+                            QString *masterCell);
 
 signals:
     void info(const QString &msg);

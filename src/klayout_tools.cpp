@@ -13,6 +13,7 @@
 #include <QTemporaryFile>
 #include <QTextStream>
 #include <QThread>
+#include <QTimer>
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QStringConverter>
@@ -378,6 +379,49 @@ bool KLayoutTools::sendOpenRequest(const QString &gdsPath, const QString &cellNa
 }
 
 /*!*******************************************************************************************************************
+ * \brief Asks the KLayout server to open master + overlay layouts in the same view.
+ **********************************************************************************************************************/
+bool KLayoutTools::sendOpenOverlayRequest(const QString &masterPath,
+                                          const QString &masterCell,
+                                          const QString &overlayPath,
+                                          const QString &overlayCell)
+{
+    if(m_cmdFile.isEmpty()) {
+        return false;
+    }
+
+    const QString tmp = m_cmdFile + ".tmp";
+
+    QJsonObject obj;
+    obj["action"] = "open_overlay";
+    obj["file"] = QFileInfo(masterPath).absoluteFilePath();
+    obj["cell"] = masterCell;
+    obj["overlay"] = QFileInfo(overlayPath).absoluteFilePath();
+    obj["overlay_cell"] = overlayCell;
+
+    const QByteArray payload = QJsonDocument(obj).toJson(QJsonDocument::Compact);
+
+    QFile f(tmp);
+    if(!f.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+        return false;
+    }
+    f.write(payload);
+    f.close();
+
+    QFile::remove(m_cmdFile);
+    if(!QFile::rename(tmp, m_cmdFile)) {
+        QFile f2(m_cmdFile);
+        if(!f2.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+            return false;
+        }
+        f2.write(payload);
+        f2.close();
+    }
+
+    return true;
+}
+
+/*!*******************************************************************************************************************
  * \brief Ensures that a KLayout instance with a polling server script is running.
  *
  * If a KLayout process is already running, this function does nothing.
@@ -689,7 +733,30 @@ def _handle(cmd):
     fn     = cmd.get("file", "")
     cell   = cmd.get("cell", "")
 
-    if action not in ("open", "select"):
+    if action not in ("open", "select", "open_overlay"):
+        return
+
+    if action == "open_overlay":
+        overlay = cmd.get("overlay", "")
+        overlay_cell = cmd.get("overlay_cell", "") or "XOR"
+        if not fn or not overlay:
+            return
+        if not os.path.exists(fn) or not os.path.exists(overlay):
+            return
+
+        (lv, cv, lv_idx, cv_idx) = _open_or_load(fn)
+        if lv is None:
+            return
+        _mw.select_view(lv_idx)
+        _select_cell(lv, cv, cv_idx, cell)
+
+        (lv2, cv2, lv_idx2, cv_idx2) = _open_or_load(overlay)
+        if lv2 is not None:
+            _mw.select_view(lv_idx2)
+            _select_cell(lv2, cv2, cv_idx2, overlay_cell)
+
+        _raise_main_window()
+        _schedule_zoom_fit()
         return
 
     if not fn:
@@ -811,6 +878,66 @@ void KLayoutTools::openLayoutFile(const QString &tool,
     }
 
     const QString scriptPath = createOpenScript(absPath, cellName);
+    if(scriptPath.isEmpty()) {
+        emit error(QObject::tr("Failed to create KLayout open script."));
+        return;
+    }
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    const QStringList parts = QProcess::splitCommand(tool.trimmed());
+#else
+    const QStringList parts = tool.trimmed().split(QLatin1Char(' '), Qt::SkipEmptyParts);
+#endif
+    if(parts.isEmpty()) {
+        emit error(QObject::tr("Invalid Layout tool command."));
+        QFile::remove(scriptPath);
+        return;
+    }
+
+    const QString program = resolveToolExecutable(tool);
+    QStringList args = parts.mid(1);
+    args << QStringLiteral("-r") << scriptPath;
+    startToolWithTempScript(program, args, scriptPath);
+}
+
+void KLayoutTools::openLayoutWithOverlay(const QString &tool,
+                                         const QString &masterPath,
+                                         const QString &masterCell,
+                                         const QString &overlayPath,
+                                         const QString &overlayCell,
+                                         const QString &projectFile)
+{
+    const QString absMaster = QFileInfo(masterPath).absoluteFilePath();
+    const QString absOverlay = QFileInfo(overlayPath).absoluteFilePath();
+    if(absMaster.isEmpty() || !QFileInfo::exists(absMaster)) {
+        emit error(QObject::tr("Master layout file not found: %1").arg(masterPath));
+        return;
+    }
+    if(absOverlay.isEmpty() || !QFileInfo::exists(absOverlay)) {
+        emit error(QObject::tr("XOR layout file not found: %1").arg(overlayPath));
+        return;
+    }
+
+    if(tool.isEmpty()) {
+        emit error(QObject::tr("Please configure the Layout tool in Tool Manager first."));
+        return;
+    }
+
+    const QString overlayCellName =
+        overlayCell.isEmpty() ? QStringLiteral("XOR") : overlayCell;
+
+    if(isServerRunning() || ensureServerRunning(tool, projectFile)) {
+        // Two "open" commands: existing servers already load into the same view
+        // (load_layout mode 1). A short gap lets the first load settle.
+        sendOpenRequest(absMaster, masterCell);
+        QTimer::singleShot(400, this, [this, absOverlay, overlayCellName]() {
+            sendOpenRequest(absOverlay, overlayCellName);
+        });
+        return;
+    }
+
+    const QString scriptPath =
+        createOpenWithOverlayScript(absMaster, masterCell, absOverlay, overlayCellName);
     if(scriptPath.isEmpty()) {
         emit error(QObject::tr("Failed to create KLayout open script."));
         return;
@@ -1020,6 +1147,55 @@ req = LibManRequest()
     return tf.fileName();
 }
 
+QString KLayoutTools::createOpenWithOverlayScript(const QString &masterPath,
+                                                  const QString &masterCell,
+                                                  const QString &overlayPath,
+                                                  const QString &overlayCell) const
+{
+    // Reuse the single-open script body, then open master + overlay into the same view.
+    QTemporaryFile tf(QDir::tempPath() + QDir::separator() + "libman_klayout_open_overlay_XXXXXX.py");
+    tf.setAutoRemove(false);
+
+    if(!tf.open()) {
+        return QString();
+    }
+
+    // Base helpers/classes from createOpenScript without the final open_cell call.
+    const QString baseScript = createOpenScript(masterPath, masterCell);
+    if(baseScript.isEmpty()) {
+        return QString();
+    }
+
+    QFile base(baseScript);
+    if(!base.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QFile::remove(baseScript);
+        return QString();
+    }
+    QByteArray body = base.readAll();
+    base.close();
+    QFile::remove(baseScript);
+
+    // Drop the trailing single open_cell / fit calls; append dual open.
+    const int cut = body.lastIndexOf("req.open_cell(");
+    if(cut >= 0) {
+        body = body.left(cut);
+    }
+
+    QTextStream out(&tf);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    out.setCodec("UTF-8");
+#else
+    out.setEncoding(QStringConverter::Utf8);
+#endif
+    out << QString::fromUtf8(body);
+    out << "req.open_cell(" << pyRawString(masterPath) << ", " << pyRawString(masterCell) << ")\n";
+    out << "req.open_cell(" << pyRawString(overlayPath) << ", " << pyRawString(overlayCell) << ")\n";
+    out << "libman_fit_view_to_window()\n";
+    out.flush();
+    tf.close();
+    return tf.fileName();
+}
+
 QString KLayoutTools::createXorScript(const QString &pathA,
                                       const QString &cellA,
                                       const QString &pathB,
@@ -1043,8 +1219,13 @@ QString KLayoutTools::createXorScript(const QString &pathA,
     out <<
         R"LIBMAN_XOR(# -*- coding: utf-8 -*-
 # LibMan layout XOR (batch)
+# Output GDS contains:
+#   MASTER/<original>  — copy of layout A (first XOR operand)
+#   XOR_DIFF           — shapes that differ
+#   COMPARE            — both instanced together (open this cell)
 import pya
 import sys
+import os
 
 def libman_pick_cell(ly, preferred):
     if preferred:
@@ -1063,6 +1244,22 @@ def libman_layer_key(ly, li):
     info = ly.get_info(li)
     return (info.layer, info.datatype, info.name)
 
+def libman_read_layout(ly, path):
+    """Read GDS/OAS/LStream/CORE (CORE needs mcore streamer in this KLayout build)."""
+    if not os.path.isfile(path):
+        print("ERROR: file not found: %s" % path)
+        return False
+    try:
+        ly.read(path)
+        return True
+    except Exception as e:
+        print("ERROR: failed to read layout: %s" % path)
+        print("  %s" % e)
+        if path.lower().endswith(".core"):
+            print("HINT: *.layout.core requires the mcore streamer (KLayout-coredb).")
+            print("      Rebuild KLayout with integrations/klayout/mcore and use that klayout.exe.")
+        return False
+
 def libman_xor(path_a, cell_a, path_b, cell_b, output_path):
     print("LibMan XOR")
     print("  A: %s" % path_a)
@@ -1070,8 +1267,10 @@ def libman_xor(path_a, cell_a, path_b, cell_b, output_path):
 
     lya = pya.Layout()
     lyb = pya.Layout()
-    lya.read(path_a)
-    lyb.read(path_b)
+    if not libman_read_layout(lya, path_a):
+        return 2
+    if not libman_read_layout(lyb, path_b):
+        return 2
 
     ca = libman_pick_cell(lya, cell_a)
     cb = libman_pick_cell(lyb, cell_b)
@@ -1082,9 +1281,6 @@ def libman_xor(path_a, cell_a, path_b, cell_b, output_path):
     print("  cell A: %s" % ca.name)
     print("  cell B: %s" % cb.name)
 
-    ly_out = pya.Layout()
-    top_idx = ly_out.add_cell("XOR")
-
     layer_map = {}
     for li in lya.layer_indices():
         layer_map[libman_layer_key(lya, li)] = True
@@ -1094,6 +1290,7 @@ def libman_xor(path_a, cell_a, path_b, cell_b, output_path):
     keys = sorted(layer_map.keys(), key=lambda k: (k[0], k[1], k[2] or ""))
     total = 0
     differing = 0
+    xor_by_layer = []
 
     for (layer, datatype, name) in keys:
         info = pya.LayerInfo(layer, datatype)
@@ -1112,13 +1309,41 @@ def libman_xor(path_a, cell_a, path_b, cell_b, output_path):
         total += n
         if n > 0:
             differing += 1
-            li_out = ly_out.layer(info)
-            xor.insert_into(ly_out, top_idx, li_out)
+            xor_by_layer.append((info, xor))
 
     print("XOR summary: %d differing layer(s), %d total XOR shape(s)" % (differing, total))
-    if total > 0:
-        ly_out.write(output_path)
-    return 0 if total == 0 else 1
+    if total == 0:
+        return 0
+
+    # Combined output: master A + XOR_DIFF under COMPARE (one file, one window).
+    ly_out = pya.Layout()
+    ly_out.dbu = lya.dbu
+    ly_out.read(path_a)
+
+    master_top = libman_pick_cell(ly_out, cell_a)
+    if master_top is None:
+        print("ERROR: could not resolve master cell in output layout")
+        return 2
+
+    master_name = master_top.name
+    if master_name in ("COMPARE", "XOR_DIFF", "XOR"):
+        # Avoid name clash with our synthetic cells.
+        ly_out.rename_cell(master_top.cell_index(), "MASTER")
+        master_top = ly_out.cell("MASTER")
+
+    xor_idx = ly_out.add_cell("XOR_DIFF")
+    for (info, xor) in xor_by_layer:
+        li_out = ly_out.layer(info)
+        xor.insert_into(ly_out, xor_idx, li_out)
+
+    compare_idx = ly_out.add_cell("COMPARE")
+    compare = ly_out.cell(compare_idx)
+    compare.insert(pya.CellInstArray(master_top.cell_index(), pya.Trans()))
+    compare.insert(pya.CellInstArray(xor_idx, pya.Trans()))
+
+    ly_out.write(output_path)
+    print("  wrote COMPARE (master + XOR_DIFF): %s" % output_path)
+    return 1
 
 )LIBMAN_XOR";
 
@@ -1155,7 +1380,9 @@ void KLayoutTools::logXorProcessOutput(const QString &text)
 void KLayoutTools::startXorProcess(const QString &program,
                                    const QStringList &args,
                                    const QString &scriptPath,
-                                   const QString &outputPath)
+                                   const QString &outputPath,
+                                   const QString &masterPath,
+                                   const QString &masterCell)
 {
     QProcess *p = new QProcess(this);
     p->setProcessChannelMode(QProcess::MergedChannels);
@@ -1167,7 +1394,7 @@ void KLayoutTools::startXorProcess(const QString &program,
     connect(p,
             QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             this,
-            [this, p, scriptPath, outputPath](int exitCode, QProcess::ExitStatus status) {
+            [this, p, scriptPath, outputPath, masterPath, masterCell](int exitCode, QProcess::ExitStatus status) {
                 logXorProcessOutput(QString::fromLocal8Bit(p->readAllStandardOutput()));
 
                 if(status != QProcess::NormalExit) {
@@ -1179,6 +1406,18 @@ void KLayoutTools::startXorProcess(const QString &program,
                 else if(exitCode == 1) {
                     emit info(QObject::tr("XOR: differences found (see log above)."));
                     if(QFileInfo::exists(outputPath)) {
+                        if(!masterPath.isEmpty()) {
+                            QJsonObject meta;
+                            meta.insert(QStringLiteral("master"),
+                                        QFileInfo(masterPath).absoluteFilePath());
+                            meta.insert(QStringLiteral("cell"), masterCell);
+                            meta.insert(QStringLiteral("overlay_cell"), QStringLiteral("XOR"));
+                            QFile metaFile(outputPath + QStringLiteral(".meta.json"));
+                            if(metaFile.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+                                metaFile.write(QJsonDocument(meta).toJson(QJsonDocument::Compact));
+                                metaFile.close();
+                            }
+                        }
                         emit fileLink(outputPath, outputPath);
                     }
                 }
@@ -1204,6 +1443,44 @@ void KLayoutTools::startXorProcess(const QString &program,
     });
 
     p->start(program, args);
+}
+
+bool KLayoutTools::readXorMeta(const QString &xorOutputPath,
+                               QString *masterPath,
+                               QString *masterCell)
+{
+    if(masterPath) {
+        masterPath->clear();
+    }
+    if(masterCell) {
+        masterCell->clear();
+    }
+
+    const QString metaPath = xorOutputPath + QStringLiteral(".meta.json");
+    QFile f(metaPath);
+    if(!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return false;
+    }
+
+    const QJsonDocument doc = QJsonDocument::fromJson(f.readAll());
+    f.close();
+    if(!doc.isObject()) {
+        return false;
+    }
+
+    const QJsonObject obj = doc.object();
+    const QString master = obj.value(QStringLiteral("master")).toString().trimmed();
+    if(master.isEmpty() || !QFileInfo::exists(master)) {
+        return false;
+    }
+
+    if(masterPath) {
+        *masterPath = master;
+    }
+    if(masterCell) {
+        *masterCell = obj.value(QStringLiteral("cell")).toString();
+    }
+    return true;
 }
 
 void KLayoutTools::startToolWithTempScript(const QString &tool,

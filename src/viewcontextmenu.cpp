@@ -1267,6 +1267,11 @@ void MainWindow::runXorWithSelectedLayout()
                   klayoutPath),
          false);
 
-    m_klayoutTools.startXorProcess(program, args, scriptPath, outputPath);
+    m_klayoutTools.startXorProcess(program,
+                                   args,
+                                   scriptPath,
+                                   outputPath,
+                                   m_xorFirst.klayoutPath,
+                                   m_xorFirst.cellName);
     m_xorFirst = XorSelection();
 }

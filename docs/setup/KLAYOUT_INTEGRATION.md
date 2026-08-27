@@ -64,7 +64,7 @@ See also: [CORE integration](CORE_INTEGRATION.md).
 
 ## Layout XOR
 
-Compare two layout views (`gds`, `oas`, `lstr`, `layout`) from the views context menu — same two-step flow as copy/paste:
+Compare two layout views (`gds`, `oas`, `lstr`, `layout` / `*.layout.core`) from the views context menu — same two-step flow as copy/paste:
 
 1. Right-click the **first** layout view (or a cell under it) → **XOR...**  
    LibMan remembers `library/cell/view` and logs:  
@@ -72,6 +72,14 @@ Compare two layout views (`gds`, `oas`, `lstr`, `layout`) from the views context
 2. Right-click the **second** layout view → **XOR with &lt;first&gt;**  
    LibMan starts a separate KLayout batch process (`klayout -b -r &lt;script&gt;`), not the interactive server.
 3. Per-layer XOR counts and the summary are streamed into the LibMan log (`textMessages`).
+4. If differences exist, a clickable temp GDS link is logged. The file contains:
+   - **master** cell tree (first operand)
+   - **XOR_DIFF** — differing shapes only
+   - **COMPARE** — both instanced together  
+
+   Clicking the link opens cell **COMPARE** so master and differences are visible in one window.
+
+**CORE layouts:** operands may be `*.layout.core`. The batch KLayout must be the same build that has the **mcore** streamer (KLayout-coredb). Otherwise the script prints a hint and exits with an error.
 
 **Clear XOR selection** cancels a pending first operand. After a successful start, the pending selection is cleared.
 

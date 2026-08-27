@@ -2,6 +2,7 @@
 #include <QDir>
 #include <QFile>
 #include <QProcess>
+#include <QProcessEnvironment>
 #include <QVariant>
 #include <QFileInfo>
 #include <QSettings>
@@ -13,6 +14,10 @@
 #include <QFileSystemWatcher>
 #include <QTimer>
 #include <QSet>
+
+#ifdef Q_OS_WIN
+#  include <windows.h>
+#endif
 
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
@@ -762,9 +767,26 @@ bool MainWindow::isSchematicLikeView(const QString &viewName) const
     return false;
 }
 
-void MainWindow::launchSchematicTool(const QString &tool, const QString &viewPath) const
+void MainWindow::launchSchematicTool(const QString &tool, const QString &viewPath)
 {
     if(tool.isEmpty() || viewPath.isEmpty()) {
+        return;
+    }
+
+    const QString absViewPath = QFileInfo(viewPath).absoluteFilePath();
+    if(absViewPath.isEmpty() || !QFileInfo::exists(absViewPath)) {
+        error(tr("Schematic file not found: %1").arg(viewPath), false);
+        return;
+    }
+
+    const QFileInfo toolFi(tool);
+    const QString absToolPath = toolFi.isAbsolute() ? toolFi.absoluteFilePath() : tool;
+    const bool isBatchFile =
+        absToolPath.endsWith(QStringLiteral(".bat"), Qt::CaseInsensitive)
+        || absToolPath.endsWith(QStringLiteral(".cmd"), Qt::CaseInsensitive);
+
+    if(isBatchFile && !QFileInfo::exists(absToolPath)) {
+        error(tr("Schematic tool not found: %1").arg(tool), false);
         return;
     }
 
@@ -789,26 +811,77 @@ void MainWindow::launchSchematicTool(const QString &tool, const QString &viewPat
     }
 
     QProcess proc;
-#ifdef Q_OS_WIN
-    QString program = tool;
-    QStringList arguments;
-    arguments << viewPath;
-    if(tool.endsWith(QStringLiteral(".bat"), Qt::CaseInsensitive)
-       || tool.endsWith(QStringLiteral(".cmd"), Qt::CaseInsensitive)) {
-        program = QStringLiteral("cmd.exe");
-        arguments = QStringList() << QStringLiteral("/c") << QDir::toNativeSeparators(tool) << viewPath;
-    }
-    proc.setProgram(program);
-    proc.setArguments(arguments);
-#else
-    proc.setProgram(tool);
-    proc.setArguments(QStringList() << viewPath);
-#endif
     proc.setProcessEnvironment(env);
+
+#ifdef Q_OS_WIN
+    if(isBatchFile) {
+        const QString workDir = QFileInfo(absToolPath).absolutePath();
+        const QString nativeView = QDir::toNativeSeparators(absViewPath);
+        const QString wslScriptWin = QDir(workDir).filePath(QStringLiteral("open-xschem-wsl.sh"));
+
+        if(QFileInfo::exists(wslScriptWin)) {
+            // Xschem is a WSL GUI app. Invoke the .sh via wsl.exe -e (no cmd.exe console).
+            // Convert the script path to /mnt/<drive>/... — Windows paths as the script
+            // argv are fine (open-xschem-wsl.sh calls wslpath).
+            auto toWslPath = [](const QString &winPath) -> QString {
+                const QString abs = QDir::fromNativeSeparators(QFileInfo(winPath).absoluteFilePath());
+                if(abs.size() >= 2 && abs.at(1) == QLatin1Char(':')) {
+                    return QStringLiteral("/mnt/") + abs.at(0).toLower() + abs.mid(2);
+                }
+                return abs;
+            };
+
+            env.insert(QStringLiteral("WSLENV"),
+                       QStringLiteral(
+                           "CORE_PRIMITIVE_LIBS/p:CORE_PRIMITIVE_LIB/p:LIBMAN_TECH_LIBRARY/u:"
+                           "XSCHEM_PRIMITIVE_CACHE/p:COMMONDB_ROOT/p:XSCHEM_OPEN_CORE/p:XSCHEM_OPEN_FILE/p"));
+            proc.setProcessEnvironment(env);
+            proc.setProgram(QStringLiteral("C:\\Windows\\System32\\wsl.exe"));
+            proc.setArguments(QStringList()
+                              << QStringLiteral("-e")
+                              << QStringLiteral("bash")
+                              << toWslPath(wslScriptWin)
+                              << nativeView);
+            proc.setWorkingDirectory(workDir);
+            proc.setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *args) {
+                args->flags |= CREATE_NO_WINDOW;
+                args->inheritHandles = false;
+            });
+        }
+        else {
+            proc.setProgram(QStringLiteral("cmd.exe"));
+            proc.setArguments(QStringList()
+                              << QStringLiteral("/c")
+                              << QDir::toNativeSeparators(absToolPath)
+                              << nativeView);
+            proc.setWorkingDirectory(workDir);
+            proc.setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *args) {
+                args->flags |= CREATE_NO_WINDOW;
+                args->inheritHandles = false;
+            });
+        }
+    }
+    else {
+        proc.setProgram(absToolPath);
+        proc.setArguments(QStringList() << absViewPath);
+        proc.setWorkingDirectory(toolFi.exists() ? toolFi.absolutePath() : QDir::currentPath());
+    }
+#else
+    Q_UNUSED(isBatchFile);
+    proc.setProgram(tool);
+    proc.setArguments(QStringList() << absViewPath);
     proc.setWorkingDirectory(QDir::currentPath());
+#endif
 
     qint64 pid = 0;
-    proc.startDetached(&pid);
+    if(!proc.startDetached(&pid)) {
+        error(tr("Failed to start schematic tool:\n%1\n%2")
+                  .arg(tool, absViewPath),
+              false);
+        return;
+    }
+
+    info(tr("Starting schematic tool: %1").arg(tool), false);
 }
 
 /*!******************************************************************************************************************
