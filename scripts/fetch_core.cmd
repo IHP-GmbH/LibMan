@@ -18,7 +18,15 @@ if defined LIBMAN_CORE_SOURCE_DIR (
 )
 
 set "CORE_SRC=%ROOT%\.deps\CommonDB"
+if exist "%CORE_SRC%\src\core_paths.h" (
+    echo Using existing CORE checkout: %CORE_SRC%
+    goto :configure
+)
 if not exist "%CORE_SRC%\.git" (
+    if exist "%CORE_SRC%\*" (
+        echo ERROR: %CORE_SRC% exists but is not a valid CORE checkout
+        exit /b 1
+    )
     if defined LIBMAN_CORE_GIT_TOKEN (
         set "CLONE_URL=https://x-access-token:%LIBMAN_CORE_GIT_TOKEN%@github.com/IHP-GmbH/CommonDB.git"
     ) else if defined GITHUB_TOKEN (

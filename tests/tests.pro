@@ -56,6 +56,10 @@ SOURCES += \
     $$PWD/../gds/gdsreader.cpp \
     $$PWD/../src/projectmanager.cpp \
     $$PWD/../src/projecteditor.cpp \
+    $$PWD/../src/importdialog.cpp \
+    $$PWD/../src/exportdialog.cpp \
+    $$PWD/../src/core_import_service.cpp \
+    $$PWD/../src/core_export_service.cpp \
     $$PWD/../src/property.cpp \
     $$PWD/../src/toolcustomtool.cpp \
     $$PWD/../src/view_tools.cpp \
@@ -71,6 +75,7 @@ SOURCES += \
     $$PWD/../src/about.cpp \
     $$PWD/../src/newview.cpp \
     $$PWD/../core/core_path_utils.cpp \
+    $$PWD/../core/converter_paths.cpp \
     main.cpp \
 
 LIBMAN_ROOT = $$dirname(_PRO_FILE_)/..
@@ -125,6 +130,10 @@ HEADERS += \
     $$PWD/../oas/oasReader.h \
     $$PWD/../src/projectmanager.h \
     $$PWD/../src/projecteditor.h \
+    $$PWD/../src/importdialog.h \
+    $$PWD/../src/exportdialog.h \
+    $$PWD/../src/core_import_service.h \
+    $$PWD/../src/core_export_service.h \
     $$PWD/../src/property.h \
     $$PWD/../src/toolmanager.h \
     $$PWD/../src/viewtoolstablewidget.h \
@@ -152,6 +161,8 @@ FORMS += \
     $$PWD/../src/mainwindow.ui \
     $$PWD/../src/projectmanager.ui \
     $$PWD/../src/projecteditor.ui \
+    $$PWD/../src/importdialog.ui \
+    $$PWD/../src/exportdialog.ui \
     $$PWD/../src/toolmanager.ui \
     $$PWD/../src/about.ui \
     $$PWD/../src/newview.ui

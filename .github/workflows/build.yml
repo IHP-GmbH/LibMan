@@ -73,6 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CORE_CHECKOUT_TOKEN: ${{ secrets.GH_PAT || secrets.LIBMAN_CORE_GIT_TOKEN }}
+      LIBMAN_CORE_SOURCE_DIR: ${{ github.workspace }}/.deps/CommonDB
 
     steps:
       - name: Checkout sources
@@ -122,7 +123,7 @@ jobs:
           cd build
           make -j1 capnp_install
           make -j1 lstream_schemas
-          make -qp 2>/dev/null | grep -q '^core_fetch:' && make -j1 core_fetch || true
+          make -j1 core_fetch
           make -j"$(nproc)"
 
       - name: Package Linux bundle (tar.gz)
@@ -166,6 +167,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       CORE_CHECKOUT_TOKEN: ${{ secrets.GH_PAT || secrets.LIBMAN_CORE_GIT_TOKEN }}
+      LIBMAN_CORE_SOURCE_DIR: ${{ github.workspace }}/.deps/CommonDB
 
     steps:
       - name: Checkout sources
@@ -236,7 +238,7 @@ jobs:
           cd build
           make -j1 capnp_install
           make -j1 lstream_schemas
-          make -qp 2>/dev/null | grep -q '^core_fetch:' && make -j1 core_fetch || true
+          make -j1 core_fetch
           make -j"$(nproc)"
 
       - name: Package Ubuntu 24 bundle
@@ -278,6 +280,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CORE_CHECKOUT_TOKEN: ${{ secrets.GH_PAT || secrets.LIBMAN_CORE_GIT_TOKEN }}
+      LIBMAN_CORE_SOURCE_DIR: ${{ github.workspace }}/.deps/CommonDB
 
     steps:
       - name: Checkout sources
@@ -328,7 +331,7 @@ jobs:
           cd build-tests
           make -j1 capnp_install
           make -j1 lstream_schemas
-          make -qp 2>/dev/null | grep -q '^core_fetch:' && make -j1 core_fetch || true
+          make -j1 core_fetch
           make -j"$(nproc)"
 
       - name: Export Cap'n Proto runtime path
@@ -362,6 +365,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CORE_CHECKOUT_TOKEN: ${{ secrets.GH_PAT || secrets.LIBMAN_CORE_GIT_TOKEN }}
+      LIBMAN_CORE_SOURCE_DIR: ${{ github.workspace }}/.deps/CommonDB
 
     steps:
       - name: Checkout sources
@@ -416,7 +420,7 @@ jobs:
           cd build-tests
           make -j1 capnp_install
           make -j1 lstream_schemas
-          make -qp 2>/dev/null | grep -q '^core_fetch:' && make -j1 core_fetch || true
+          make -j1 core_fetch
           make -j"$(nproc)"
 
       - name: Export Cap'n Proto runtime path
@@ -451,6 +455,7 @@ jobs:
     runs-on: windows-latest
     env:
       CORE_CHECKOUT_TOKEN: ${{ secrets.GH_PAT || secrets.LIBMAN_CORE_GIT_TOKEN }}
+      LIBMAN_CORE_SOURCE_DIR: ${{ github.workspace }}/.deps/CommonDB
 
     steps:
       - name: Checkout sources
@@ -508,7 +513,7 @@ jobs:
         shell: bash
         run: |
           cd build
-          mingw32-make -qp 2>/dev/null | grep -q '^core_fetch:' && mingw32-make -j1 core_fetch || true
+          mingw32-make -j1 core_fetch
           mingw32-make -j"$(nproc)"
 
       - name: Deploy Qt runtime and resources
@@ -563,6 +568,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CORE_CHECKOUT_TOKEN: ${{ secrets.GH_PAT || secrets.LIBMAN_CORE_GIT_TOKEN }}
+      LIBMAN_CORE_SOURCE_DIR: ${{ github.workspace }}/.deps/CommonDB
     container:
       image: rockylinux:8
 
@@ -600,7 +606,7 @@ jobs:
           cd build
           make -j1 capnp_install
           make -j1 lstream_schemas
-          make -qp 2>/dev/null | grep -q '^core_fetch:' && make -j1 core_fetch || true
+          make -j1 core_fetch
           make -j"$(nproc)"
 
       - name: Install linuxdeployqt

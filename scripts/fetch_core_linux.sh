@@ -30,8 +30,14 @@ if [ -n "${LIBMAN_CORE_SOURCE_DIR:-}" ] && [ -d "${LIBMAN_CORE_SOURCE_DIR}" ]; t
     echo "Using local CORE tree: ${CORE_SRC}"
 else
     CORE_SRC="${LIBMAN_ROOT}/.deps/CommonDB"
-    mkdir -p "$(dirname "$CORE_SRC")"
-    if [ ! -d "$CORE_SRC/.git" ]; then
+    if [ -f "${CORE_SRC}/src/core_paths.h" ]; then
+        echo "Using existing CORE checkout: ${CORE_SRC}"
+    elif [ ! -d "$CORE_SRC/.git" ]; then
+        mkdir -p "$(dirname "$CORE_SRC")"
+        if [ -d "$CORE_SRC" ] && [ -n "$(ls -A "$CORE_SRC" 2>/dev/null || true)" ]; then
+            echo "ERROR: ${CORE_SRC} exists but is not a valid CORE checkout" >&2
+            exit 1
+        fi
         clone_url="$(core_git_clone_url "$CORE_GIT_URL")"
         echo "Cloning CORE from ${CORE_GIT_URL} (${CORE_GIT_BRANCH})..."
         git clone --depth 1 --branch "$CORE_GIT_BRANCH" "$clone_url" "$CORE_SRC"
