@@ -14,6 +14,8 @@
 #include <QFileSystemWatcher>
 #include <QTimer>
 #include <QSet>
+#include <QDirIterator>
+#include <QDateTime>
 
 #ifdef Q_OS_WIN
 #  include <windows.h>
@@ -217,7 +219,7 @@ void MainWindow::loadProjectFile(const QString &fileName)
     }
 
     for(const LibAttach &attach : data.attaches) {
-        setTechLibraryAttach(attach.libraryName, attach.techLibraryName);
+        addTechLibraryAttach(attach.libraryName, attach.techLibraryName);
     }
 
     loadLibraries();
@@ -599,16 +601,30 @@ void MainWindow::clearAllTechLibraryAttaches()
 
 QString MainWindow::getTechLibraryAttach(const QString &libraryName) const
 {
+    const QStringList techs = getTechLibraryAttachList(libraryName);
+    return techs.isEmpty() ? QString() : techs.first();
+}
+
+QStringList MainWindow::getTechLibraryAttachList(const QString &libraryName) const
+{
+    QStringList techs;
     if(libraryName.isEmpty() || !m_properties) {
-        return QString();
+        return techs;
     }
 
     const QString key = techAttachKey(libraryName);
     if(!m_properties->exists(key)) {
-        return QString();
+        return techs;
     }
 
-    return m_properties->get<QString>(key).trimmed();
+    const QString raw = m_properties->get<QString>(key).trimmed();
+    for(const QString &part : raw.split(QRegularExpression(QStringLiteral("[;,]")), Qt::SkipEmptyParts)) {
+        const QString tech = part.trimmed();
+        if(!tech.isEmpty() && !techs.contains(tech)) {
+            techs.append(tech);
+        }
+    }
+    return techs;
 }
 
 void MainWindow::setTechLibraryAttach(const QString &libraryName, const QString &techLibraryName)
@@ -623,7 +639,26 @@ void MainWindow::setTechLibraryAttach(const QString &libraryName, const QString 
         return;
     }
 
+    // Replaces the full attach list with a single tech library.
     m_properties->set(techAttachKey(libraryName), tech);
+}
+
+void MainWindow::addTechLibraryAttach(const QString &libraryName, const QString &techLibraryName)
+{
+    if(libraryName.isEmpty() || !m_properties) {
+        return;
+    }
+
+    const QString tech = techLibraryName.trimmed();
+    if(tech.isEmpty()) {
+        return;
+    }
+
+    QStringList techs = getTechLibraryAttachList(libraryName);
+    if(!techs.contains(tech)) {
+        techs.append(tech);
+    }
+    m_properties->set(techAttachKey(libraryName), techs.join(QLatin1Char(';')));
 }
 
 void MainWindow::clearTechLibraryAttach(const QString &libraryName)
@@ -650,8 +685,11 @@ QList<QPair<QString, QString>> MainWindow::getTechLibraryAttaches() const
         }
 
         const QString libName = it.key().mid(prefix.size());
-        const QString techLib = m_properties->get<QString>(it.key()).trimmed();
-        if(!libName.isEmpty() && !techLib.isEmpty()) {
+        if(libName.isEmpty()) {
+            continue;
+        }
+
+        for(const QString &techLib : getTechLibraryAttachList(libName)) {
             attaches.append(qMakePair(libName, techLib));
         }
     }
@@ -735,6 +773,25 @@ QStringList MainWindow::resolveTechLibraryCorePaths(const QString &techLibraryNa
 
     paths.sort();
     paths.removeDuplicates();
+
+    if(!m_currentProjFile.isEmpty()) {
+        const QDir libDir(QFileInfo(m_currentProjFile).absoluteDir().filePath(techLibraryName));
+        if(libDir.exists()) {
+            QDirIterator it(libDir.absolutePath(),
+                            QStringList() << QStringLiteral("*.symbol.core"),
+                            QDir::Files,
+                            QDirIterator::Subdirectories);
+            while(it.hasNext()) {
+                const QString discovered = QDir::toNativeSeparators(it.next());
+                if(!paths.contains(discovered)) {
+                    paths.append(discovered);
+                }
+            }
+            paths.sort();
+            paths.removeDuplicates();
+        }
+    }
+
     return paths;
 }
 
@@ -796,18 +853,51 @@ void MainWindow::launchSchematicTool(const QString &tool, const QString &viewPat
     if(techLib.isEmpty() && !resolveTechLibraryCorePaths(libName).isEmpty()) {
         techLib = libName;
     }
-    if(!techLib.isEmpty()) {
-        const QStringList corePaths = resolveTechLibraryCorePaths(techLib);
-        if(!corePaths.isEmpty()) {
-            QStringList nativePaths;
-            for(const QString &path : corePaths) {
-                nativePaths.append(QDir::toNativeSeparators(path));
+    QStringList techLibs = getTechLibraryAttachList(libName);
+    if(techLibs.isEmpty() && !techLib.isEmpty()) {
+        techLibs.append(techLib);
+    }
+    QStringList nativePaths;
+    // Design-library symbol cores (e.g. inverter.symbol.core for inverter_tb hierarchy).
+    for(const QString &path : resolveTechLibraryCorePaths(libName)) {
+        if(!path.endsWith(QStringLiteral(".symbol.core"), Qt::CaseInsensitive)) {
+            continue;
+        }
+        const QString native = QDir::toNativeSeparators(path);
+        if(!native.isEmpty() && !nativePaths.contains(native)) {
+            nativePaths.append(native);
+        }
+    }
+    if(!techLibs.isEmpty()) {
+        for(const QString &tech : techLibs) {
+            for(const QString &path : resolveTechLibraryCorePaths(tech)) {
+                const QString native = QDir::toNativeSeparators(path);
+                if(!native.isEmpty() && !nativePaths.contains(native)) {
+                    nativePaths.append(native);
+                }
             }
+        }
+    }
+    if(!nativePaths.isEmpty()) {
+        QStringList techEnv = techLibs;
+        if(!libName.isEmpty() && !techEnv.contains(libName)) {
+            techEnv.prepend(libName);
+        }
+        const QString listPath = QDir::temp().filePath(
+            QStringLiteral("libman_primitive_libs_%1.txt").arg(QDateTime::currentMSecsSinceEpoch()));
+        QFile listFile(listPath);
+        if(listFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            QTextStream out(&listFile);
+            for(const QString &path : nativePaths) {
+                out << path << QLatin1Char('\n');
+            }
+            env.insert(QStringLiteral("CORE_PRIMITIVE_LIBS_FILE"), QDir::toNativeSeparators(listPath));
+        } else {
             env.insert(QStringLiteral("CORE_PRIMITIVE_LIBS"), nativePaths.join(QLatin1Char(';')));
             env.insert(QStringLiteral("CORE_PRIMITIVE_LIB"), nativePaths.first());
-            env.insert(QStringLiteral("LIBMAN_TECH_LIBRARY"), techLib);
-            env.insert(QStringLiteral("QUCS_PRIMITIVE_LIB"), QStringLiteral("IHP_PDK_nonlinear_components"));
         }
+        env.insert(QStringLiteral("LIBMAN_TECH_LIBRARY"), techEnv.join(QLatin1Char(';')));
+        env.insert(QStringLiteral("QUCS_PRIMITIVE_LIB"), QStringLiteral("IHP_PDK_nonlinear_components"));
     }
 
     QProcess proc;
@@ -820,9 +910,8 @@ void MainWindow::launchSchematicTool(const QString &tool, const QString &viewPat
         const QString wslScriptWin = QDir(workDir).filePath(QStringLiteral("open-xschem-wsl.sh"));
 
         if(QFileInfo::exists(wslScriptWin)) {
-            // Xschem is a WSL GUI app. Invoke the .sh via wsl.exe -e (no cmd.exe console).
-            // Convert the script path to /mnt/<drive>/... — Windows paths as the script
-            // argv are fine (open-xschem-wsl.sh calls wslpath).
+            // Launch wsl.exe directly (no cmd.exe). CREATE_NO_WINDOW on cmd breaks WSLg;
+            // Qt startDetached sets DETACHED_PROCESS which also hides GUI — clear it.
             auto toWslPath = [](const QString &winPath) -> QString {
                 const QString abs = QDir::fromNativeSeparators(QFileInfo(winPath).absoluteFilePath());
                 if(abs.size() >= 2 && abs.at(1) == QLatin1Char(':')) {
@@ -831,20 +920,30 @@ void MainWindow::launchSchematicTool(const QString &tool, const QString &viewPat
                 return abs;
             };
 
+            const QString commonDbRoot = QFileInfo(QDir(workDir).filePath(QStringLiteral("../../CommonDB")))
+                                             .absoluteFilePath();
+            if(QFileInfo::exists(commonDbRoot)) {
+                env.insert(QStringLiteral("COMMONDB_ROOT"), QDir::toNativeSeparators(commonDbRoot));
+            }
+
             env.insert(QStringLiteral("WSLENV"),
                        QStringLiteral(
-                           "CORE_PRIMITIVE_LIBS/p:CORE_PRIMITIVE_LIB/p:LIBMAN_TECH_LIBRARY/u:"
-                           "XSCHEM_PRIMITIVE_CACHE/p:COMMONDB_ROOT/p:XSCHEM_OPEN_CORE/p:XSCHEM_OPEN_FILE/p"));
+                           "CORE_PRIMITIVE_LIBS_FILE/p:CORE_PRIMITIVE_LIBS/p:CORE_PRIMITIVE_LIB/p:"
+                           "LIBMAN_TECH_LIBRARY/u:XSCHEM_PRIMITIVE_CACHE/p:COMMONDB_ROOT/p:"
+                           "XSCHEM_OPEN_CORE/p:XSCHEM_OPEN_FILE/p"));
             proc.setProcessEnvironment(env);
+            const QString wslWorkDir = toWslPath(workDir);
+            const QString wslView = toWslPath(absViewPath);
             proc.setProgram(QStringLiteral("C:\\Windows\\System32\\wsl.exe"));
             proc.setArguments(QStringList()
-                              << QStringLiteral("-e")
+                              << QStringLiteral("--cd")
+                              << wslWorkDir
                               << QStringLiteral("bash")
-                              << toWslPath(wslScriptWin)
-                              << nativeView);
+                              << QStringLiteral("-lc")
+                              << QStringLiteral("./open-xschem-wsl.sh '%1'").arg(wslView));
             proc.setWorkingDirectory(workDir);
             proc.setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *args) {
-                args->flags |= CREATE_NO_WINDOW;
+                args->flags &= ~static_cast<DWORD>(DETACHED_PROCESS);
                 args->inheritHandles = false;
             });
         }

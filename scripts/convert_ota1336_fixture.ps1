@@ -33,9 +33,14 @@ Get-ChildItem $DestRoot -Recurse -Include *.sch, *.sym | ForEach-Object {
     if (-not (Test-Path $out)) { throw "Conversion failed: $($_.FullName)" }
 }
 
-$basicCore = Join-Path $DestRoot "schematic\xschem\OTA1336-basic.schematic.core"
+$basicSch = Join-Path $DestRoot "schematic\xschem\payload\OTA1336-basic.sch"
 $mainCore = Join-Path $DestRoot "schematic\xschem\OTA1336.schematic.core"
-Copy-Item $basicCore $mainCore -Force
+$coreToXschem = Join-Path (Split-Path $XschemToCore) "core_to_xschem.exe"
+if (-not (Test-Path $coreToXschem)) {
+    throw "core_to_xschem not found: $coreToXschem (build CommonDB target core_to_xschem first)"
+}
+& $coreToXschem --save $basicSch $mainCore --cell OTA1336 | Out-Null
+if (-not (Test-Path $mainCore)) { throw "Failed to create $mainCore with cell OTA1336" }
 
 $lines = @(
     "# KLayout library definition file",

@@ -462,7 +462,9 @@ private:
 
     QString                             techAttachPropertyKey(const QString &libraryName) const;
     QString                             getTechLibraryAttach(const QString &libraryName) const;
+    QStringList                         getTechLibraryAttachList(const QString &libraryName) const;
     void                                setTechLibraryAttach(const QString &libraryName, const QString &techLibraryName);
+    void                                addTechLibraryAttach(const QString &libraryName, const QString &techLibraryName);
     void                                clearTechLibraryAttach(const QString &libraryName);
     QList<QPair<QString, QString>>      getTechLibraryAttaches() const;
     QStringList                         getDesignLibrariesUsingTech(const QString &techLibraryName) const;

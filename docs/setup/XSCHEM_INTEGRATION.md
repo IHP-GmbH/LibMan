@@ -90,6 +90,18 @@ Optional environment overrides (WSL / Tcl):
 | `COMMONDB_ROOT` / `CORE_ROOT` | CommonDB checkout (non-sibling layout) |
 | `XSCHEM_SRC` | Source tree for `build-xschem.sh` (default: `XSchem-coredb/xschem-src`) |
 
+LibMan sets these when opening a schematic/symbol view with attached tech or design libraries:
+
+| Variable | Purpose |
+|----------|---------|
+| `CORE_PRIMITIVE_LIBS_FILE` | Temp file with one `*.symbol.core` path per line (preferred for large libraries) |
+| `CORE_PRIMITIVE_LIB` | First attached symbol core (legacy fallback) |
+| `LIBMAN_TECH_LIBRARY` | Semicolon-separated library names (`commonLib;ihp_sg13g2;…`) |
+| `QUCS_PRIMITIVE_LIB` | Qucs `<Lib>` bundle name for PDK cells |
+| `XSCHEM_PRIMITIVE_CACHE` | Temp dir where `core.tcl` materializes `.sym` files for Xschem |
+
+`open-xschem-wsl.sh` converts Windows paths to WSL (`/mnt/c/...`) and passes variables through `WSLENV`.
+
 LibMan Tool Manager still needs the **full Windows path** to `open-xschem-wsl.bat` on your machine (one-time setup in Settings → Tools).
 
 ### What the launcher does
@@ -135,13 +147,17 @@ Default schematic-related views come from CORE file names (`schematic`, `symbol`
 
 ## CORE + Xschem behaviour
 
-Authoritative storage is the **CORE file**, not the `.sch` in `payload/`:
+Authoritative storage is the **CORE file** (`.schematic.core` / `.symbol.core`), not `payload/*.sch`.
+
+With the native bridge (Xschem built from **XSchem-coredb** with `load_data` / `get_data`):
 
 | Step | Action |
 |------|--------|
-| Open | CORE → export cell → `payload/<cell>.sch` → Xschem loads `.sch` |
+| Open | `coreapi_export_cell_data` → `xschem load_data` (records in RAM; no temp `.sch`) |
 | Edit | User edits in Xschem |
-| Save | Xschem save → import back into bound `.schematic.core` / `.symbol.core` |
+| Save | `xschem get_data` → `coreapi_import_data` → writes `.core` |
+
+`payload/<cell>.sch` is no longer used as interchange for CORE-bound views. Older Xschem builds without `load_data` fall back to ephemeral temp files via `core.tcl`.
 
 Window/tab title shows the **CORE filename** (e.g. `cell.schematic.core`), not `payload/cell.sch`.
 
@@ -162,8 +178,8 @@ sg13g2_stdcell/
   sg13g2_stdcell/
     sg13g2_stdcell.schematic.core   ← LibMan opens this
     sg13g2_stdcell.layout.core
-    payload/
-      sg13g2_stdcell.sch            ← Xschem editor cache (export/import)
+    payload/                        ← optional legacy cache (not used by native bridge)
+      sg13g2_stdcell.sch
 ```
 
 ## Troubleshooting
@@ -177,7 +193,13 @@ sg13g2_stdcell/
 | Title shows `.sch` not `.core` | Update `integrations/core.tcl` (title hooks); restart Xschem |
 | Blank schematic | CORE file empty or export failed — check Messages in LibMan / Xschem stderr in WSL terminal |
 | WSL `file not found` | Path conversion: ensure LibMan passes existing file; test `wslpath -u 'C:\...'` |
+| `MISSING SYMBOL` for lab_pin, PDK devices | Check `CORE_PRIMITIVE_LIBS_FILE` / `LIBMAN_TECH_LIBRARY` in WSL (`echo $CORE_PRIMITIVE_LIBS`); see `/tmp/xschem-libman-launch.log` |
+| `extra characters after close-quote` (Tcl) | Outdated `core.tcl` — update XSchem-coredb; usually a Tcl syntax error in symbol index build |
 | No GUI in WSL | WSLg / DISPLAY; run `xschem` manually in WSL first |
+
+### Primitive libraries (commonLib / PDK)
+
+LibMan auto-discovers `<projectDir>/<lib>/**/*.symbol.core` for attached tech libraries and writes paths to `CORE_PRIMITIVE_LIBS_FILE` before launching Xschem or Qucs-S. `commonLib` holds Xschem device symbols (`lab_pin`, `res`, `title-3`, …); PDK cells come from `sg13g2_pr` or design libraries. Qucs skips Xschem-only decorations (`lab_wire`, `code_shown`) but maps passives to native Qucs components.
 
 ### Clean geometry cache (WSL)
 
