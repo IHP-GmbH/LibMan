@@ -61,10 +61,20 @@ if command -v patchelf >/dev/null 2>&1; then
     patchelf --set-rpath '$ORIGIN/lib' "$STAGE/libman" || true
 fi
 
-if command -v linuxdeployqt >/dev/null 2>&1; then
-    linuxdeployqt "$STAGE/libman" -bundle-non-qt-libs -always-overwrite
+bundle_manual() {
+    bash "$(dirname "$0")/bundle_qt_libs_manual.sh" "$STAGE/libman" "$STAGE"
+}
+
+if [[ "${BUNDLE_SKIP_LINUXDEPLOYQT:-}" == "1" ]]; then
+    bundle_manual
+elif command -v linuxdeployqt >/dev/null 2>&1; then
+    if ! linuxdeployqt "$STAGE/libman" -bundle-non-qt-libs -always-overwrite; then
+        echo "linuxdeployqt failed; falling back to manual Qt bundling." >&2
+        bundle_manual
+    fi
 else
-    echo "WARNING: linuxdeployqt not found; Qt libraries may be missing from the bundle."
+    echo "WARNING: linuxdeployqt not found; using manual Qt bundling."
+    bundle_manual
 fi
 
 cp "$STAGE/libman" "$DIST/bin/libman"

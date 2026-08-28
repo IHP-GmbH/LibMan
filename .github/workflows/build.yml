@@ -239,13 +239,12 @@ jobs:
           make -qp 2>/dev/null | grep -q '^core_fetch:' && make -j1 core_fetch || true
           make -j"$(nproc)"
 
-      - name: Install linuxdeployqt
-        run: bash scripts/ci_install_linuxdeployqt.sh
-
       - name: Package Ubuntu 24 bundle
+        env:
+          BUNDLE_SKIP_LINUXDEPLOYQT: "1"
         run: |
           export QT_ROOT_DIR="$(qmake -query QT_INSTALL_PREFIX)"
-          chmod +x scripts/package_linux_bundle.sh
+          chmod +x scripts/package_linux_bundle.sh scripts/bundle_qt_libs_manual.sh
           bash scripts/package_linux_bundle.sh build libman-ubuntu24.tar.gz "Ubuntu 24.04"
 
       - name: Smoke-test bundled binary (headless)
