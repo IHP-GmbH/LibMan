@@ -118,13 +118,14 @@ Link targets are already set in `CMakeLists.txt` (`CORE::core`, `CORE::core_util
 | Job | CORE |
 |-----|------|
 | `build-linux-no-core` | No token — probe fails, stubs only |
-| `build-linux`, `tests-linux`, `build-windows`, `build-rhel8` | `LIBMAN_CORE_GIT_TOKEN` secret — probe succeeds |
+| `build-linux`, `tests-linux`, `build-windows`, `build-rhel8`, `build-ubuntu24` | `GH_PAT` (or legacy `LIBMAN_CORE_GIT_TOKEN`) — CommonDB checkout + full CORE |
 
-Add repository secret:
+Add repository secret (org-level `GH_PAT` is preferred — same token as Qucs/XSchem/KLayout CI):
 
 | Secret | Description |
 |--------|-------------|
-| `LIBMAN_CORE_GIT_TOKEN` | PAT with `repo` read access to `IHP-GmbH/CommonDB` |
+| `GH_PAT` | PAT with `repo` read access to `IHP-GmbH/CommonDB` |
+| `LIBMAN_CORE_GIT_TOKEN` | Legacy alias (still accepted if `GH_PAT` is unset) |
 
 `qmake` / `cmake` auto-detect access; no manual `CONFIG+=core` required in CI.
 
