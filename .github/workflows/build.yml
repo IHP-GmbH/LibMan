@@ -506,14 +506,17 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          qmake CONFIG+=release ../libman.pro
+          qmake CONFIG+=release "LIBMAN_CORE_SOURCE_DIR=${LIBMAN_CORE_SOURCE_DIR}" ../libman.pro
           bash ../scripts/patch_capnp_makefile.sh
+
+      - name: Build CORE
+        shell: cmd
+        run: call scripts\fetch_core.cmd
 
       - name: Build (mingw32-make)
         shell: bash
         run: |
           cd build
-          mingw32-make -j1 core_fetch
           mingw32-make -j"$(nproc)"
 
       - name: Deploy Qt runtime and resources
