@@ -35,7 +35,7 @@ win32 {
     CORE_FETCH_CMD = cmd /c \"$$_fetchcore\"
     !isEmpty(LIBMAN_CORE_SOURCE_DIR) {
         _coresrc = $$replace($$shell_path($$LIBMAN_CORE_SOURCE_DIR), \\, /)
-        CORE_FETCH_CMD = cmd /c \"set LIBMAN_CORE_SOURCE_DIR=$$_coresrc && $$_fetchcore\"
+        CORE_FETCH_CMD = cmd /c \"set \"LIBMAN_CORE_SOURCE_DIR=$$_coresrc\" && $$_fetchcore\"
     }
 } else {
     CORE_FETCH_CMD = bash $$shell_path($$LIBMAN_ROOT/scripts/fetch_core_linux.sh)

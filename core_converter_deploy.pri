@@ -6,16 +6,16 @@ isEmpty(CORE_BUILD_DIR) {
 }
 
 CONVERTER_DST = $$OUT_PWD
-contains(CONFIG, release): CONVERTER_DST = $$OUT_PWD/release
-contains(CONFIG, debug): CONVERTER_DST = $$OUT_PWD/debug
+!isEmpty(DESTDIR): CONVERTER_DST = $$OUT_PWD/$$DESTDIR
 
 CORE_CONVERTERS = gds_to_core xschem_to_core qucs_to_core oas_to_core core_to_gds core_to_xschem core_to_qucs
 
 win32 {
+  # mingw32-make on GitHub Actions runs recipes in bash; wrap copy in cmd.exe.
     for(_tool, CORE_CONVERTERS) {
         _src = $$shell_path($$CORE_BUILD_DIR/$${_tool}.exe)
         _dst = $$shell_path($$CONVERTER_DST/$${_tool}.exe)
-        QMAKE_POST_LINK += $$quote(if exist $$_src copy /Y $$_src $$_dst)$$escape_expand(\\n\\t)
+        QMAKE_POST_LINK += $$quote(cmd //c if exist $$_src copy /Y $$_src $$_dst)$$escape_expand(\\n\\t)
     }
 } else {
     for(_tool, CORE_CONVERTERS) {
