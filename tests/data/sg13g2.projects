@@ -38,6 +38,8 @@ define("analogLib", "analogLib\\Vpwl\\Vpwl.symbol.core");
 define("analogLib", "analogLib\\Vrect\\Vrect.symbol.core");
 define("analogLib", "analogLib\\vdd\\vdd.symbol.core");
 define("analogLib", "analogLib\\vss\\vss.symbol.core");
+define("analogLib", "analogLib\\INCLSCR\\INCLSCR.symbol.core");
+define("analogLib", "analogLib\\TR\\TR.symbol.core");
 define("commonLib", "commonLib\\iopin\\iopin.symbol.core");
 define("commonLib", "commonLib\\ipin\\ipin.symbol.core");
 define("commonLib", "commonLib\\opin\\opin.symbol.core");

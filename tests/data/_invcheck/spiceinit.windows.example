@@ -1,0 +1,11 @@
+* LibMan / Qucs-S / ngspice-42 on Windows — IHP SG13G2
+* OSDI plugins MUST be Windows PE (not Linux ELF from the PDK tree).
+* Place Windows-built .osdi under osdi-win\ (see docs/setup/QUCS_INTEGRATION.md).
+
+setcs sourcepath = ( $sourcepath C:/Users/anton/Documents/IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/models )
+
+* Uncomment AFTER building Windows OSDI with OpenVAF (MSVC x64 prompt):
+* osdi 'C:/Users/anton/Documents/IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/osdi-win/psp103.osdi'
+* osdi 'C:/Users/anton/Documents/IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/osdi-win/psp103_nqs.osdi'
+* osdi 'C:/Users/anton/Documents/IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/osdi-win/r3_cmc.osdi'
+* osdi 'C:/Users/anton/Documents/IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/osdi-win/mosvar.osdi'

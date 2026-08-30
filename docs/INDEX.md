@@ -18,7 +18,7 @@ Welcome! This is your central hub for all LibMan documentation. Use the sections
 | **File organization** | [Directory Structure](setup/DIRECTORY_STRUCTURE.md) (3 min) |
 | **Edit project file** | [Project Editor](setup/PROJECT_EDITOR.md) (5 min) |
 | **Import GDS/Xschem/Qucs/OAS** | [Import](setup/IMPORT.md) (5 min) |
-| **Schematic (Windows)** | [Xschem + WSL](setup/XSCHEM_INTEGRATION.md) (10 min) |
+| **Schematic (Windows)** | [Xschem + WSL](setup/XSCHEM_INTEGRATION.md) · [Qucs-S](setup/QUCS_INTEGRATION.md) |
 
 ---
 
@@ -42,6 +42,7 @@ Detailed setup and configuration information:
 5. **[Project Editor](setup/PROJECT_EDITOR.md)** - Edit `define(library, path)` entries (`Ctrl+E`)
 6. **[Import](setup/IMPORT.md)** - Convert GDS, Xschem, Qucs, OAS into CORE views (`File → Import...`)
 7. **[Xschem integration](setup/XSCHEM_INTEGRATION.md)** - Schematic/symbol on Windows via WSL launchers
+8. **[Qucs-S integration](setup/QUCS_INTEGRATION.md)** - Schematic/symbol in Qucs-S + ngspice on Windows
 
 ### 📖 Reference & Advanced
 Detailed reference and customization guides:

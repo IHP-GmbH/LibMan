@@ -930,7 +930,8 @@ void MainWindow::launchSchematicTool(const QString &tool, const QString &viewPat
                        QStringLiteral(
                            "CORE_PRIMITIVE_LIBS_FILE/p:CORE_PRIMITIVE_LIBS/p:CORE_PRIMITIVE_LIB/p:"
                            "LIBMAN_TECH_LIBRARY/u:XSCHEM_PRIMITIVE_CACHE/p:COMMONDB_ROOT/p:"
-                           "XSCHEM_OPEN_CORE/p:XSCHEM_OPEN_FILE/p"));
+                           "XSCHEM_OPEN_CORE/p:XSCHEM_OPEN_FILE/p:"
+                           "PDK_ROOT/u:PDK/u:XSCHEM_NETLIST_DIR/u"));
             proc.setProcessEnvironment(env);
             const QString wslWorkDir = toWslPath(workDir);
             const QString wslView = toWslPath(absViewPath);

@@ -1,0 +1,38 @@
+v {xschem version=3.4.6 file_version=1.2}
+G {}
+V {}
+S {}
+E {}
+N 220 -300 240 -300 {lab=Vin}
+N 70 -60 110 -60 {lab=GND}
+N 110 -60 110 -50 {lab=GND}
+N 150 -170 150 -140 {lab=Vin}
+N 320 -210 320 -190 {lab=GND}
+N 70 -80 70 -60 {lab=GND}
+N 520 -300 540 -300 {lab=Vout}
+N 320 -410 320 -380 {lab=Vdd}
+N 70 -170 70 -140 {lab=Vdd}
+N 110 -60 150 -60 {lab=GND}
+N 150 -80 150 -60 {lab=GND}
+B 2 710 -550 1510 -150 {flags=graph y1=-0.0023 y2=1.3 ypos1=0 ypos2=2 divy=5 subdivy=1 unity=1 x1=0 x2=2e-06 divx=5 subdivx=1 xlabmag=1.0 ylabmag=1.0 node=vout color=4 dataset=-1 unitx=1 logx=0 logy=0}
+C {vsource.sym} 150 -110 0 0 {name=V1 value="PULSE(0 1.2 0.5u 10n 10n 1u 2u 1)" savecurrent=false core.primitive=commonLib/vsource.symbol.core}
+C {vsource.sym} 70 -110 0 0 {name=V2 value=1.2 savecurrent=false core.primitive=commonLib/vsource.symbol.core}
+C {gnd.sym} 110 -50 0 0 {name=l2 lab=GND core.primitive=commonLib/gnd.symbol.core}
+C {lab_pin.sym} 150 -170 0 0 {name=p1 sig_type=std_logic lab=Vin core.primitive=commonLib/lab_pin.symbol.core}
+C {lab_pin.sym} 70 -170 0 0 {name=p3 sig_type=std_logic lab=Vdd core.primitive=commonLib/lab_pin.symbol.core}
+C {code_shown.sym} 40 -540 0 0 {name=NGSPICE only_toplevel=true value="
+.control
+save all
+tran 50n 2u 
+write test_inverter.raw
+.endc
+" core.primitive=commonLib/code_shown.symbol.core}
+C {devices/code_shown.sym} 280 -540 0 0 {name=MODEL only_toplevel=true format="tcleval( @value )" value="
+.lib cornerMOSlv.lib mos_tt
+" core.primitive=commonLib/code_shown.symbol.core}
+C {launcher.sym} 770 -120 0 0 {name=h5 descr="load waves" tclcommand="xschem raw_read $netlist_dir/test_inverter.raw tran" core.primitive=commonLib/launcher.symbol.core}
+C {inverter.sym} 390 -300 0 0 {name=x1}
+C {lab_pin.sym} 220 -300 0 0 {name=p2 sig_type=std_logic lab=Vin core.primitive=commonLib/lab_pin.symbol.core}
+C {gnd.sym} 320 -190 0 0 {name=l1 lab=GND core.primitive=commonLib/gnd.symbol.core}
+C {lab_pin.sym} 320 -410 0 0 {name=p4 sig_type=std_logic lab=Vdd core.primitive=commonLib/lab_pin.symbol.core}
+C {lab_pin.sym} 540 -300 0 1 {name=p5 sig_type=std_logic lab=Vout core.primitive=commonLib/lab_pin.symbol.core}

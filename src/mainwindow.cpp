@@ -6,6 +6,7 @@
 #include <QVariant>
 #include <QFileInfo>
 #include <QSettings>
+#include <QMessageBox>
 #include <QMouseEvent>
 #include <QTextStream>
 #include <QFileDialog>
@@ -2726,6 +2727,18 @@ void MainWindow::on_actionSession_triggered()
  ********************************************************************************************************************/
 void MainWindow::on_actionClear_Recent_File_Stack_triggered()
 {
+    if (!libmanAutomatedTestRun()) {
+        const QMessageBox::StandardButton reply = QMessageBox::question(
+            this,
+            tr("Clear Recent File Stack"),
+            tr("Clear the list of recent project files?"),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::No);
+        if (reply != QMessageBox::Yes) {
+            return;
+        }
+    }
+
     for (int i = 0; i < PROJ_MAX_COUNT; ++i) {
         m_recentProjects[i]->setText("");
         m_recentProjects[i]->setData("");
