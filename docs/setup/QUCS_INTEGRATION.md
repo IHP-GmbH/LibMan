@@ -60,7 +60,13 @@ Fallback: ngspice-42 under `%USERPROFILE%\Spice64\…` (OSDI **v0.3** only — n
 
 1. **Models / OSDI** (for `.LIB cornerMOSlv.lib mos_tt`):
 
-   Copy from WSL (or clone IHP-Open-PDK on Windows):
+   Primary models path (this machine):
+
+   ```text
+   C:\Work\IHP\ihp-sg13g2\libs.tech\ngspice\models\
+   ```
+
+   Fallback / WSL copy:
 
    ```text
    %USERPROFILE%\Documents\IHP-Open-PDK\ihp-sg13g2\libs.tech\ngspice\models\
@@ -87,7 +93,7 @@ Fallback: ngspice-42 under `%USERPROFILE%\Spice64\…` (OSDI **v0.3** only — n
 Example `%USERPROFILE%\.spiceinit`:
 
 ```text
-setcs sourcepath = ( $sourcepath C:/Users/<you>/Documents/IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/models )
+setcs sourcepath = ( $sourcepath C:/Work/IHP/ihp-sg13g2/libs.tech/ngspice/models )
 
 osdi 'C:/Users/<you>/Documents/IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/osdi-win/psp103.osdi'
 osdi 'C:/Users/<you>/Documents/IHP-Open-PDK/ihp-sg13g2/libs.tech/ngspice/osdi-win/psp103_nqs.osdi'

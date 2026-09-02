@@ -25,6 +25,24 @@ An asterisk (`*`) means there are unsaved changes.
 
 Each row corresponds to one `define("library", "path");` in the project file.
 
+### Wildcard defines (primitive libraries)
+
+For tech/primitive libraries you can register many CORE symbol files with one line:
+
+```text
+define("analogLib", "analogLib/*");
+define("analogLib", "analogLib/MyDev/*");
+define("analogLib", "analogLib/R/R.symbol.core");
+```
+
+| Pattern | Meaning |
+|---------|---------|
+| `analogLib/*` | All `*.core` files under `analogLib/` (recursive) |
+| `analogLib/MyDev/*` | All `*.core` views in cell folder `analogLib/MyDev/` |
+| `analogLib/R/R.symbol.core` | Single view file (classic form) |
+
+On **Save**, wildcard lines are preserved; individually registered files covered by a wildcard are not duplicated in the project file.
+
 ### Example project file
 
 ```text

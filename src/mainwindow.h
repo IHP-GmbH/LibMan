@@ -466,6 +466,12 @@ private:
     void                                setTechLibraryAttach(const QString &libraryName, const QString &techLibraryName);
     void                                addTechLibraryAttach(const QString &libraryName, const QString &techLibraryName);
     void                                clearTechLibraryAttach(const QString &libraryName);
+    QList<QPair<QString, QString>>      getProjectWildcardDefines() const;
+    bool                                hasWildcardDefineForLibrary(const QString &libraryName) const;
+    QStringList                         discoverCellNamesFromDisk(const QString &libraryName) const;
+    QStringList                         discoverViewNamesFromDisk(const QString &libraryName,
+                                                                  const QString &cellName) const;
+
     QList<QPair<QString, QString>>      getTechLibraryAttaches() const;
     QStringList                         getDesignLibrariesUsingTech(const QString &techLibraryName) const;
     void                                clearAllTechLibraryAttaches();
@@ -520,6 +526,7 @@ private:
 
     QFileSystemWatcher                  *m_projFileWatcher = nullptr;      /*!< Watches current project file for external modifications (edit/replace/remove). */
     bool                                m_ignoreProjectFileChange = false; /*!< Suppresses watcher reaction during internal save operations. */
+    QList<QPair<QString, QString>>      m_wildcardDefines;               /*!< define() entries using trailing /* wildcards. */
 
     QHash<QString, std::shared_ptr<GdsCacheEntry>> m_gdsCache;             /*!< GDS hierarchy cache: abs path -> entry. */
     QHash<QString, std::shared_ptr<OasCacheEntry>> m_oasCache;             /*!< OASIS hierarchy cache: abs path -> entry. */

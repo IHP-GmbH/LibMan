@@ -26,6 +26,7 @@
 
 #include "property.h"
 #include "libfileparser.h"
+#include "libdefine_utils.h"
 #include "core/core_path_utils.h"
 #include "libman_test_mode.h"
 
@@ -158,7 +159,9 @@ void MainWindow::loadProjectFile(const QString &fileName)
 
     clearLibraryViewProperties();
     clearAllTechLibraryAttaches();
+    m_wildcardDefines.clear();
 
+    const QDir projectDir = QFileInfo(fileName).absoluteDir();
     QSet<QString> loadedLibraries;
 
     for(const LibDefinition& def : data.definitions) {
@@ -167,8 +170,9 @@ void MainWindow::loadProjectFile(const QString &fileName)
         QString libPath = expandShellVariables(def.path.trimmed());
         libPath.replace('\\', '/');
 
+        QString storedPath = libPath;
         if (!QDir::isAbsolutePath(libPath)) {
-            const QDir projectDir = QFileInfo(fileName).absoluteDir();
+            storedPath = QDir::fromNativeSeparators(libPath);
             libPath = QDir::toNativeSeparators(projectDir.absoluteFilePath(libPath));
         }
 
@@ -179,6 +183,46 @@ void MainWindow::loadProjectFile(const QString &fileName)
 
         if(libPath.isEmpty()) {
             error(QString("Skipping library '%1' with empty path.").arg(libName));
+            continue;
+        }
+
+        if(libdefine::isWildcardDefinePath(storedPath)) {
+            m_wildcardDefines.append(qMakePair(libName, storedPath));
+
+            const QString scanRoot = libdefine::wildcardScanRoot(projectDir.absolutePath(), storedPath);
+            if(scanRoot.isEmpty()) {
+                error(QString("Wildcard define path does not exist for '%1': %2").arg(libName, storedPath));
+                continue;
+            }
+
+            const QString libRoot = libdefine::wildcardLibraryRoot(projectDir.absolutePath(), storedPath);
+            if(!libRoot.isEmpty()) {
+                setLibraryRootDirectory(libName, libRoot);
+            }
+
+            const QStringList expanded =
+                libdefine::expandWildcardDefinePath(projectDir.absolutePath(), storedPath);
+            if(expanded.isEmpty()) {
+                error(QString("Wildcard define matched no CORE files for '%1': %2")
+                          .arg(libName, storedPath));
+            }
+
+            for(const QString &corePath : expanded) {
+                QString groupName;
+                QString viewName;
+                if(!resolveCellViewFromPath(corePath, &groupName, &viewName)) {
+                    error(QString("Skipping wildcard file with unknown view type: %1").arg(corePath));
+                    continue;
+                }
+                if(groupName.isEmpty()) {
+                    continue;
+                }
+
+                const QString key = getLibraryKeyPrefix() + libName + "/" + groupName + "/" + viewName;
+                m_properties->set(key, corePath);
+            }
+
+            loadedLibraries.insert(libName);
             continue;
         }
 
@@ -345,9 +389,113 @@ QString MainWindow::findRepresentativeLibraryFile(const QString &libName) const
  *
  * \return List of (library name, absolute file path) pairs.
  **********************************************************************************************************************/
+QList<QPair<QString, QString>> MainWindow::getProjectWildcardDefines() const
+{
+    return m_wildcardDefines;
+}
+
+bool MainWindow::hasWildcardDefineForLibrary(const QString &libraryName) const
+{
+    for(const QPair<QString, QString> &entry : m_wildcardDefines) {
+        if(entry.first == libraryName) {
+            return true;
+        }
+    }
+    return false;
+}
+
+QStringList MainWindow::discoverCellNamesFromDisk(const QString &libraryName) const
+{
+    QStringList cells;
+    const QString libRoot = getLibraryPath(libraryName);
+    if(libRoot.isEmpty()) {
+        return cells;
+    }
+
+    QDir libDir(libRoot);
+    if(!libDir.exists()) {
+        return cells;
+    }
+
+    const QFileInfoList subDirs = libDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    for(const QFileInfo &subDir : subDirs) {
+        const QString cellName = subDir.fileName();
+        if(cellName.startsWith(QLatin1Char('.'))) {
+            continue;
+        }
+
+        const QDir cellDir(subDir.absoluteFilePath());
+        const QStringList cores = cellDir.entryList(QStringList() << QStringLiteral("*.core"), QDir::Files);
+        for(const QString &coreName : cores) {
+            QString groupName;
+            QString viewName;
+            const QString corePath = cellDir.filePath(coreName);
+            if(!resolveCellViewFromPath(corePath, &groupName, &viewName)) {
+                continue;
+            }
+            if(groupName == cellName) {
+                cells.append(cellName);
+                break;
+            }
+        }
+    }
+
+    cells.sort();
+    cells.removeDuplicates();
+    return cells;
+}
+
+QStringList MainWindow::discoverViewNamesFromDisk(const QString &libraryName,
+                                                const QString &cellName) const
+{
+    QStringList views;
+    const QString libRoot = getLibraryPath(libraryName);
+    if(libRoot.isEmpty() || cellName.isEmpty()) {
+        return views;
+    }
+
+    const QDir cellDir(QDir(libRoot).filePath(cellName));
+    if(!cellDir.exists()) {
+        return views;
+    }
+
+    const QFileInfoList coreFiles = cellDir.entryInfoList(QStringList() << QStringLiteral("*.core"),
+                                                          QDir::Files,
+                                                          QDir::Name);
+    for(const QFileInfo &coreFile : coreFiles) {
+        QString groupName;
+        QString viewName;
+        if(resolveCellViewFromPath(coreFile.absoluteFilePath(), &groupName, &viewName)
+           && groupName == cellName
+           && !viewName.isEmpty()
+           && !views.contains(viewName)) {
+            views << viewName;
+        }
+    }
+
+    views.sort();
+    return views;
+}
+
 QList<QPair<QString, QString>> MainWindow::getCurrentProjectEntries() const
 {
     QList<QPair<QString, QString>> entries;
+    QSet<QString> coveredFiles;
+    const QDir projectDir = m_currentProjFile.isEmpty()
+        ? QDir()
+        : QFileInfo(m_currentProjFile).absoluteDir();
+
+    for(const QPair<QString, QString> &wildcard : m_wildcardDefines) {
+        entries.append(wildcard);
+        if(!projectDir.path().isEmpty()) {
+            const QStringList expanded =
+                libdefine::expandWildcardDefinePath(projectDir.absolutePath(), wildcard.second);
+            for(const QString &path : expanded) {
+                coveredFiles.insert(QDir::toNativeSeparators(QFileInfo(path).absoluteFilePath()));
+            }
+        }
+    }
+
     QSet<QString> librariesWithViews;
 
     const QMap<QString, PropertyItem*> propItems = m_properties->getMap();
@@ -377,8 +525,13 @@ QList<QPair<QString, QString>> MainWindow::getCurrentProjectEntries() const
             continue;
         }
 
+        const QString absolutePath = QDir::toNativeSeparators(fi.absoluteFilePath());
+        if(coveredFiles.contains(absolutePath)) {
+            continue;
+        }
+
         librariesWithViews.insert(libName);
-        entries.append(qMakePair(libName, fi.absoluteFilePath()));
+        entries.append(qMakePair(libName, absolutePath));
     }
 
     for(auto it = propItems.constBegin(); it != propItems.constEnd(); ++it) {
@@ -455,6 +608,22 @@ bool MainWindow::saveProjectEntriesToFile(const QString &fileName,
         QString filePath = entry.second.trimmed();
 
         if (libName.isEmpty() || filePath.isEmpty()) {
+            continue;
+        }
+
+        if (libdefine::isWildcardDefinePath(filePath)) {
+            const QString scanRoot = libdefine::wildcardScanRoot(baseDir.absolutePath(), filePath);
+            if (scanRoot.isEmpty()) {
+                error(QString("Skipping library entry '%1': wildcard path does not exist: %2")
+                          .arg(libName, filePath));
+                continue;
+            }
+
+            out << "define("
+                << toLibStringLiteral(libName)
+                << ", "
+                << toLibStringLiteral(QDir::toNativeSeparators(filePath))
+                << ");\n";
             continue;
         }
 

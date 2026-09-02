@@ -631,6 +631,15 @@ QString MainWindow::getLibraryPath(const QString &libName) const
         return QString();
     }
 
+    const QString rootKey = getLibraryKeyPrefix() + libName;
+    if(m_properties && m_properties->exists(rootKey)) {
+        const QString rootPath = m_properties->get<QString>(rootKey).trimmed();
+        QFileInfo rootInfo(rootPath);
+        if(rootInfo.exists() && rootInfo.isDir()) {
+            return QDir::toNativeSeparators(rootInfo.absoluteFilePath());
+        }
+    }
+
     const QMap<QString, PropertyItem*> propItems = m_properties->getMap();
     const QString prefix = getLibraryKeyPrefix() + libName + "/";
 
@@ -656,15 +665,6 @@ QString MainWindow::getLibraryPath(const QString &libName) const
         }
 
         return QDir::toNativeSeparators(viewDir.absolutePath());
-    }
-
-    const QString rootKey = getLibraryKeyPrefix() + libName;
-    if(m_properties->exists(rootKey)) {
-        const QString rootPath = m_properties->get<QString>(rootKey).trimmed();
-        QFileInfo rootInfo(rootPath);
-        if(rootInfo.exists() && rootInfo.isDir()) {
-            return QDir::toNativeSeparators(rootInfo.absoluteFilePath());
-        }
     }
 
     return QString();
@@ -1429,6 +1429,14 @@ QStringList MainWindow::getCurrentGroups(const QString &libName) const
         }
     }
 
+    if(hasWildcardDefineForLibrary(libName)) {
+        for(const QString &groupName : discoverCellNamesFromDisk(libName)) {
+            if(!groups.contains(groupName)) {
+                groups << groupName;
+            }
+        }
+    }
+
     groups.sort();
     return groups;
 }
@@ -1466,6 +1474,14 @@ QStringList MainWindow::getCurrentViews(const QString &libName, const QString &g
 
         if(!views.contains(viewName)) {
             views << viewName;
+        }
+    }
+
+    if(hasWildcardDefineForLibrary(libName)) {
+        for(const QString &viewName : discoverViewNamesFromDisk(libName, groupName)) {
+            if(!views.contains(viewName)) {
+                views << viewName;
+            }
         }
     }
 

@@ -57,6 +57,16 @@
         <widget class="QComboBox" name="cbxView">
          <item>
           <property name="text">
+           <string>schematic</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>symbol</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
            <string>cdl</string>
           </property>
          </item>

@@ -163,6 +163,7 @@ set(SOURCES
     src/main.cpp
     gds/gdsReadAsync.cpp
     src/libfileparser.cpp
+    src/libdefine_utils.cpp
     oas/oasReadAsync.cpp
     oas/oasReader.cpp
     src/klayout_tools.cpp
@@ -254,6 +255,7 @@ set(HEADERS
 
     gds/gdsreader.h
     src/libfileparser.h
+    src/libdefine_utils.h
     oas/oasReader.h
     src/lstreamcellreader.h
     src/projectmanager.h

@@ -63,7 +63,13 @@ void NewView::on_btnCreate_clicked()
 {
     if(m_mw) {
         QString type = m_ui->cbxView->currentText();
-        if(type == "cdl") {
+        if(type == "schematic") {
+            m_mw->addNewCoreSchematicView();
+        }
+        else if(type == "symbol") {
+            m_mw->addNewCoreSymbolView();
+        }
+        else if(type == "cdl") {
             m_mw->addNewSchematicView();
         }
         else if(type == "gds") {

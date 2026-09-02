@@ -9,6 +9,7 @@
 #include <QVariant>
 
 #include "libfileparser.h"
+#include "libdefine_utils.h"
 #include "test_paths.h"
 
 namespace
@@ -405,6 +406,18 @@ void LibFileParserTest::parseFile_sg13g2_projects_fixture_pathsExist()
     QVERIFY2(!parser.data().definitions.isEmpty(), "expected define() entries in sg13g2.projects");
 
     for(const LibDefinition &def : parser.data().definitions) {
+        if(libdefine::isWildcardDefinePath(def.path)) {
+            QString basePath = def.path;
+            if(!QDir::isAbsolutePath(basePath)) {
+                basePath = QDir(dataDir).absoluteFilePath(basePath);
+            }
+            const QString scanRoot = libdefine::wildcardScanRoot(dataDir, def.path);
+            QVERIFY2(QFileInfo(scanRoot).exists(),
+                     qPrintable(QStringLiteral("missing wildcard scan root for '%1': %2")
+                                    .arg(def.name, def.path)));
+            continue;
+        }
+
         if(!def.path.startsWith(dataDir, Qt::CaseInsensitive)) {
             continue;
         }
@@ -469,4 +482,22 @@ void LibFileParserTest::parseFile_attachWrongArgCount_returnsError()
     LibFileParser parser;
     QVERIFY(!parser.parseFile(libFile));
     QVERIFY(parser.errorString().contains("attach() expects"));
+}
+
+void LibFileParserTest::parseFile_wildcardDefine_preservesPattern()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+
+    QDir().mkpath(dir.path() + "/sg13g2_pr/bondpad");
+    QVERIFY(writeTextFile(dir.path() + "/sg13g2_pr/bondpad/bondpad.symbol.core", "core"));
+
+    const QString libFile = dir.path() + "/wildcard.lib";
+    QVERIFY(writeTextFile(libFile, "define(\"sg13g2_pr\", \"sg13g2_pr/*\");\n"));
+
+    LibFileParser parser;
+    QVERIFY2(parser.parseFile(libFile), qPrintable(parser.errorString()));
+    QCOMPARE(parser.data().definitions.size(), 1);
+    QVERIFY(parser.data().definitions.first().path.endsWith(QStringLiteral("/*"))
+            || parser.data().definitions.first().path.endsWith(QStringLiteral("\\*")));
 }

@@ -1,0 +1,11 @@
+v {xschem version=Schematic 25.1.0 file_version=1.2}
+G {type=netlist_commands template="name=@name only_toplevel=true value=@value" format="tcleval(@value)"}
+K {schematic.header="<Qucs Schematic 25.1.0>" schematic.view=<View=0,0,800,800,1,0,0>}
+V {}
+S {}
+E {}
+L 4 50 -20 50 20 {}
+L 4 -50 -20 50 -20 {}
+L 4 -50 -20 -50 20 {}
+L 4 -50 20 50 20 {}
+T {INCLSCR} -40 -8 0 0 0.35 0.35 {}

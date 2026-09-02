@@ -875,6 +875,14 @@ QString LibFileParser::resolvePathRelativeToFile(const QString& currentFile,
     QString p = rawPath;
     p.replace('\\', '/');
 
+    // Keep wildcard define patterns intact (e.g. analogLib/*). QFileInfo would drop the suffix.
+    if(p.contains(QLatin1Char('*'))) {
+        if(QDir::isAbsolutePath(p)) {
+            return QDir::toNativeSeparators(QDir::cleanPath(p));
+        }
+        return QDir::toNativeSeparators(p);
+    }
+
     if(QDir::isAbsolutePath(p)) {
         return QDir::toNativeSeparators(QFileInfo(p).absoluteFilePath());
     }

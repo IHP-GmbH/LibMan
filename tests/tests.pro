@@ -35,6 +35,7 @@ SOURCES += \
     $$PWD/../lstream/lstreamcellwriter.cpp \
     $$PWD/../lstream/lstrReadAsync.cpp \
     $$PWD/../src/libfileparser.cpp \
+    $$PWD/../src/libdefine_utils.cpp \
     $$PWD/../src/klayout_tools.cpp \
     $$PWD/../src/klayoutCellResolver.cpp \
     $$PWD/../src/lstreamcellreader.cpp \
@@ -95,6 +96,7 @@ SOURCES += \
     tst_dialogs.cpp \
     tst_klayout_requests.cpp \
     tst_libfileparser.cpp \
+    tst_libdefine_utils.cpp \
     tst_libman_layoutview_create.cpp \
     tst_libman_viewops.cpp \
     tst_lstream_writer.cpp \
@@ -145,6 +147,7 @@ HEADERS += \
     tst_dialogs.h \
     tst_klayout_requests.h \
     tst_libfileparser.h \
+    tst_libdefine_utils.h \
     tst_libman_layoutview_create.h \
     tst_libman_viewops.h \
     tst_lstream_writer.h \

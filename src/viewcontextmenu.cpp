@@ -51,8 +51,46 @@ void MainWindow::showViewMenu(const QPoint &pos)
     QAction *schematic = new QAction(tr("&Schematic"), this);
     schematic->setIcon(QIcon(":/icons/schematic.svg"));
     schematic->setStatusTip(tr("Create new schematic view."));
-    connect(schematic, &QAction::triggered, this, &MainWindow::addNewSchematicView);
+    connect(schematic, &QAction::triggered, this, &MainWindow::addNewCoreSchematicView);
     menuViews->addAction(schematic);
+
+    QAction *symbol = new QAction(tr("S&ymbol"), this);
+    symbol->setIcon(QIcon(":/icons/schematic.svg"));
+    symbol->setStatusTip(tr("Create new symbol view."));
+    connect(symbol, &QAction::triggered, this, &MainWindow::addNewCoreSymbolView);
+    menuViews->addAction(symbol);
+
+    QAction *cdl = new QAction(tr("&CDL"), this);
+    cdl->setStatusTip(tr("Create new CDL view."));
+    connect(cdl, &QAction::triggered, this, [this]() {
+        if(libmanAutomatedTestRun()) {
+            addNewSchematicView();
+            return;
+        }
+        const QString libName = getCurrentLibraryName();
+        const QString groupName = getCurrentGroupName();
+        if(libName.isEmpty() || groupName.isEmpty()) {
+            return;
+        }
+        const QStringList views = getCurrentViews(libName, groupName);
+        if(views.contains(QStringLiteral("cdl"))) {
+            return;
+        }
+        const QString libRoot = getLibraryPath(libName);
+        if(libRoot.isEmpty()) {
+            return;
+        }
+        const QString groupPath = QDir::toNativeSeparators(libRoot + "/" + groupName);
+        QDir().mkpath(groupPath);
+        const QString viewPath = QDir::toNativeSeparators(groupPath + "/" + groupName + ".cdl");
+        if(QFileInfo(viewPath).exists()) {
+            return;
+        }
+        if(createNewFile(viewPath)) {
+            registerCreatedView(libName, groupName, QStringLiteral("cdl"), viewPath);
+        }
+    });
+    menuViews->addAction(cdl);
 
     QAction *layout = new QAction(tr("&Layout"), this);
     layout->setIcon(QIcon(":/icons/layout.svg"));

@@ -47,6 +47,13 @@ private:
                                 const QString &cellName,
                                 const QString &viewName) const;
 
+#ifndef LIBMAN_NO_CORE
+    void exportXschemReferencedCells(const QString &converterPath,
+                                     const QString &destRoot,
+                                     const QString &sourceCorePath,
+                                     const QString &cellName) const;
+#endif
+
     MainWindow *m_mainWindow = nullptr;
 };
 

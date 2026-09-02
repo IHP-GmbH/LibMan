@@ -38,6 +38,25 @@
       "hide": true
     },
     {
+      "label": "_cleanBrokenCoreUtils",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-Command",
+        "Remove-Item -Force -ErrorAction SilentlyContinue build/_deps/commondb-build/libcore_utils.a; Remove-Item -Force -ErrorAction SilentlyContinue build/_deps/commondb-build/CMakeFiles/core_utils.dir/utils/xschem_io.cpp.obj, build/_deps/commondb-build/CMakeFiles/core_utils.dir/utils/qucs_importer.cpp.obj, build/_deps/commondb-build/CMakeFiles/core_utils.dir/utils/qucs_exporter.cpp.obj"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "hide": true
+    },
+    {
       "label": "_configureLibMan",
       "type": "shell",
       "command": "cmake",
@@ -101,13 +120,16 @@
       "args": [
         "--build",
         "build",
-        "-j4"
+        "--target",
+        "libman",
+        "-j2"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
       },
       "dependsOn": [
         "_stopLibMan",
+        "_cleanBrokenCoreUtils",
         "_configureLibMan"
       ],
       "group": {

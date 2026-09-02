@@ -30,6 +30,7 @@ private slots:
     void parseFile_includeWrongArgCount_returnsError();
     void parseFile_attach_parsesTechLibraryLink();
     void parseFile_attachWrongArgCount_returnsError();
+    void parseFile_wildcardDefine_preservesPattern();
 };
 
 #endif // TST_LIBFILEPARSER_H
