@@ -41,8 +41,17 @@ void LibDefineUtilsTest::wildcardDefine_expandsLibraryPattern()
     const QStringList expanded =
         libdefine::expandWildcardDefinePath(projectDir, QStringLiteral("analogLib/*"));
     QCOMPARE(expanded.size(), 2);
-    QVERIFY(expanded.at(0).endsWith(QStringLiteral("R.symbol.core")));
-    QVERIFY(expanded.at(1).endsWith(QStringLiteral("C.symbol.core")));
+
+    const auto normalizedPath = [](const QString &path) {
+        return QDir::fromNativeSeparators(QFileInfo(path).absoluteFilePath());
+    };
+    QStringList normalized;
+    for (const QString &path : expanded) {
+        normalized << normalizedPath(path);
+    }
+
+    QVERIFY(normalized.contains(normalizedPath(projectDir + QStringLiteral("/analogLib/C/C.symbol.core"))));
+    QVERIFY(normalized.contains(normalizedPath(projectDir + QStringLiteral("/analogLib/R/R.symbol.core"))));
 }
 
 void LibDefineUtilsTest::wildcardDefine_expandsCellPattern()
@@ -99,7 +108,10 @@ void LibDefineUtilsTest::wildcardDefine_coversExpandedFiles()
     QVERIFY(libdefine::isPathCoveredByWildcardDefine(projectDir,
                                                      QStringLiteral("analogLib/*"),
                                                      corePath));
+    QVERIFY(libdefine::isPathCoveredByWildcardDefine(projectDir,
+                                                     QStringLiteral("analogLib/R/*"),
+                                                     corePath));
     QVERIFY(!libdefine::isPathCoveredByWildcardDefine(projectDir,
-                                                      QStringLiteral("analogLib/R/*"),
+                                                      QStringLiteral("analogLib/C/*"),
                                                       corePath));
 }
