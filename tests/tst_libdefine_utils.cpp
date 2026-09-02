@@ -103,5 +103,3 @@ void LibDefineUtilsTest::wildcardDefine_coversExpandedFiles()
                                                       QStringLiteral("analogLib/R/*"),
                                                       corePath));
 }
-
-QTEST_APPLESS_MAIN(LibDefineUtilsTest)

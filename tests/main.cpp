@@ -17,6 +17,7 @@
 #include "tst_oas_writer.h"
 #include "tst_lstream_writer.h"
 #include "tst_libfileparser.h"
+#include "tst_libdefine_utils.h"
 #include "tst_dialogs.h"
 #include "tst_libman_layoutview_create.h"
 #include "tst_mainwindow_categories.h"
@@ -135,6 +136,7 @@ int main(int argc, char **argv)
         ADD_TEST(OasWriterTest),
         ADD_TEST(LStreamWriterTest),
         ADD_TEST(LibFileParserTest),
+        ADD_TEST(LibDefineUtilsTest),
         ADD_TEST(DialogsTest),
         ADD_TEST(FormatReadersCoverageTest),
         ADD_TEST(MainWindowCoverageExpansionTest),
