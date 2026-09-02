@@ -24,6 +24,7 @@
 #include "tst_coverage_expansion.h"
 #include "tst_coverage_80.h"
 #include "tst_core_path_utils.h"
+#include "tst_core_file_lock.h"
 
 namespace
 {
@@ -144,7 +145,8 @@ int main(int argc, char **argv)
         ADD_TEST(Coverage80MainWindowDeepTest),
         ADD_TEST(Coverage80LStreamReaderTest),
         ADD_TEST(Coverage80GdsExtraTest),
-        ADD_TEST(CorePathUtilsTest)
+        ADD_TEST(CorePathUtilsTest),
+        ADD_TEST(CoreFileLockTest)
     };
 
     QStringList logFiles;

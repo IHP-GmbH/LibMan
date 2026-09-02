@@ -157,6 +157,7 @@ endif()
 
 set(SOURCES
     core/core_path_utils.cpp
+    core/core_file_lock.cpp
     core/converter_paths.cpp
     lstream/lstreamcellwriter.cpp
     oas/oasCreate.cpp
@@ -231,6 +232,7 @@ endif()
 
 set(HEADERS
     core/core_path_utils.h
+    core/core_file_lock.h
     core/converter_paths.h
     core/corecellreader.h
     core/coreKlayoutBridge.h

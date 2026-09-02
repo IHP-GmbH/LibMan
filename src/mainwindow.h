@@ -15,6 +15,7 @@
 class QMimeData;
 class QDropEvent;
 #include <QHash>
+#include <QSet>
 #include <QTimer>
 #include <memory>
 
@@ -172,6 +173,7 @@ private slots:
     bool                                eventFilter(QObject *obj, QEvent *event) override;
 
     void                                onProjectFileChanged(const QString &path);
+    void                                onCoreLockWatcherChanged(const QString &path);
     void                                on_treeLibs_itemSelectionChanged();
 
     void                                showViewMenu(const QPoint &pos);
@@ -423,6 +425,13 @@ private:
     void                                configureCoreViewTreeItem(QTreeWidgetItem *viewItem,
                                                                   const QString &viewName,
                                                                   const QString &viewPath) const;
+    void                                applyCoreViewLockPresentation(QTreeWidgetItem *viewItem,
+                                                                      const QString &viewName,
+                                                                      const QString &viewPath);
+    void                                syncCoreLockWatches();
+    void                                refreshCoreViewLockItems(const QString &changedPath = QString());
+    void                                scheduleCoreLockRefresh();
+    QString                             coreLockInfoExtraLines(const QString &corePath) const;
     void                                createCoreView(const QString &viewName);
 
     QString                             generateCopyName(const QString &, const QString &, const QString &suffix = "") const;
@@ -525,7 +534,12 @@ private:
     QHash<QTreeWidgetItem*, SpinnerState> m_spinnerStates;                 /*!< Spinner animation state per tree item. */
 
     QFileSystemWatcher                  *m_projFileWatcher = nullptr;      /*!< Watches current project file for external modifications (edit/replace/remove). */
+    QFileSystemWatcher                  *m_coreLockWatcher = nullptr;      /*!< Watches CORE .lck sidecars for the current cell views. */
     bool                                m_ignoreProjectFileChange = false; /*!< Suppresses watcher reaction during internal save operations. */
+    QSet<QString>                       m_coreLockWatchedDirs;             /*!< Directories watched for new .core.lck files. */
+    QSet<QString>                       m_coreLockWatchedFiles;            /*!< Existing .core.lck files watched for changes/removal. */
+    QTimer                              *m_coreLockRefreshTimer = nullptr; /*!< Debounced refresh for Windows watcher races. */
+    QTimer                              *m_coreLockPollTimer = nullptr;    /*!< Periodic stale-lock cleanup (WSL PID checks). */
     QList<QPair<QString, QString>>      m_wildcardDefines;               /*!< define() entries using trailing /* wildcards. */
 
     QHash<QString, std::shared_ptr<GdsCacheEntry>> m_gdsCache;             /*!< GDS hierarchy cache: abs path -> entry. */

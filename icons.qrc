@@ -25,5 +25,6 @@
         <file>icons/show_categories.svg</file>
         <file>icons/show_documents.svg</file>
         <file>icons/documents.svg</file>
+        <file>icons/locked.svg</file>
     </qresource>
 </RCC>

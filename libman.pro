@@ -68,6 +68,7 @@ SOURCES += \
     src/about.cpp \
     src/newview.cpp \
     core/core_path_utils.cpp \
+    core/core_file_lock.cpp \
     core/converter_paths.cpp
 
 LIBMAN_ROOT = $$dirname(_PRO_FILE_)
@@ -122,6 +123,7 @@ HEADERS += \
     core/corecellreader.h \
     core/coreKlayoutBridge.h \
     core/core_path_utils.h \
+    core/core_file_lock.h \
     core/converter_paths.h
 
 FORMS += \

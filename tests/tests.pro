@@ -76,6 +76,7 @@ SOURCES += \
     $$PWD/../src/about.cpp \
     $$PWD/../src/newview.cpp \
     $$PWD/../core/core_path_utils.cpp \
+    $$PWD/../core/core_file_lock.cpp \
     $$PWD/../core/converter_paths.cpp \
     main.cpp \
 
@@ -106,7 +107,8 @@ SOURCES += \
     tst_toolmanager.cpp \
     tst_coverage_expansion.cpp \
     tst_coverage_80.cpp \
-    tst_core_path_utils.cpp
+    tst_core_path_utils.cpp \
+    tst_core_file_lock.cpp
 
 HEADERS += \
     $$PWD/tst_libman_gui.h \
@@ -158,6 +160,7 @@ HEADERS += \
     tst_coverage_expansion.h \
     tst_coverage_80.h \
     tst_core_path_utils.h \
+    tst_core_file_lock.h \
     test_paths.h
 
 FORMS += \

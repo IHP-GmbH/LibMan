@@ -15,6 +15,7 @@
 #include <QTemporaryFile>
 #include <QGuiApplication>
 #include <QFileSystemWatcher>
+#include <QTimer>
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QMimeData>
@@ -60,6 +61,28 @@ QTextCursor logCursorAtEnd(QTextEdit *textEdit, bool clear)
     return cursor;
 }
 
+QString normalizedWatchPath(const QString &path)
+{
+    if(path.isEmpty()) {
+        return QString();
+    }
+    return QDir::toNativeSeparators(QFileInfo(path).absoluteFilePath());
+}
+
+bool watchPathsEqual(const QString &left, const QString &right)
+{
+    const QString a = normalizedWatchPath(left);
+    const QString b = normalizedWatchPath(right);
+    if(a.isEmpty() || b.isEmpty()) {
+        return false;
+    }
+#if defined(Q_OS_WIN)
+    return a.compare(b, Qt::CaseInsensitive) == 0;
+#else
+    return a == b;
+#endif
+}
+
 } // namespace
 
 #include "about.h"
@@ -73,6 +96,7 @@ QTextCursor logCursorAtEnd(QTextEdit *textEdit, bool clear)
 #include "importdialog.h"
 #include "exportdialog.h"
 #include "core/core_path_utils.h"
+#include "core/core_file_lock.h"
 
 /*!*******************************************************************************************************************
  * \brief Constructs a LibMan MainWindow object with the given arguments.
@@ -89,7 +113,8 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     m_runDirectory(runDir),
     m_currentProjFile(QString("")),
     m_currentCopyState(NONE),
-    m_projFileWatcher(new QFileSystemWatcher(this))
+    m_projFileWatcher(new QFileSystemWatcher(this)),
+    m_coreLockWatcher(new QFileSystemWatcher(this))
 {
     m_ui->setupUi(this);
 
@@ -156,6 +181,29 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
             SIGNAL(fileChanged(QString)),
             this,
             SLOT(onProjectFileChanged(QString)));
+
+    connect(m_coreLockWatcher, &QFileSystemWatcher::fileChanged,
+            this, &MainWindow::onCoreLockWatcherChanged);
+    connect(m_coreLockWatcher, &QFileSystemWatcher::directoryChanged,
+            this, &MainWindow::onCoreLockWatcherChanged);
+
+    m_coreLockRefreshTimer = new QTimer(this);
+    m_coreLockRefreshTimer->setSingleShot(true);
+    m_coreLockRefreshTimer->setInterval(300);
+    connect(m_coreLockRefreshTimer, &QTimer::timeout, this, [this]() {
+        refreshCoreViewLockItems();
+        syncCoreLockWatches();
+    });
+
+    m_coreLockPollTimer = new QTimer(this);
+    m_coreLockPollTimer->setInterval(2000);
+    connect(m_coreLockPollTimer, &QTimer::timeout, this, [this]() {
+        if(m_coreLockWatchedFiles.isEmpty()) {
+            return;
+        }
+        refreshCoreViewLockItems();
+        syncCoreLockWatches();
+    });
 
     m_ui->listViews->setHeaderHidden(true);
 }
@@ -1779,10 +1827,12 @@ void MainWindow::loadViews(const QString &libName, const QString &groupName)
         }
         else if(isCoreViewName(viewName)) {
             configureCoreViewTreeItem(viewItem, viewName, viewPath);
+            applyCoreViewLockPresentation(viewItem, viewName, viewPath);
         }
     }
 
     m_ui->listViews->sortItems(0, Qt::AscendingOrder);
+    syncCoreLockWatches();
 }
 
 /*!*******************************************************************************************************************
@@ -2882,6 +2932,162 @@ void MainWindow::onProjectFileChanged(const QString &path)
     else {
         info(QString("Project file '%1' was modified externally. Reload skipped.").arg(path), false);
     }
+}
+
+void MainWindow::applyCoreViewLockPresentation(QTreeWidgetItem *viewItem,
+                                              const QString &viewName,
+                                              const QString &viewPath)
+{
+    Q_UNUSED(viewName)
+
+    if(!viewItem || viewPath.isEmpty()) {
+        return;
+    }
+
+    const CoreFileLockInfo lockInfo = readActiveCoreLockFile(viewPath);
+    if(!lockInfo.present) {
+        viewItem->setIcon(0, QIcon());
+        viewItem->setToolTip(0, viewPath);
+        return;
+    }
+
+    viewItem->setIcon(0, QIcon(QStringLiteral(":/icons/locked.svg")));
+
+    QString tooltip = viewPath;
+    tooltip += QStringLiteral("\n\nLocked");
+    if(lockInfo.parseOk) {
+        if(!lockInfo.user.isEmpty() || !lockInfo.host.isEmpty()) {
+            tooltip += QStringLiteral("\nBy: ") + lockInfo.user;
+            if(!lockInfo.host.isEmpty()) {
+                tooltip += QStringLiteral(" @ ") + lockInfo.host;
+            }
+        }
+        if(!lockInfo.tool.isEmpty()) {
+            tooltip += QStringLiteral("\nTool: ") + lockInfo.tool;
+        }
+        if(!lockInfo.createdAt.isEmpty()) {
+            tooltip += QStringLiteral("\nSince: ") + lockInfo.createdAt;
+        }
+    }
+    else if(!lockInfo.parseError.isEmpty()) {
+        tooltip += QStringLiteral("\n") + lockInfo.parseError;
+    }
+
+    viewItem->setToolTip(0, tooltip);
+}
+
+void MainWindow::syncCoreLockWatches()
+{
+    if(!m_coreLockWatcher) {
+        return;
+    }
+
+    QSet<QString> wantedDirs;
+    QSet<QString> wantedFiles;
+
+    for(int i = 0; i < m_ui->listViews->topLevelItemCount(); ++i) {
+        QTreeWidgetItem *item = m_ui->listViews->topLevelItem(i);
+        if(item->data(0, RoleType).toInt() != ItemViewCore) {
+            continue;
+        }
+
+        const QString corePath = item->data(0, RoleCorePath).toString();
+        if(corePath.isEmpty()) {
+            continue;
+        }
+
+        const QString lockPath = normalizedWatchPath(lockFilePathForCore(corePath));
+        wantedDirs.insert(normalizedWatchPath(QFileInfo(lockPath).absolutePath()));
+        if(QFileInfo::exists(lockPath)) {
+            wantedFiles.insert(lockPath);
+        }
+    }
+
+    for(const QString &dir : m_coreLockWatchedDirs) {
+        if(!wantedDirs.contains(dir)) {
+            m_coreLockWatcher->removePath(dir);
+        }
+    }
+    for(const QString &dir : wantedDirs) {
+        if(!m_coreLockWatchedDirs.contains(dir)) {
+            if(m_coreLockWatcher->addPath(dir)) {
+                m_coreLockWatchedDirs.insert(dir);
+            }
+        }
+    }
+    m_coreLockWatchedDirs.intersect(wantedDirs);
+
+    for(const QString &file : m_coreLockWatchedFiles) {
+        if(!wantedFiles.contains(file)) {
+            m_coreLockWatcher->removePath(file);
+        }
+    }
+    for(const QString &file : wantedFiles) {
+        if(!m_coreLockWatchedFiles.contains(file)) {
+            if(m_coreLockWatcher->addPath(file)) {
+                m_coreLockWatchedFiles.insert(file);
+            }
+        }
+    }
+    m_coreLockWatchedFiles.intersect(wantedFiles);
+
+    if(m_coreLockPollTimer != nullptr) {
+        if(!m_coreLockWatchedFiles.isEmpty()) {
+            if(!m_coreLockPollTimer->isActive()) {
+                m_coreLockPollTimer->start();
+            }
+        } else if(m_coreLockPollTimer->isActive()) {
+            m_coreLockPollTimer->stop();
+        }
+    }
+}
+
+void MainWindow::refreshCoreViewLockItems(const QString &changedPath)
+{
+    const QString normalizedChanged = normalizedWatchPath(changedPath);
+
+    for(int i = 0; i < m_ui->listViews->topLevelItemCount(); ++i) {
+        QTreeWidgetItem *item = m_ui->listViews->topLevelItem(i);
+        if(item->data(0, RoleType).toInt() != ItemViewCore) {
+            continue;
+        }
+
+        const QString corePath = item->data(0, RoleCorePath).toString();
+        if(corePath.isEmpty()) {
+            continue;
+        }
+
+        if(!normalizedChanged.isEmpty()) {
+            const QString lockPath = normalizedWatchPath(lockFilePathForCore(corePath));
+            const QString coreDir = QFileInfo(corePath).absolutePath();
+            if(!watchPathsEqual(normalizedChanged, lockPath)
+               && !watchPathsEqual(normalizedChanged, corePath)
+               && !watchPathsEqual(normalizedChanged, coreDir)) {
+                continue;
+            }
+        }
+
+        applyCoreViewLockPresentation(item, item->text(0), corePath);
+    }
+}
+
+void MainWindow::scheduleCoreLockRefresh()
+{
+    if(m_coreLockRefreshTimer != nullptr) {
+        m_coreLockRefreshTimer->start();
+    }
+}
+
+void MainWindow::onCoreLockWatcherChanged(const QString &path)
+{
+    refreshCoreViewLockItems(path);
+    syncCoreLockWatches();
+    scheduleCoreLockRefresh();
+}
+
+QString MainWindow::coreLockInfoExtraLines(const QString &corePath) const
+{
+    return formatCoreLockInfoBlock(readActiveCoreLockFile(corePath));
 }
 
 /*!*******************************************************************************************************************

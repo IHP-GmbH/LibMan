@@ -386,9 +386,11 @@ bool MainWindow::registerCreatedView(const QString &libName,
     }
     else if(isCoreViewName(viewName)) {
         configureCoreViewTreeItem(viewItem, viewName, viewPath);
+        applyCoreViewLockPresentation(viewItem, viewName, viewPath);
     }
 
     m_ui->listViews->sortItems(0, Qt::AscendingOrder);
+    syncCoreLockWatches();
 
     setStateChanged();
 
@@ -852,7 +854,8 @@ void MainWindow::showViewInfo()
         return;
     }
 
-    showFolderInfo("View", viewName, viewPath);
+    const QString extra = isCoreViewName(viewName) ? coreLockInfoExtraLines(viewPath) : QString();
+    showFolderInfo("View", viewName, viewPath, true, extra);
 }
 
 /*!*********************************************************************************************************************
