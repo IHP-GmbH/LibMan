@@ -830,7 +830,7 @@ void MainWindow::error(const QString &msg, bool clear)
     QTextCursor cursor = logCursorAtEnd(m_ui->textMessages, clear);
     QTextCharFormat fmt = logPlainCharFormat();
     fmt.setForeground(QBrush(Qt::red));
-    cursor.insertText(QStringLiteral("[ERROR] ") + msg, fmt);
+    cursor.insertText(QStringLiteral("[ERROR] ") + msg + QLatin1Char('\n'), fmt);
     cursor.setCharFormat(logPlainCharFormat());
     m_ui->textMessages->setTextCursor(cursor);
 }
