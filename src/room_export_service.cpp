@@ -183,11 +183,11 @@ QString CoreExportService::converterBaseName(Format format)
 {
     switch (format) {
     case Format::Gds:
-        return QStringLiteral("core_to_gds");
+        return QStringLiteral("room_to_gds");
     case Format::Xschem:
-        return QStringLiteral("core_to_xschem");
+        return QStringLiteral("room_to_xschem");
     case Format::Qucs:
-        return QStringLiteral("core_to_qucs");
+        return QStringLiteral("room_to_qucs");
     }
     return {};
 }

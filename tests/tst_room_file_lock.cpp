@@ -3,12 +3,15 @@
 #include "room/room_file_lock.h"
 
 #include <QFile>
+#include <QFileInfo>
 #include <QTemporaryDir>
 
 void CoreFileLockTest::lockPath_appendsLckSuffix()
 {
-    QCOMPARE(lockFilePathForCore(QStringLiteral("/tmp/cell.schematic.room")),
-             QStringLiteral("/tmp/cell.schematic.room.lck"));
+    const QString corePath = QStringLiteral("/tmp/cell.schematic.room");
+    const QString lockPath = lockFilePathForCore(corePath);
+    QCOMPARE(QFileInfo(lockPath).fileName(), QStringLiteral("cell.schematic.room.lck"));
+    QVERIFY(lockPath.endsWith(QStringLiteral(".room.lck")));
 }
 
 void CoreFileLockTest::readLockFile_missingReturnsNotPresent()

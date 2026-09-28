@@ -130,25 +130,26 @@ include("${CMAKE_SOURCE_DIR}/cmake/ProbeCoreAccess.cmake")
 option(LIBMAN_FORCE_ROOM "Build with ROOM even if GitHub probe fails" OFF)
 option(LIBMAN_FORCE_NO_ROOM "Build without ROOM even if GitHub probe succeeds" OFF)
 
-libman_probe_core_access(LIBMAN_CORE_ACCESSIBLE
-    FORCE_ROOM ${LIBMAN_FORCE_CORE}
-    FORCE_NO_ROOM ${LIBMAN_FORCE_NO_CORE}
+libman_probe_core_access(LIBMAN_ROOM_ACCESSIBLE
+    FORCE_ROOM ${LIBMAN_FORCE_ROOM}
+    FORCE_NO_ROOM ${LIBMAN_FORCE_NO_ROOM}
 )
 
-set(LIBMAN_USE_ROOM ${LIBMAN_CORE_ACCESSIBLE})
+set(LIBMAN_USE_ROOM ${LIBMAN_ROOM_ACCESSIBLE})
 
-set(LIBMAN_CORE_SOURCES)
-set(LIBMAN_CORE_LINK_LIBS)
-if(LIBMAN_USE_CORE)
+set(LIBMAN_ROOM_SOURCES)
+set(LIBMAN_ROOM_LINK_LIBS)
+if(LIBMAN_USE_ROOM)
     include("${CMAKE_SOURCE_DIR}/cmake/FetchRoom.cmake")
-    list(APPEND LIBMAN_CORE_SOURCES
+    list(APPEND LIBMAN_ROOM_SOURCES
         room/roomcellreader.cpp
         room/roomKlayoutBridge.cpp
         room/roomReadAsync.cpp
     )
-    list(APPEND LIBMAN_CORE_LINK_LIBS ROOM::room ROOM::room_utils)
+    list(APPEND LIBMAN_ROOM_LINK_LIBS ROOM::room ROOM::room_utils)
+    message(STATUS "LibMan: building with ROOM")
 else()
-    message(STATUS "LibMan: building without ROOM (CommonDB not reachable). Set LIBMAN_CORE_GIT_TOKEN for access.")
+    message(STATUS "LibMan: building without ROOM (CommonDB/Room not reachable). Set LIBMAN_CORE_GIT_TOKEN or LIBMAN_ROOM_SOURCE_DIR for full ROOM.")
 endif()
 
 # -----------------------------------------------------------------------------
@@ -226,9 +227,9 @@ set(SOURCES
     capnp/variant.capnp.cc
 )
 
-list(APPEND SOURCES ${LIBMAN_CORE_SOURCES})
+list(APPEND SOURCES ${LIBMAN_ROOM_SOURCES})
 
-if(NOT LIBMAN_USE_CORE)
+if(NOT LIBMAN_USE_ROOM)
     list(APPEND SOURCES room/libman_no_room_stubs.cpp)
 endif()
 
@@ -310,12 +311,16 @@ add_executable(libman
     ${RESOURCES}
 )
 
-add_dependencies(libman prepare_libman_deps)
-if(TARGET core)
-    add_dependencies(libman core)
+if(WIN32)
+    target_sources(libman PRIVATE "${CMAKE_SOURCE_DIR}/icons/libman.rc")
 endif()
 
-if(NOT LIBMAN_USE_CORE)
+add_dependencies(libman prepare_libman_deps)
+if(TARGET room)
+    add_dependencies(libman room)
+endif()
+
+if(NOT LIBMAN_USE_ROOM)
     target_compile_definitions(libman PRIVATE LIBMAN_NO_ROOM)
 endif()
 
@@ -341,11 +346,11 @@ target_link_libraries(libman PRIVATE
     ZLIB::ZLIB
     capnp
     kj
-    ${LIBMAN_CORE_LINK_LIBS}
+    ${LIBMAN_ROOM_LINK_LIBS}
 )
 
-if(LIBMAN_USE_CORE)
-foreach(_converter gds_to_core xschem_to_core qucs_to_core oas_to_core core_to_gds core_to_xschem core_to_qucs)
+if(LIBMAN_USE_ROOM)
+foreach(_converter gds_to_room xschem_to_room qucs_to_room oas_to_room room_to_gds room_to_xschem room_to_qucs)
     if(TARGET ${_converter})
         add_custom_command(TARGET libman POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different

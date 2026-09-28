@@ -85,13 +85,13 @@ QString CoreImportService::converterBaseName(Format format)
 {
     switch (format) {
     case Format::Gds:
-        return QStringLiteral("gds_to_core");
+        return QStringLiteral("gds_to_room");
     case Format::Xschem:
-        return QStringLiteral("xschem_to_core");
+        return QStringLiteral("xschem_to_room");
     case Format::Qucs:
-        return QStringLiteral("qucs_to_core");
+        return QStringLiteral("qucs_to_room");
     case Format::Oas:
-        return QStringLiteral("oas_to_core");
+        return QStringLiteral("oas_to_room");
     }
     return {};
 }

@@ -1,6 +1,6 @@
 #include "room/roomcellreader.h"
 
-#include "core_paths.h"
+#include "room_paths.h"
 #include "database.h"
 
 #include <QString>

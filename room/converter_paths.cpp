@@ -22,19 +22,19 @@ QString converterFileName(const QString &baseName)
 QStringList coreImportConverterNames()
 {
     return {
-        QStringLiteral("gds_to_core"),
-        QStringLiteral("xschem_to_core"),
-        QStringLiteral("qucs_to_core"),
-        QStringLiteral("oas_to_core"),
+        QStringLiteral("gds_to_room"),
+        QStringLiteral("xschem_to_room"),
+        QStringLiteral("qucs_to_room"),
+        QStringLiteral("oas_to_room"),
     };
 }
 
 QStringList coreExportConverterNames()
 {
     return {
-        QStringLiteral("core_to_gds"),
-        QStringLiteral("core_to_xschem"),
-        QStringLiteral("core_to_qucs"),
+        QStringLiteral("room_to_gds"),
+        QStringLiteral("room_to_xschem"),
+        QStringLiteral("room_to_qucs"),
     };
 }
 

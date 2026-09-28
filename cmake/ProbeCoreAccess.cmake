@@ -1,17 +1,17 @@
-# Probe whether CommonDB (CORE) is reachable: local tree or GitHub access.
+# Probe whether ROOM (IHP-GmbH/Room) is reachable: local tree or GitHub access.
 # Sets ${OUT_VAR} to ON/OFF. Optional FORCE_ROOM / FORCE_NO_ROOM override.
 
 function(libman_probe_core_access OUT_VAR)
     set(options)
-    set(oneValueArgs FORCE_ROOM FORCE_NO_CORE)
+    set(oneValueArgs FORCE_ROOM FORCE_NO_ROOM)
     set(multiValueArgs)
     cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-    if(ARG_FORCE_NO_CORE)
+    if(ARG_FORCE_NO_ROOM)
         set(${OUT_VAR} OFF PARENT_SCOPE)
         return()
     endif()
-    if(ARG_FORCE_CORE)
+    if(ARG_FORCE_ROOM)
         set(${OUT_VAR} ON PARENT_SCOPE)
         return()
     endif()

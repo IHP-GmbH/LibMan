@@ -1,8 +1,10 @@
+<p align="center">
+  <img src="docs/libman-logo.png" alt="LibMan logo" width="280">
+</p>
+
 ### LibMan
 
-LibMan - an easy way to manage your open source design flow
-
-![](https://github.com/IHP-GmbH/LibMan/blob/main/icons/logo.png)
+LibMan — an easy way to manage your open source design flow
 
 ---
 

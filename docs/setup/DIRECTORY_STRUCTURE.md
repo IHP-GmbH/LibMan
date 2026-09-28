@@ -17,6 +17,7 @@ LibMan/
 │   └── README.md               ← VS Code quick reference
 │
 ├── 📁 docs/                    ← All documentation
+│   ├── libman-logo.png         ← Brand logo (README / docs)
 │   ├── INDEX.md                ← Documentation hub (START HERE)
 │   │
 │   ├── getting-started/        ← For new users
@@ -50,7 +51,7 @@ LibMan/
 │   ├── Makefile
 │   └── compile_commands.json
 │
-├── 📁 icons/                   ← Application icons
+├── 📁 icons/                   ← Application icons (logo.png, libman.ico, …)
 ├── 📁 pics/                    ← Images/resources
 ├── 📁 gds/                     ← GDS file handling
 ├── 📁 oas/                     ← OAS file handling

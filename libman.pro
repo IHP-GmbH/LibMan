@@ -15,7 +15,10 @@ DEFINES += QT_NO_DEPRECATED_WARNINGS
 
 LIBS += -lz
 
-win32:QMAKE_CXXFLAGS += -Wa,-mbig-obj
+win32 {
+    QMAKE_CXXFLAGS += -Wa,-mbig-obj
+    RC_ICONS = icons/libman.ico
+}
 QMAKE_CXXFLAGS += -g1
 
 SOURCES += \

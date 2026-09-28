@@ -146,6 +146,8 @@ HEADERS += \
     $$PWD/../src/toolpickerdialog.h \
     $$PWD/../src/about.h \
     $$PWD/../src/newview.h \
+    $$PWD/../src/snapshotscene.h \
+    $$PWD/../src/snapshotview.h \
     $$PWD/../room/roomcellreader.h \
     $$PWD/../room/roomKlayoutBridge.h \
     tst_dialogs.h \

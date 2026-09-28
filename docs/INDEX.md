@@ -1,5 +1,9 @@
 # 📚 LibMan Documentation Index
 
+<p align="center">
+  <img src="libman-logo.png" alt="LibMan logo" width="220">
+</p>
+
 Welcome! This is your central hub for all LibMan documentation. Use the sections below to find what you need.
 
 ---

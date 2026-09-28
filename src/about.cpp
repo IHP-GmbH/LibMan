@@ -14,8 +14,8 @@ About::About(QWidget *parent) :
     m_ui->setupUi(this);
 
     QPixmap pix(":logo");
-    m_ui->lblLogo->resize(200, 200);
-    pix = pix.scaled(m_ui->lblLogo->size(), Qt::KeepAspectRatio);
+    m_ui->lblLogo->resize(240, 240);
+    pix = pix.scaled(m_ui->lblLogo->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
     m_ui->lblLogo->setPixmap(pix);
 
     QPalette palette;
