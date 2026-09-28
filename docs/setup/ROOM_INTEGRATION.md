@@ -135,7 +135,7 @@ Add repository secret (org-level `GH_PAT` is preferred — same token as Qucs/XS
 
 - **Create:** View panel → New → Layout → `layout` (creates `<cell>/<cell>.layout.room`)
 - **Tree:** expand `layout` to browse cell hierarchy from `LibIndex`
-- **Open:** double-click opens the file in KLayout with a resolved top cell; see **[KLayout integration](KLAYOUT_INTEGRATION.md)** for server setup, root-cell rules, and mcore plugin notes.
+- **Open:** double-click opens the file in KLayout with a resolved top cell; see **[KLayout integration](KLAYOUT_INTEGRATION.md)** for server setup, root-cell rules, and mroom plugin notes.
 
 **Schematic/symbol (`*.schematic.room`, `*.symbol.room`):** on Windows open in **Xschem via WSL** ([Xschem integration](XSCHEM_INTEGRATION.md)) and/or **Qucs-S** ([Qucs-S integration](QUCS_INTEGRATION.md)) — register one or both in Tool Manager.
 

@@ -1683,6 +1683,7 @@ void MainWindow::clearLibrarySelectionDependentViews()
     m_ui->listCategories->clear();
 
     updateLibraryActionStates();
+    refreshSnapshot();
 }
 
 /*!*******************************************************************************************************************
@@ -1800,6 +1801,7 @@ void MainWindow::loadGroups(const QString &libName)
     }
 
     m_ui->listGroups->sortItems();
+    refreshSnapshot();
 }
 
 /*!*******************************************************************************************************************
@@ -1852,6 +1854,7 @@ void MainWindow::loadViews(const QString &libName, const QString &groupName)
 
     m_ui->listViews->sortItems(0, Qt::AscendingOrder);
     syncCoreLockWatches();
+    refreshSnapshot();
 }
 
 /*!*******************************************************************************************************************
@@ -2353,6 +2356,7 @@ void MainWindow::on_listCategories_itemClicked(QTreeWidgetItem *item)
     }
 
     m_ui->listGroups->sortItems();
+    refreshSnapshot();
 }
 
 /*!*******************************************************************************************************************
@@ -2579,11 +2583,13 @@ void MainWindow::refreshSnapshot()
         return;
     }
 
-    QTreeWidgetItem *item = m_ui->listViews->currentItem();
-    if (item == nullptr) {
+    const QList<QTreeWidgetItem *> selected = m_ui->listViews->selectedItems();
+    if (selected.isEmpty()) {
         m_snapshotView->clearScene(tr("Select a schematic, symbol, or layout"));
         return;
     }
+
+    QTreeWidgetItem *item = selected.first();
 
     QTreeWidgetItem *root = item;
     while (root->parent() != nullptr) {
@@ -2940,6 +2946,7 @@ void MainWindow::on_actionSession_triggered()
    m_ui->listGroups->clear();
    m_ui->listCategories->clear();
    m_ui->listDocumentation->clear();
+   refreshSnapshot();
 
    m_currentProjFile = "";
 
@@ -3025,6 +3032,7 @@ void MainWindow::clearCurrentProjectData()
     m_ui->listGroups->clear();
     m_ui->listCategories->clear();
     m_ui->listDocumentation->clear();
+    refreshSnapshot();
 
     m_itemText.clear();
     m_currentProjFile.clear();

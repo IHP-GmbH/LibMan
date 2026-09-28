@@ -21,7 +21,7 @@ Double-click **opens KLayout** and does **not** expand or collapse the tree node
 
 LibMan:
 
-1. Resolves the file path sent to KLayout (GDS/OAS/LStream directly; `*.layout.room` natively when the [mcore](https://github.com/adatsuk/KLayout-coredb) streamer is installed).
+1. Resolves the file path sent to KLayout (GDS/OAS/LStream directly; `*.layout.room` natively when the [mroom](https://github.com/adatsuk/KLayout-roomdb) streamer is installed).
 2. Picks a **root cell** to activate (see [Root cell selection](#root-cell-selection)).
 3. Starts KLayout with the server script if needed, then sends an `open` command with the file and cell name.
 4. On a later double-click on the same layout root while KLayout is already running, sends a `select` command (file is not reloaded).
@@ -58,7 +58,7 @@ An `.alive` sidecar file reports the server PID for health checks.
 
 ## ROOM layout files
 
-`*.layout.room` files are passed **directly** to KLayout (no temporary GDS export) when the mcore plugin is available. Build it from [KLayout-coredb](https://github.com/adatsuk/KLayout-coredb) (or link `integrations/klayout/mcore` from CommonDB into your KLayout tree).
+`*.layout.room` files are passed **directly** to KLayout (no temporary GDS export) when the mroom plugin is available. Build it from [KLayout-roomdb](https://github.com/adatsuk/KLayout-roomdb) (or link `integrations/klayout/mroom` from CommonDB into your KLayout tree).
 
 See also: [ROOM integration](ROOM_INTEGRATION.md).
 
@@ -79,7 +79,7 @@ Compare two layout views (`gds`, `oas`, `lstr`, `layout` / `*.layout.room`) from
 
    Clicking the link opens cell **COMPARE** so master and differences are visible in one window.
 
-**ROOM layouts:** operands may be `*.layout.room`. The batch KLayout must be the same build that has the **mcore** streamer (KLayout-coredb). Otherwise the script prints a hint and exits with an error.
+**ROOM layouts:** operands may be `*.layout.room`. The batch KLayout must be the same build that has the **mroom** streamer (KLayout-roomdb). Otherwise the script prints a hint and exits with an error.
 
 **Clear XOR selection** cancels a pending first operand. After a successful start, the pending selection is cleared.
 
@@ -91,11 +91,11 @@ Cell resolution matches open-layout rules (selected hierarchy cell, else preferr
 |---------|--------|
 | KLayout does not start | **Layout** tool path in Tool Manager; executable exists |
 | File opens but wrong/empty cell | Group name may not exist in file; expand layout tree once so hierarchy cache is warm |
-| `*.layout.room` not recognized | mcore streamer not installed in KLayout |
+| `*.layout.room` not recognized | mroom streamer not installed in KLayout |
 | Second double-click does nothing | KLayout server died; close KLayout and double-click again to restart |
 | Double-click expands tree instead of opening | Expected: only **child cells** expand; layout **root** opens KLayout. Use the disclosure arrow to expand |
 | XOR menu missing | Select a layout view (`gds`/`oas`/`lstr`/`layout`) or a cell under it |
 | XOR fails to start | Same Layout tool as open; `klayout -b` must be available |
-| XOR on `*.layout.room` fails | mcore plugin required in the same KLayout used by the Layout tool |
+| XOR on `*.layout.room` fails | mroom plugin required in the same KLayout used by the Layout tool |
 
 More: [Troubleshooting](../reference/TROUBLESHOOTING.md).

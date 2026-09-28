@@ -26,7 +26,7 @@ QString roomLayoutPathForKLayout(const QString &viewPath, QStringList *errors)
         || fi.suffix().compare(QStringLiteral("core"), Qt::CaseInsensitive) == 0;
 
     if (isCoreLayout) {
-        // KLayout opens *.layout.room natively via the mcore streamer plugin.
+        // KLayout opens *.layout.room natively via the mroom streamer plugin.
         return QDir::toNativeSeparators(fi.absoluteFilePath());
     }
 

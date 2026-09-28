@@ -57,7 +57,7 @@ parent/
   XSchem-coredb/   ← https://github.com/adatsuk/XSchem-coredb (launchers, xschemrc, core.tcl)
   CommonDB/        ← sibling checkout (coretcl.so build)
   LibMan/          ← optional; Windows app
-  KLayout-coredb/  ← optional; https://github.com/adatsuk/KLayout-coredb (mcore plugin)
+  KLayout-roomdb/  ← optional; https://github.com/adatsuk/KLayout-roomdb (mroom plugin)
   Qucs-S-coredb/   ← optional; https://github.com/adatsuk/Qucs-S-coredb (ROOM in Qucs-S)
 ```
 
