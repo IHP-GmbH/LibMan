@@ -483,6 +483,16 @@ jobs:
           arch: 'win64_mingw81'
           tools: 'tools_mingw81'
 
+      - name: Prefer MinGW 64-bit on PATH
+        shell: bash
+        run: |
+          # tools_mingw81 also ships mingw810_32; keep 64-bit ahead of it for qmake/cmake/make.
+          if [ -d "${IQTA_TOOLS}/mingw810_64/bin" ]; then
+            echo "${IQTA_TOOLS}/mingw810_64/bin" >> "$GITHUB_PATH"
+          fi
+          which g++ || true
+          g++ -dumpmachine || true
+
       - name: Install Inno Setup
         shell: pwsh
         run: choco install innosetup --yes

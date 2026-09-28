@@ -45,6 +45,14 @@ if not exist "%CAPNP_ROOT%\include\capnp\message.h" (
     exit /b 1
 )
 
+rem Prefer MinGW 64-bit (Qt win64_mingw81). tools_mingw81 also ships mingw810_32 first on PATH.
+if defined IQTA_TOOLS if exist "%IQTA_TOOLS%\mingw810_64\bin\g++.exe" (
+    set "PATH=%IQTA_TOOLS%\mingw810_64\bin;%PATH%"
+)
+if exist "C:\Qt\Tools\mingw810_64\bin\g++.exe" (
+    set "PATH=C:\Qt\Tools\mingw810_64\bin;%PATH%"
+)
+
 cmake -S "%ROOM_SRC%" -B "%ROOM_BUILD%" ^
     -DCMAKE_BUILD_TYPE=Release ^
     -DROOM_BOOTSTRAP_CAPNP=OFF ^
