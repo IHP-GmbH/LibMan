@@ -122,33 +122,33 @@ add_custom_target(prepare_libman_deps
 )
 
 # -----------------------------------------------------------------------------
-# CORE (CommonDB) — optional; private repository (auto-detected via GitHub probe)
+# ROOM (CommonDB) — optional; private repository (auto-detected via GitHub probe)
 # -----------------------------------------------------------------------------
 
 include("${CMAKE_SOURCE_DIR}/cmake/ProbeCoreAccess.cmake")
 
-option(LIBMAN_FORCE_CORE "Build with CORE even if GitHub probe fails" OFF)
-option(LIBMAN_FORCE_NO_CORE "Build without CORE even if GitHub probe succeeds" OFF)
+option(LIBMAN_FORCE_ROOM "Build with ROOM even if GitHub probe fails" OFF)
+option(LIBMAN_FORCE_NO_ROOM "Build without ROOM even if GitHub probe succeeds" OFF)
 
 libman_probe_core_access(LIBMAN_CORE_ACCESSIBLE
-    FORCE_CORE ${LIBMAN_FORCE_CORE}
-    FORCE_NO_CORE ${LIBMAN_FORCE_NO_CORE}
+    FORCE_ROOM ${LIBMAN_FORCE_CORE}
+    FORCE_NO_ROOM ${LIBMAN_FORCE_NO_CORE}
 )
 
-set(LIBMAN_USE_CORE ${LIBMAN_CORE_ACCESSIBLE})
+set(LIBMAN_USE_ROOM ${LIBMAN_CORE_ACCESSIBLE})
 
 set(LIBMAN_CORE_SOURCES)
 set(LIBMAN_CORE_LINK_LIBS)
 if(LIBMAN_USE_CORE)
-    include("${CMAKE_SOURCE_DIR}/cmake/FetchCore.cmake")
+    include("${CMAKE_SOURCE_DIR}/cmake/FetchRoom.cmake")
     list(APPEND LIBMAN_CORE_SOURCES
-        core/corecellreader.cpp
-        core/coreKlayoutBridge.cpp
-        core/coreReadAsync.cpp
+        room/roomcellreader.cpp
+        room/roomKlayoutBridge.cpp
+        room/roomReadAsync.cpp
     )
-    list(APPEND LIBMAN_CORE_LINK_LIBS CORE::core CORE::core_utils)
+    list(APPEND LIBMAN_CORE_LINK_LIBS ROOM::room ROOM::room_utils)
 else()
-    message(STATUS "LibMan: building without CORE (CommonDB not reachable). Set LIBMAN_CORE_GIT_TOKEN for access.")
+    message(STATUS "LibMan: building without ROOM (CommonDB not reachable). Set LIBMAN_CORE_GIT_TOKEN for access.")
 endif()
 
 # -----------------------------------------------------------------------------
@@ -156,9 +156,9 @@ endif()
 # -----------------------------------------------------------------------------
 
 set(SOURCES
-    core/core_path_utils.cpp
-    core/core_file_lock.cpp
-    core/converter_paths.cpp
+    room/room_path_utils.cpp
+    room/room_file_lock.cpp
+    room/converter_paths.cpp
     lstream/lstreamcellwriter.cpp
     oas/oasCreate.cpp
     src/main.cpp
@@ -194,8 +194,8 @@ set(SOURCES
     src/projecteditor.cpp
     src/importdialog.cpp
     src/exportdialog.cpp
-    src/core_import_service.cpp
-    src/core_export_service.cpp
+    src/room_import_service.cpp
+    src/room_export_service.cpp
     lstream/lstrReadAsync.cpp
     src/property.cpp
     src/toolcustomtool.cpp
@@ -211,6 +211,8 @@ set(SOURCES
     src/categorycontextmenu.cpp
     src/about.cpp
     src/newview.cpp
+    src/snapshotscene.cpp
+    src/snapshotview.cpp
 
     capnp/cell.capnp.cc
     capnp/geometry.capnp.cc
@@ -227,15 +229,15 @@ set(SOURCES
 list(APPEND SOURCES ${LIBMAN_CORE_SOURCES})
 
 if(NOT LIBMAN_USE_CORE)
-    list(APPEND SOURCES core/libman_no_core_stubs.cpp)
+    list(APPEND SOURCES room/libman_no_room_stubs.cpp)
 endif()
 
 set(HEADERS
-    core/core_path_utils.h
-    core/core_file_lock.h
-    core/converter_paths.h
-    core/corecellreader.h
-    core/coreKlayoutBridge.h
+    room/room_path_utils.h
+    room/room_file_lock.h
+    room/converter_paths.h
+    room/roomcellreader.h
+    room/roomKlayoutBridge.h
     lstream/lstreamcellwriter.h
     src/mainwindow.h
 
@@ -264,8 +266,8 @@ set(HEADERS
     src/projecteditor.h
     src/importdialog.h
     src/exportdialog.h
-    src/core_import_service.h
-    src/core_export_service.h
+    src/room_import_service.h
+    src/room_export_service.h
     src/property.h
     src/toolmanager.h
     src/view_tools.h
@@ -314,7 +316,7 @@ if(TARGET core)
 endif()
 
 if(NOT LIBMAN_USE_CORE)
-    target_compile_definitions(libman PRIVATE LIBMAN_NO_CORE)
+    target_compile_definitions(libman PRIVATE LIBMAN_NO_ROOM)
 endif()
 
 target_include_directories(libman PRIVATE

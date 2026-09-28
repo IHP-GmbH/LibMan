@@ -415,7 +415,7 @@ void MainWindow::on_viewItemExpanded(QTreeWidgetItem *item)
     }
 
     // ------------------------------------------------------------
-    // CORE root (layout / schematic / symbol)
+    // ROOM root (layout / schematic / symbol)
     // ------------------------------------------------------------
     if (type == ItemViewCore && !item->parent()) {
 
@@ -439,12 +439,12 @@ void MainWindow::on_viewItemExpanded(QTreeWidgetItem *item)
             return;
         }
 
-        loadCoreHierarchyAsync(entry->path, entry, item);
+        loadRoomHierarchyAsync(entry->path, entry, item);
         return;
     }
 
     // ------------------------------------------------------------
-    // Cell node (GDS, OAS, or CORE)
+    // Cell node (GDS, OAS, or ROOM)
     // ------------------------------------------------------------
     if (type == ItemCell) {
 
@@ -509,7 +509,7 @@ void MainWindow::on_viewItemExpanded(QTreeWidgetItem *item)
                 return;
             }
 
-            loadCoreHierarchyAsync(entry->path, entry, item, cellName);
+            loadRoomHierarchyAsync(entry->path, entry, item, cellName);
             return;
         }
 

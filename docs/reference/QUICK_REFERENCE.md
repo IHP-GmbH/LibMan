@@ -148,7 +148,7 @@ Ctrl+Shift+B → "Tests: Run All Tests" → Enter
 | `Ctrl+O` | Open project file |
 | `Ctrl+S` | Save project |
 | `Ctrl+E` | Edit Project... (Project Editor) |
-| — | **File → Import...** — convert GDS / Xschem / Qucs / OAS into CORE views |
+| — | **File → Import...** — convert GDS / Xschem / Qucs / OAS into ROOM views |
 
 Double-click a **layout** view root (`gds`, `oas`, `lstr`, `layout`) to open KLayout. Double-click **schematic** / **symbol** to open Xschem (WSL on Windows). See [KLayout](../setup/KLAYOUT_INTEGRATION.md), [Xschem](../setup/XSCHEM_INTEGRATION.md), and [Import](../setup/IMPORT.md).
 

@@ -1,6 +1,6 @@
 # Project Editor
 
-LibMan stores design libraries in a **project file** (`.projects` or `.lib`). Each line is a `define(library, path)` entry that maps a logical library name to a view file (GDS, OAS, LStream, or CORE).
+LibMan stores design libraries in a **project file** (`.projects` or `.lib`). Each line is a `define(library, path)` entry that maps a logical library name to a view file (GDS, OAS, LStream, or ROOM).
 
 The **Project Editor** is a Cadence Library Path Editor–style table for editing those entries without hand-editing the file.
 
@@ -27,19 +27,19 @@ Each row corresponds to one `define("library", "path");` in the project file.
 
 ### Wildcard defines (primitive libraries)
 
-For tech/primitive libraries you can register many CORE symbol files with one line:
+For tech/primitive libraries you can register many ROOM symbol files with one line:
 
 ```text
 define("analogLib", "analogLib/*");
 define("analogLib", "analogLib/MyDev/*");
-define("analogLib", "analogLib/R/R.symbol.core");
+define("analogLib", "analogLib/R/R.symbol.room");
 ```
 
 | Pattern | Meaning |
 |---------|---------|
-| `analogLib/*` | All `*.core` files under `analogLib/` (recursive) |
-| `analogLib/MyDev/*` | All `*.core` views in cell folder `analogLib/MyDev/` |
-| `analogLib/R/R.symbol.core` | Single view file (classic form) |
+| `analogLib/*` | All `*.room` files under `analogLib/` (recursive) |
+| `analogLib/MyDev/*` | All `*.room` views in cell folder `analogLib/MyDev/` |
+| `analogLib/R/R.symbol.room` | Single view file (classic form) |
 
 On **Save**, wildcard lines are preserved; individually registered files covered by a wildcard are not duplicated in the project file.
 
@@ -47,8 +47,8 @@ On **Save**, wildcard lines are preserved; individually registered files covered
 
 ```text
 define("ihp_sg13g2", "sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.gds");
-define("ihp_sg13g2", "sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.layout.core");
-define("ihp_sg13g2", "sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.schematic.core");
+define("ihp_sg13g2", "sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.layout.room");
+define("ihp_sg13g2", "sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.schematic.room");
 ```
 
 ## Editing
@@ -104,8 +104,8 @@ After Project Editor Save, select the library in the main window if needed — d
 
 ## Related topics
 
-- [Import](IMPORT.md) — convert GDS, Xschem, Qucs, OAS into CORE views and add `define()` rows
+- [Import](IMPORT.md) — convert GDS, Xschem, Qucs, OAS into ROOM views and add `define()` rows
 - [KLayout integration](KLAYOUT_INTEGRATION.md) — opening layout views from the View tree
-- [CORE integration](CORE_INTEGRATION.md) — `*.layout.core`, `*.schematic.core`
+- [ROOM integration](ROOM_INTEGRATION.md) — `*.layout.room`, `*.schematic.room`
 - [Xschem integration](XSCHEM_INTEGRATION.md) — WSL launchers, Tool Manager
 - [Troubleshooting](../reference/TROUBLESHOOTING.md) — common Project Editor and view issues

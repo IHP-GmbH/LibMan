@@ -35,7 +35,7 @@ struct LibInclude
     int                             sourceLine = -1;
 };
 
-// attach(designLibrary, techLibrary) — tech primitive CORE library name in the same project
+// attach(designLibrary, techLibrary) — tech primitive ROOM library name in the same project
 struct LibAttach
 {
     QString                         libraryName;

@@ -2,7 +2,7 @@
 #include "ui_exportdialog.h"
 
 #include "mainwindow.h"
-#include "core/core_path_utils.h"
+#include "room/room_path_utils.h"
 
 #include <QDir>
 #include <QFileDialog>
@@ -183,7 +183,7 @@ QStringList ExportDialog::collectSourceFiles() const
 
     QStringList compatible;
     for (const QString &filePath : files) {
-        const CoreViewIdentity identity = parseCoreViewIdentity(filePath);
+        const RoomViewIdentity identity = parseRoomViewIdentity(filePath);
         if (identity.valid && CoreExportService::coreViewMatchesFormat(format, identity.viewName)) {
             compatible << filePath;
         }
@@ -202,9 +202,9 @@ void ExportDialog::on_btnBrowseSource_clicked()
     if (m_ui->radioSingleFile->isChecked()) {
         const QString filePath = QFileDialog::getOpenFileName(
             this,
-            tr("Select CORE view file"),
+            tr("Select ROOM view file"),
             startDir,
-            tr("CORE files (%1);;All files (*)").arg(filterLine));
+            tr("ROOM files (%1);;All files (*)").arg(filterLine));
         if (!filePath.isEmpty()) {
             m_ui->editSourcePath->setText(QDir::toNativeSeparators(filePath));
         }
@@ -238,7 +238,7 @@ void ExportDialog::on_btnExport_clicked()
 
     const QStringList sourceFiles = collectSourceFiles();
     if (sourceFiles.isEmpty()) {
-        QMessageBox::warning(this, tr("Export"), tr("Select valid CORE source file(s) for the chosen format."));
+        QMessageBox::warning(this, tr("Export"), tr("Select valid ROOM source file(s) for the chosen format."));
         return;
     }
 

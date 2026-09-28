@@ -1,12 +1,12 @@
-#ifndef CORECELLREADER_H
-#define CORECELLREADER_H
+#ifndef ROOMCELLREADER_H
+#define ROOMCELLREADER_H
 
 #include <QMap>
 #include <QSet>
 #include <QString>
 #include <QStringList>
 
-class CoreCellReader
+class RoomCellReader
 {
 public:
     struct CoreHierarchy {
@@ -15,7 +15,7 @@ public:
         QSet<QString> allCells;
     };
 
-    explicit CoreCellReader(const QString &fileName);
+    explicit RoomCellReader(const QString &fileName);
 
     void coreCreate(const QString &cellName, const QString &viewName = QStringLiteral("layout"));
     QStringList getErrors() const { return m_errorList; }
@@ -27,4 +27,4 @@ private:
     QStringList m_errorList;
 };
 
-#endif // CORECELLREADER_H
+#endif // ROOMCELLREADER_H

@@ -1,5 +1,5 @@
-#ifndef CORE_IMPORT_SERVICE_H
-#define CORE_IMPORT_SERVICE_H
+#ifndef ROOM_IMPORT_SERVICE_H
+#define ROOM_IMPORT_SERVICE_H
 
 #include <QString>
 #include <QStringList>
@@ -59,4 +59,4 @@ private:
     MainWindow *m_mainWindow = nullptr;
 };
 
-#endif // CORE_IMPORT_SERVICE_H
+#endif // ROOM_IMPORT_SERVICE_H

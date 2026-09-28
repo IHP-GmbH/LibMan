@@ -1,8 +1,8 @@
-#include "core_import_service.h"
+#include "room_import_service.h"
 
 #include "mainwindow.h"
-#include "core/converter_paths.h"
-#include "core/core_path_utils.h"
+#include "room/converter_paths.h"
+#include "room/room_path_utils.h"
 
 #include <QDir>
 #include <QFileInfo>
@@ -139,7 +139,7 @@ QString CoreImportService::destinationCorePath(const QString &libraryRoot,
                                                const QString &viewName) const
 {
     const QString cellDirPath = QDir(libraryRoot).filePath(cellName);
-    return coreViewFilePath(cellDirPath, cellName, viewName);
+    return roomViewFilePath(cellDirPath, cellName, viewName);
 }
 
 CoreImportService::ImportItemResult CoreImportService::importOne(Format format,

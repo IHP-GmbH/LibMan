@@ -27,6 +27,9 @@
 #include <QRegularExpression>
 
 #include <QListWidgetItem>
+#include <QVBoxLayout>
+
+#include "snapshotview.h"
 
 #if QT_VERSION >= 0x050000
 #include <QScreen>
@@ -95,8 +98,8 @@ bool watchPathsEqual(const QString &left, const QString &right)
 #include "projecteditor.h"
 #include "importdialog.h"
 #include "exportdialog.h"
-#include "core/core_path_utils.h"
-#include "core/core_file_lock.h"
+#include "room/room_path_utils.h"
+#include "room/room_file_lock.h"
 
 /*!*******************************************************************************************************************
  * \brief Constructs a LibMan MainWindow object with the given arguments.
@@ -131,10 +134,19 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     connect(&m_klayoutTools, &KLayoutTools::error, this, [this](const QString &msg) { error(msg, false); });
     connect(&m_klayoutTools, &KLayoutTools::fileLink, this, &MainWindow::appendLogFileLink);
 
+    m_snapshotView = new SnapshotView(m_ui->snapshotHost);
+    auto *snapshotLayout = new QVBoxLayout(m_ui->snapshotHost);
+    snapshotLayout->setContentsMargins(0, 0, 0, 0);
+    snapshotLayout->addWidget(m_snapshotView);
+
     m_ui->groupCats->setVisible(false);
     m_ui->groupDocs->setVisible(false);
+    m_ui->groupSnapshot->setVisible(false);
     m_ui->actionShow_Documents->setChecked(false);
     m_ui->actionShow_Categories->setChecked(false);
+    m_ui->actionShow_Snapshot->setChecked(false);
+    m_ui->splitterView->setStretchFactor(0, 2);
+    m_ui->splitterView->setStretchFactor(1, 1);
 
     m_ui->actionGroup->setEnabled(false);
     m_ui->actionUnion->setEnabled(false);
@@ -159,6 +171,7 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     connect(m_ui->listGroups, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showGroupMenu(const QPoint &)));
     connect(m_ui->listCategories, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(showCategoryMenu(const QPoint &)));
     connect(m_ui->listViews, SIGNAL(itemExpanded(QTreeWidgetItem*)), this, SLOT(on_viewItemExpanded(QTreeWidgetItem*)));
+    connect(m_ui->listViews, &QTreeWidget::itemSelectionChanged, this, &MainWindow::refreshSnapshot);
     connect(m_ui->treeLibs, SIGNAL(itemSelectionChanged()), this, SLOT(on_treeLibs_itemSelectionChanged()));
 
     m_ui->listViews->viewport()->installEventFilter(this);
@@ -242,6 +255,7 @@ void MainWindow::initIcons()
     // View switching
     m_ui->actionShow_Documents->setIcon(QIcon(":/icons/show_documents.svg"));
     m_ui->actionShow_Categories->setIcon(QIcon(":/icons/show_categories.svg"));
+    m_ui->actionShow_Snapshot->setIcon(QIcon(":/icons/show_snapshot.svg"));
 
     // Category
     m_ui->actionCategory->setIcon(QIcon(":/icons/category.svg"));
@@ -283,6 +297,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
     settings.setValue("WindowState", saveState());
     settings.setValue("ShowDocuments", m_ui->groupDocs->isVisible());
     settings.setValue("ShowCategories", m_ui->groupCats->isVisible());
+    settings.setValue("ShowSnapshot", m_ui->groupSnapshot->isVisible());
+    settings.setValue("SnapshotSplitter", m_ui->splitterView->saveState());
     settings.endGroup();
 
     settings.beginGroup("Tools");
@@ -393,8 +409,11 @@ void MainWindow::loadSettings()
 
     m_ui->groupDocs->setVisible(settings.value("ShowDocuments", false).toBool());
     m_ui->groupCats->setVisible(settings.value("ShowCategories", false).toBool());
+    m_ui->groupSnapshot->setVisible(settings.value("ShowSnapshot", false).toBool());
     m_ui->actionShow_Documents->setChecked(settings.value("ShowDocuments", false).toBool());
     m_ui->actionShow_Categories->setChecked(settings.value("ShowCategories", false).toBool());
+    m_ui->actionShow_Snapshot->setChecked(settings.value("ShowSnapshot", false).toBool());
+    m_ui->splitterView->restoreState(settings.value("SnapshotSplitter").toByteArray());
 
     settings.endGroup();
 
@@ -524,21 +543,21 @@ void MainWindow::on_actionEditProject_triggered()
 
 void MainWindow::on_actionImport_triggered()
 {
-#ifndef LIBMAN_NO_CORE
+#ifndef LIBMAN_NO_ROOM
     ImportDialog dialog(this);
     dialog.exec();
 #else
-    error(tr("Import requires CORE support. Rebuild LibMan without CONFIG+=no_core."), false);
+    error(tr("Import requires ROOM support. Rebuild LibMan without CONFIG+=no_room."), false);
 #endif
 }
 
 void MainWindow::on_actionExport_triggered()
 {
-#ifndef LIBMAN_NO_CORE
+#ifndef LIBMAN_NO_ROOM
     ExportDialog dialog(this);
     dialog.exec();
 #else
-    error(tr("Export requires CORE support. Rebuild LibMan without CONFIG+=no_core."), false);
+    error(tr("Export requires ROOM support. Rebuild LibMan without CONFIG+=no_room."), false);
 #endif
 }
 
@@ -1009,8 +1028,8 @@ QString MainWindow::layoutPathForKLayout(const QString &viewName,
                                          const QString &viewPath,
                                          QStringList *errors) const
 {
-    if(isLayoutCoreViewName(viewName)) {
-        return coreLayoutPathForKLayout(viewPath, errors);
+    if(isLayoutRoomViewName(viewName)) {
+        return roomLayoutPathForKLayout(viewPath, errors);
     }
 
     return QFileInfo(viewPath).absoluteFilePath();
@@ -1034,7 +1053,7 @@ LayoutHierarchySnapshot snapshotFromOas(const LayoutHierarchy &hierarchy)
     return snapshot;
 }
 
-LayoutHierarchySnapshot snapshotFromCore(const CoreCellReader::CoreHierarchy &hierarchy)
+LayoutHierarchySnapshot snapshotFromCore(const RoomCellReader::CoreHierarchy &hierarchy)
 {
     LayoutHierarchySnapshot snapshot;
     snapshot.topCells = hierarchy.topCells;
@@ -1125,7 +1144,7 @@ bool MainWindow::isLayoutViewTreeItem(QTreeWidgetItem *item) const
         return true;
     }
 
-    if (type == ItemViewCore && isLayoutCoreViewName(item->text(0))) {
+    if (type == ItemViewCore && isLayoutRoomViewName(item->text(0))) {
         return true;
     }
 
@@ -1143,7 +1162,7 @@ bool MainWindow::isLayoutViewTreeItem(QTreeWidgetItem *item) const
         return true;
     }
 
-    return rootType == ItemViewCore && isLayoutCoreViewName(root->text(0));
+    return rootType == ItemViewCore && isLayoutRoomViewName(root->text(0));
 }
 
 /*!*******************************************************************************************************************
@@ -1204,7 +1223,7 @@ QString MainWindow::getCurrentViewFilePath(const QString &viewName) const
 {
     const QString v = viewName.trimmed().toLower();
 
-    if(v != "gds" && v != "oas" && v != "oasis" && v != "lstr" && !isLayoutCoreViewName(v)) {
+    if(v != "gds" && v != "oas" && v != "oasis" && v != "lstr" && !isLayoutRoomViewName(v)) {
         return QString();
     }
 
@@ -1825,7 +1844,7 @@ void MainWindow::loadViews(const QString &libName, const QString &groupName)
             viewItem->setData(0, RoleOasPath, viewPath);
             viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         }
-        else if(isCoreViewName(viewName)) {
+        else if(isRoomViewName(viewName)) {
             configureCoreViewTreeItem(viewItem, viewName, viewPath);
             applyCoreViewLockPresentation(viewItem, viewName, viewPath);
         }
@@ -2133,7 +2152,7 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
     // ------------------------------------------------------------
     // Layout handling via KLayout server: GDS + OAS (same behavior)
     // ------------------------------------------------------------
-    if(viewName == "gds" || viewName == "oas" || viewName == "lstr" || isLayoutCoreViewName(viewName)) {
+    if(viewName == "gds" || viewName == "oas" || viewName == "lstr" || isLayoutRoomViewName(viewName)) {
 
         QStringList bridgeErrors;
         const QString klayoutPath = layoutPathForKLayout(viewName, viewPath, &bridgeErrors);
@@ -2147,7 +2166,7 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
             return;
         }
 
-        // Root item: "gds", "oas", "lstr", or layout CORE view
+        // Root item: "gds", "oas", "lstr", or layout ROOM view
         if(type == ItemViewGds || type == ItemViewOas || type == ItemViewLStream || type == ItemViewCore) {
 
             const QString groupName = getCurrentGroupName();
@@ -2454,6 +2473,155 @@ void MainWindow::on_actionShow_Categories_toggled(bool state)
 void MainWindow::on_actionShow_Documents_toggled(bool state)
 {
     m_ui->groupDocs->setVisible(state);
+}
+
+void MainWindow::on_actionShow_Snapshot_toggled(bool state)
+{
+    m_ui->groupSnapshot->setVisible(state);
+    if (!state) {
+        return;
+    }
+
+    const QList<int> sizes = m_ui->splitterView->sizes();
+    if (sizes.size() == 2 && sizes.at(1) < 80) {
+        const int total = qMax(sizes.at(0) + sizes.at(1), 240);
+        const int snapshot = qMax(140, total / 3);
+        m_ui->splitterView->setSizes({qMax(80, total - snapshot), snapshot});
+    }
+    refreshSnapshot();
+}
+
+QString MainWindow::symbolCoreForCell(const QString &cellName) const
+{
+    if (cellName.isEmpty() || m_properties == nullptr) {
+        return QString();
+    }
+
+    QString libraryHint;
+    QString bareCell = cellName.trimmed();
+    bareCell.replace(QLatin1Char('\\'), QLatin1Char('/'));
+    const int slash = bareCell.lastIndexOf(QLatin1Char('/'));
+    if (slash >= 0) {
+        libraryHint = bareCell.left(slash);
+        bareCell = bareCell.mid(slash + 1);
+    }
+    const QStringList viewSuffixes = {
+        QStringLiteral(".symbol.room"),
+        QStringLiteral(".sym"),
+        QStringLiteral(".symbol")
+    };
+    for (const QString &suffix : viewSuffixes) {
+        if (bareCell.endsWith(suffix, Qt::CaseInsensitive)) {
+            bareCell.chop(suffix.size());
+            break;
+        }
+    }
+    if (bareCell.isEmpty()) {
+        return QString();
+    }
+
+    const auto existingFile = [](const QString &path) {
+        if (path.isEmpty() || !QFileInfo::exists(path)) {
+            return QString();
+        }
+        return QFileInfo(path).absoluteFilePath();
+    };
+
+    const auto symbolInLibrary = [&](const QString &libraryName) {
+        if (libraryName.isEmpty()) {
+            return QString();
+        }
+
+        const QString key = getLibraryKeyPrefix() + libraryName + QLatin1Char('/') + bareCell + QStringLiteral("/symbol");
+        if (m_properties->exists(key)) {
+            const QString registered = existingFile(m_properties->get<QString>(key).trimmed());
+            if (!registered.isEmpty()) {
+                return registered;
+            }
+        }
+
+        const QString libraryRoot = getLibraryPath(libraryName);
+        if (!libraryRoot.isEmpty()) {
+            const QString onDisk = existingFile(QDir(libraryRoot).filePath(bareCell + QLatin1Char('/') + bareCell + QStringLiteral(".symbol.room")));
+            if (!onDisk.isEmpty()) {
+                return onDisk;
+            }
+        }
+        return QString();
+    };
+
+    const QString currentLibrary = getCurrentLibraryName();
+    if (!libraryHint.isEmpty()) {
+        const QString hinted = symbolInLibrary(libraryHint);
+        if (!hinted.isEmpty()) {
+            return hinted;
+        }
+    }
+
+    const QString inDesign = symbolInLibrary(currentLibrary);
+    if (!inDesign.isEmpty()) {
+        return inDesign;
+    }
+
+    for (const QString &tech : getTechLibraryAttachList(currentLibrary)) {
+        const QString attached = symbolInLibrary(tech);
+        if (!attached.isEmpty()) {
+            return attached;
+        }
+    }
+
+    return QString();
+}
+
+void MainWindow::refreshSnapshot()
+{
+    if (m_snapshotView == nullptr || !m_ui->groupSnapshot->isVisible()) {
+        return;
+    }
+
+    QTreeWidgetItem *item = m_ui->listViews->currentItem();
+    if (item == nullptr) {
+        m_snapshotView->clearScene(tr("Select a schematic, symbol, or layout"));
+        return;
+    }
+
+    QTreeWidgetItem *root = item;
+    while (root->parent() != nullptr) {
+        root = root->parent();
+    }
+
+    const QString viewName = root->text(0).trimmed();
+    const QString view = viewName.toLower();
+    const bool isLayout = isLayoutRoomViewName(view);
+    if (view != QLatin1String("schematic") && view != QLatin1String("symbol")
+        && view != QLatin1String("sch") && view != QLatin1String("sym")
+        && !isLayout) {
+        m_snapshotView->clearScene(tr("Snapshot is available for schematic, symbol, and layout"));
+        return;
+    }
+
+    QString viewPath;
+    if (root->data(0, RoleType).toInt() == ItemViewCore) {
+        viewPath = root->data(0, RoleCorePath).toString();
+    } else {
+        viewPath = getViewPath(getCurrentLibraryName(), getCurrentGroupName(), viewName);
+    }
+
+    if (viewPath.isEmpty() || !QFileInfo::exists(viewPath)) {
+        m_snapshotView->clearScene(tr("No file for this view"));
+        return;
+    }
+
+    QString focusCell;
+    if (item->data(0, RoleType).toInt() == ItemCell) {
+        focusCell = item->data(0, RoleCellName).toString();
+    } else if (isLayout) {
+        focusCell = getCurrentGroupName();
+    }
+
+    m_snapshotView->setScene(loadCoreSnapshot(viewPath, view, [this](const QString &name) {
+        return symbolCoreForCell(name);
+    }, focusCell));
 }
 
 /*!*******************************************************************************************************************
@@ -3396,7 +3564,7 @@ bool MainWindow::isSupportedViewDrop(const QMimeData *mimeData) const
             continue;
         }
 
-        const CoreViewIdentity coreIdentity = parseCoreViewIdentity(localPath);
+        const RoomViewIdentity coreIdentity = parseRoomViewIdentity(localPath);
         if(coreIdentity.valid && supportedViews.contains(coreIdentity.viewName)) {
             return true;
         }
@@ -3528,8 +3696,8 @@ bool MainWindow::importCellViewFile(const QString &libName, const QString &srcFi
     }
 
     const QString dstFilePath = QDir::toNativeSeparators(
-        isCoreViewName(viewName)
-            ? coreViewFilePath(cellDirPath, groupName, viewName)
+        isRoomViewName(viewName)
+            ? roomViewFilePath(cellDirPath, groupName, viewName)
             : cellDirPath + "/" + groupName + "." + viewName);
     if(QFileInfo(dstFilePath).exists()) {
         error(QString("Cell view already exists: %1").arg(dstFilePath), false);

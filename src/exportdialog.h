@@ -1,7 +1,7 @@
 #ifndef EXPORTDIALOG_H
 #define EXPORTDIALOG_H
 
-#include "core_export_service.h"
+#include "room_export_service.h"
 
 #include <QDialog>
 

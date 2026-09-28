@@ -1,0 +1,35 @@
+v {xschem version=Schematic file_version=1.2}
+G {}
+K {schematic.header="<Qucs Schematic 0.0.19>" schematic.view=<View=0,0,800,600,1,0,0> schematic.view=<Grid=10,10,1> schematic.view=<DataSet=inverter_tb.dat> schematic.view=<DataDisplay=inverter_tb.dpl>}
+V {}
+S {}
+E {}
+N 70 -410 320 -410 {lab=Vdd}
+N 70 -80 70 -50 {lab=gnd}
+N 70 -410 70 -140 {lab=Vdd}
+N 70 -50 110 -50 {lab=gnd}
+N 150 -300 150 -140 {lab=Vin}
+N 320 -210 320 -190 {lab=GND}
+N 110 -50 150 -50 {lab=gnd}
+N 150 -300 220 -300 {lab=Vin}
+N 320 -440 320 -410 {lab=Vdd}
+N 520 -300 540 -300 {lab=Vout}
+N 320 -410 320 -380 {lab=Vdd}
+N 150 -80 150 -50 {lab=gnd}
+N 220 -300 240 -300 {lab=Vin}
+C {analogLib/INCLSCR.sym} 390 -100 0 0 {name=INCLSCR1 value=".lib cornerMOSlv.lib mos_tt" only_toplevel=true qucs.type=INCLSCR rotate=0 mirror=0 core.primitive=analogLib/INCLSCR.symbol.core core.primitive=analogLib/INCLSCR.symbol.core}
+C {analogLib/TR.sym} 400 30 0 0 {name=TR1 value=".control
+save all
+tran 50n 2u
+write test_inverter.raw
+.endc" only_toplevel=true qucs.type=.TR rotate=0 mirror=0 core.primitive=analogLib/TR.symbol.core core.primitive=analogLib/TR.symbol.core}
+C {vsource.sym} 70 -110 0 0 {name=Vdd value=1.2 qucs.type=Vdc rotate=1 mirror=0 core.primitive=analogLib/Vdc.symbol.core}
+C {gnd.sym} 110 -50 0 0 {name=* lab=GND qucs.type=GND rotate=0 mirror=0 core.primitive=analogLib/GND.symbol.core}
+C {vsource.sym} 150 -110 0 0 {name=Vin value="PULSE(0 1.2 0.5u 10n 10n 1u 2u)" qucs.type=Vpulse rotate=1 mirror=0 core.primitive=analogLib/Vpulse.symbol.core}
+C {lab_pin.sym} 220 -300 0 0 {name=p2 lab=Vin sig_type=std_logic qucs.type=Port rotate=0 mirror=0 core.primitive=commonLib/lab_pin.symbol.core}
+C {lab_pin.sym} 320 -440 0 0 {name=p4 lab=Vdd sig_type=std_logic qucs.type=Port rotate=0 mirror=0 core.primitive=commonLib/lab_pin.symbol.core}
+C {lab_pin.sym} 540 -300 1 0 {name=p5 lab=Vout sig_type=std_logic qucs.type=Port rotate=1 mirror=0 core.primitive=commonLib/lab_pin.symbol.core}
+C {gnd.sym} 320 -190 0 0 {name=* lab=GND qucs.type=GND rotate=0 mirror=0 core.primitive=analogLib/GND.symbol.core}
+C {inverter.sym} 390 -300 0 0 {name=x1 qucs.type=Lib qucs.model=inverter rotate=0 mirror=0}
+C {analogLib/launcher.sym} 770 -120 0 0 {name=h5 descr="load waves" tclcommand="xschem raw_read $netlist_dir/test_inverter.raw tran" qucs.type=launcher core.primitive=analogLib/launcher.symbol.core core.primitive=analogLib/launcher.symbol.core}
+B 2 600 -380 880 -180 {flags=graph y1=-0.002592 y2=1.296 ypos1=0 ypos2=2 divy=5 subdivy=1 unity=1 x1=0 x2=2e-06 divx=5 subdivx=1 xlabmag=1.0 ylabmag=1.0 node=vout color=4 dataset=-1 unitx=1 logx=0 logy=0}

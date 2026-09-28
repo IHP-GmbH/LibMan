@@ -1,42 +1,42 @@
-# Shared CORE / no_core selection for qmake (libman.pro, tests/tests.pro).
+# Shared ROOM / no_room selection for qmake (libman.pro, tests/tests.pro).
 # Probes GitHub access to CommonDB; uses stubs when the private repo is unreachable.
 
 isEmpty(LIBMAN_ROOT) {
     LIBMAN_ROOT = $$dirname(_PRO_FILE_)
 }
 
-LIBMAN_CORE_TREE = $$LIBMAN_ROOT/.deps/CommonDB
-!isEmpty(LIBMAN_CORE_SOURCE_DIR) {
-    LIBMAN_CORE_TREE = $$LIBMAN_CORE_SOURCE_DIR
+LIBMAN_ROOM_TREE = $$LIBMAN_ROOT/.deps/Room
+!isEmpty(LIBMAN_ROOM_SOURCE_DIR) {
+    LIBMAN_ROOM_TREE = $$LIBMAN_ROOM_SOURCE_DIR
 }
 
-contains(CONFIG, no_core) {
+contains(CONFIG, no_room) {
     # explicit disable
-} else:contains(CONFIG, core) {
-    CONFIG -= no_core
+} else:contains(CONFIG, room) {
+    CONFIG -= no_room
 } else {
-    LIBMAN_HAS_CORE = 0
+    LIBMAN_HAS_ROOM = 0
 
-    exists($$LIBMAN_CORE_TREE/src/core_paths.h) {
-        LIBMAN_HAS_CORE = 1
+    exists($$LIBMAN_ROOM_TREE/src/room_paths.h) {
+        LIBMAN_HAS_ROOM = 1
     } else {
         win32 {
-            LIBMAN_CORE_PROBE = $$system(cmd /c $$shell_quote($$LIBMAN_ROOT/scripts/probe_core_access.cmd) $$shell_quote($$shell_path($$LIBMAN_ROOT)))
+            LIBMAN_ROOM_PROBE = $$system(cmd /c $$shell_quote($$LIBMAN_ROOT/scripts/probe_core_access.cmd) $$shell_quote($$shell_path($$LIBMAN_ROOT)))
         } else {
-            LIBMAN_CORE_PROBE = $$system(bash $$shell_quote($$LIBMAN_ROOT/scripts/probe_core_access.sh) $$shell_quote($$shell_path($$LIBMAN_ROOT)))
+            LIBMAN_ROOM_PROBE = $$system(bash $$shell_quote($$LIBMAN_ROOT/scripts/probe_core_access.sh) $$shell_quote($$shell_path($$LIBMAN_ROOT)))
         }
-        equals(LIBMAN_CORE_PROBE, 0) {
-            LIBMAN_HAS_CORE = 1
+        equals(LIBMAN_ROOM_PROBE, 0) {
+            LIBMAN_HAS_ROOM = 1
         }
     }
 
-    equals(LIBMAN_HAS_CORE, 0) {
-        CONFIG += no_core
+    equals(LIBMAN_HAS_ROOM, 0) {
+        CONFIG += no_room
     }
 }
 
-contains(CONFIG, no_core) {
-    message("LibMan: building without CORE (CommonDB not available). Set LIBMAN_CORE_GIT_TOKEN or clone .deps/CommonDB for full CORE.")
+contains(CONFIG, no_room) {
+    message("LibMan: building without ROOM (CommonDB not available). Set LIBMAN_CORE_GIT_TOKEN or clone .deps/Room for full ROOM.")
 } else {
-    message("LibMan: building with CORE (CommonDB available).")
+    message("LibMan: building with ROOM (CommonDB available).")
 }

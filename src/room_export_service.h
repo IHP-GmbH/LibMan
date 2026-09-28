@@ -1,5 +1,5 @@
-#ifndef CORE_EXPORT_SERVICE_H
-#define CORE_EXPORT_SERVICE_H
+#ifndef ROOM_EXPORT_SERVICE_H
+#define ROOM_EXPORT_SERVICE_H
 
 #include <QString>
 #include <QStringList>
@@ -47,7 +47,7 @@ private:
                                 const QString &cellName,
                                 const QString &viewName) const;
 
-#ifndef LIBMAN_NO_CORE
+#ifndef LIBMAN_NO_ROOM
     void exportXschemReferencedCells(const QString &converterPath,
                                      const QString &destRoot,
                                      const QString &sourceCorePath,
@@ -57,4 +57,4 @@ private:
     MainWindow *m_mainWindow = nullptr;
 };
 
-#endif // CORE_EXPORT_SERVICE_H
+#endif // ROOM_EXPORT_SERVICE_H

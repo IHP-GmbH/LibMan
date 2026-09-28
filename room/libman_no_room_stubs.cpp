@@ -1,34 +1,34 @@
-#include "core/corecellreader.h"
-#include "core/coreKlayoutBridge.h"
+#include "room/roomcellreader.h"
+#include "room/roomKlayoutBridge.h"
 #include "src/mainwindow.h"
 
 #include <QFileInfo>
 
-CoreCellReader::CoreCellReader(const QString &fileName)
+RoomCellReader::RoomCellReader(const QString &fileName)
     : m_fileName(fileName)
 {
 }
 
-void CoreCellReader::coreCreate(const QString &cellName, const QString &viewName)
+void RoomCellReader::coreCreate(const QString &cellName, const QString &viewName)
 {
     Q_UNUSED(cellName);
     Q_UNUSED(viewName);
-    m_errorList << QStringLiteral("CORE support is not built (CONFIG+=no_core).");
+    m_errorList << QStringLiteral("ROOM support is not built (CONFIG+=no_room).");
 }
 
-bool CoreCellReader::readHierarchy(CoreHierarchy &out)
+bool RoomCellReader::readHierarchy(CoreHierarchy &out)
 {
     Q_UNUSED(out);
-    m_errorList << QStringLiteral("CORE support is not built (CONFIG+=no_core).");
+    m_errorList << QStringLiteral("ROOM support is not built (CONFIG+=no_room).");
     return false;
 }
 
-QString coreLayoutPathForKLayout(const QString &viewPath, QStringList *errors)
+QString roomLayoutPathForKLayout(const QString &viewPath, QStringList *errors)
 {
     const QFileInfo fi(viewPath);
     if(!fi.exists() || !fi.isFile()) {
         if(errors) {
-            *errors << QStringLiteral("CORE file not found: %1").arg(viewPath);
+            *errors << QStringLiteral("ROOM file not found: %1").arg(viewPath);
         }
         return QString();
     }
@@ -36,7 +36,7 @@ QString coreLayoutPathForKLayout(const QString &viewPath, QStringList *errors)
     return fi.absoluteFilePath();
 }
 
-void MainWindow::loadCoreHierarchyAsync(const QString &corePath,
+void MainWindow::loadRoomHierarchyAsync(const QString &corePath,
                                         const std::shared_ptr<CoreCacheEntry> &entry,
                                         QTreeWidgetItem *targetItem,
                                         const QString &requestedCellName)
@@ -51,5 +51,5 @@ void MainWindow::loadCoreHierarchyAsync(const QString &corePath,
 
     entry->loading = false;
     entry->loaded = false;
-    entry->errors << QStringLiteral("CORE support is not built (CONFIG+=no_core).");
+    entry->errors << QStringLiteral("ROOM support is not built (CONFIG+=no_room).");
 }

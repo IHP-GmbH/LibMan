@@ -1245,7 +1245,7 @@ def libman_layer_key(ly, li):
     return (info.layer, info.datatype, info.name)
 
 def libman_read_layout(ly, path):
-    """Read GDS/OAS/LStream/CORE (CORE needs mcore streamer in this KLayout build)."""
+    """Read GDS/OAS/LStream/ROOM (ROOM needs mcore streamer in this KLayout build)."""
     if not os.path.isfile(path):
         print("ERROR: file not found: %s" % path)
         return False
@@ -1255,8 +1255,8 @@ def libman_read_layout(ly, path):
     except Exception as e:
         print("ERROR: failed to read layout: %s" % path)
         print("  %s" % e)
-        if path.lower().endswith(".core"):
-            print("HINT: *.layout.core requires the mcore streamer (KLayout-coredb).")
+        if path.lower().endswith(".room"):
+            print("HINT: *.layout.room requires the mcore streamer (KLayout-coredb).")
             print("      Rebuild KLayout with integrations/klayout/mcore and use that klayout.exe.")
         return False
 

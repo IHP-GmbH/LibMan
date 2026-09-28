@@ -3,9 +3,9 @@
 
 #include "gds/gdsreader.h"
 #include "oas/oasReader.h"
-#include "core/corecellreader.h"
-#include "core/coreKlayoutBridge.h"
-#include "core/core_path_utils.h"
+#include "room/roomcellreader.h"
+#include "room/roomKlayoutBridge.h"
+#include "room/room_path_utils.h"
 #include "src/klayoutCellResolver.h"
 #include "src/klayout_tools.h"
 
@@ -29,6 +29,7 @@ class QListWidget;
 class QListWidgetItem;
 class QTreeWidgetItem;
 class QFileSystemWatcher;
+class SnapshotView;
 
 namespace Ui {
 class MainWindow;
@@ -79,7 +80,7 @@ class MainWindow : public QMainWindow
         RoleOasPath              = Qt::UserRole + 4,    /*!< Absolute path to OASIS file for "oas" view node. */
         RoleLStreamPath          = Qt::UserRole + 5,    /*!< Absolute path to LStream file for "lstream" view node. */
         RoleDocumentPath         = Qt::UserRole + 6,    /*!< Absolute path to document (pdf/txt/etc). */
-        RoleCorePath             = Qt::UserRole + 7     /*!< Absolute path to CORE (.core) file. */
+        RoleCorePath             = Qt::UserRole + 7     /*!< Absolute path to ROOM (.room) file. */
     };
 
     /*!
@@ -136,14 +137,14 @@ public:
     };
 
     /*!
-     * \brief Cache entry storing parsed CORE hierarchy for a given .core file.
+     * \brief Cache entry storing parsed ROOM hierarchy for a given .room file.
      */
     struct CoreCacheEntry
     {
         bool                                loaded   = false;
         bool                                loading  = false;
         QString                             path;
-        CoreCellReader::CoreHierarchy       hierarchy;
+        RoomCellReader::CoreHierarchy       hierarchy;
         QStringList                         errors;
     };
 
@@ -258,6 +259,8 @@ private slots:
     void                                on_actionExit_triggered();
     void                                on_actionShow_Categories_toggled(bool);
     void                                on_actionShow_Documents_toggled(bool);
+    void                                on_actionShow_Snapshot_toggled(bool);
+    void                                refreshSnapshot();
 
     void                                on_actionTools_triggered();
     void                                on_actionProjects_triggered();
@@ -356,7 +359,7 @@ private:
     void                                populateLStreamTopLevel(QTreeWidgetItem *item,
                                                                 const std::shared_ptr<LStreamCacheEntry> &entry);
 
-    void                                loadCoreHierarchyAsync(const QString &corePath,
+    void                                loadRoomHierarchyAsync(const QString &corePath,
                                                                const std::shared_ptr<CoreCacheEntry> &entry,
                                                                QTreeWidgetItem *targetItem,
                                                                const QString &requestedCellName = QString());
@@ -487,6 +490,7 @@ private:
     QStringList                         resolveTechLibraryCorePaths(const QString &techLibraryName) const;
     QString                             resolveTechLibraryCorePath(const QString &techLibraryName) const;
     bool                                isSchematicLikeView(const QString &viewName) const;
+    QString                             symbolCoreForCell(const QString &cellName) const;
     void                                launchSchematicTool(const QString &tool, const QString &viewPath);
 
     bool                                ensureKLayoutServerRunning(const QString &tool);
@@ -534,7 +538,7 @@ private:
     QHash<QTreeWidgetItem*, SpinnerState> m_spinnerStates;                 /*!< Spinner animation state per tree item. */
 
     QFileSystemWatcher                  *m_projFileWatcher = nullptr;      /*!< Watches current project file for external modifications (edit/replace/remove). */
-    QFileSystemWatcher                  *m_coreLockWatcher = nullptr;      /*!< Watches CORE .lck sidecars for the current cell views. */
+    QFileSystemWatcher                  *m_coreLockWatcher = nullptr;      /*!< Watches ROOM .lck sidecars for the current cell views. */
     bool                                m_ignoreProjectFileChange = false; /*!< Suppresses watcher reaction during internal save operations. */
     QSet<QString>                       m_coreLockWatchedDirs;             /*!< Directories watched for new .core.lck files. */
     QSet<QString>                       m_coreLockWatchedFiles;            /*!< Existing .core.lck files watched for changes/removal. */
@@ -545,7 +549,8 @@ private:
     QHash<QString, std::shared_ptr<GdsCacheEntry>> m_gdsCache;             /*!< GDS hierarchy cache: abs path -> entry. */
     QHash<QString, std::shared_ptr<OasCacheEntry>> m_oasCache;             /*!< OASIS hierarchy cache: abs path -> entry. */
     QHash<QString, std::shared_ptr<LStreamCacheEntry>> m_lstreamCache;     /*!< LStream hierarchy cache: abs path -> entry. */
-    QHash<QString, std::shared_ptr<CoreCacheEntry>> m_coreCache;           /*!< CORE hierarchy cache: abs path -> entry. */
+    QHash<QString, std::shared_ptr<CoreCacheEntry>> m_coreCache;           /*!< ROOM hierarchy cache: abs path -> entry. */
+    SnapshotView                       *m_snapshotView = nullptr;         /*!< Schematic/symbol thumbnail under the view list. */
 };
 
 /*!*******************************************************************************************************************

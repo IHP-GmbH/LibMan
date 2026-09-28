@@ -50,8 +50,8 @@ SOURCES += \
     src/projecteditor.cpp \
     src/importdialog.cpp \
     src/exportdialog.cpp \
-    src/core_import_service.cpp \
-    src/core_export_service.cpp \
+    src/room_import_service.cpp \
+    src/room_export_service.cpp \
     lstream/lstrReadAsync.cpp \
     src/property.cpp \
     src/toolcustomtool.cpp \
@@ -67,21 +67,23 @@ SOURCES += \
     src/categorycontextmenu.cpp \
     src/about.cpp \
     src/newview.cpp \
-    core/core_path_utils.cpp \
-    core/core_file_lock.cpp \
-    core/converter_paths.cpp
+    src/snapshotscene.cpp \
+    src/snapshotview.cpp \
+    room/room_path_utils.cpp \
+    room/room_file_lock.cpp \
+    room/converter_paths.cpp
 
 LIBMAN_ROOT = $$dirname(_PRO_FILE_)
 include(core_build_config.pri)
 
-contains(CONFIG, no_core) {
-    DEFINES += LIBMAN_NO_CORE
-    SOURCES += core/libman_no_core_stubs.cpp
+contains(CONFIG, no_room) {
+    DEFINES += LIBMAN_NO_ROOM
+    SOURCES += room/libman_no_room_stubs.cpp
 } else {
     SOURCES += \
-        core/corecellreader.cpp \
-        core/coreReadAsync.cpp \
-        core/coreKlayoutBridge.cpp
+        room/roomcellreader.cpp \
+        room/roomReadAsync.cpp \
+        room/roomKlayoutBridge.cpp
 }
 
 HEADERS += \
@@ -111,8 +113,8 @@ HEADERS += \
     src/projecteditor.h \
     src/importdialog.h \
     src/exportdialog.h \
-    src/core_import_service.h \
-    src/core_export_service.h \
+    src/room_import_service.h \
+    src/room_export_service.h \
     src/property.h \
     src/toolmanager.h \
     src/view_tools.h \
@@ -120,11 +122,13 @@ HEADERS += \
     src/toolpickerdialog.h \
     src/about.h \
     src/newview.h \
-    core/corecellreader.h \
-    core/coreKlayoutBridge.h \
-    core/core_path_utils.h \
-    core/core_file_lock.h \
-    core/converter_paths.h
+    src/snapshotscene.h \
+    src/snapshotview.h \
+    room/roomcellreader.h \
+    room/roomKlayoutBridge.h \
+    room/room_path_utils.h \
+    room/room_file_lock.h \
+    room/converter_paths.h
 
 FORMS += \
     src/mainwindow.ui \
@@ -144,8 +148,8 @@ RESOURCES += icons.qrc
 # Repo root (directory of this .pro file), not the shadow-build cwd.
 LIBMAN_ROOT = $$dirname(_PRO_FILE_)
 include(capnp_deps.pri)
-!contains(CONFIG, no_core) {
-    include(core_deps.pri)
+!contains(CONFIG, no_room) {
+    include(room_deps.pri)
 }
 
 # Generated Cap'n Proto files
@@ -176,7 +180,7 @@ HEADERS += \
     capnp/variant.capnp.h
 
 include(capnp_deps_finalize.pri)
-!contains(CONFIG, no_core) {
-    include(core_deps_finalize.pri)
+!contains(CONFIG, no_room) {
+    include(room_deps_finalize.pri)
     include(core_converter_deploy.pri)
 }

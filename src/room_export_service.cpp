@@ -1,8 +1,8 @@
-#include "core_export_service.h"
+#include "room_export_service.h"
 
 #include "mainwindow.h"
-#include "core/converter_paths.h"
-#include "core/core_path_utils.h"
+#include "room/converter_paths.h"
+#include "room/room_path_utils.h"
 
 #include <QDir>
 #include <QFile>
@@ -10,7 +10,7 @@
 #include <QProcess>
 #include <QTextStream>
 
-#ifndef LIBMAN_NO_CORE
+#ifndef LIBMAN_NO_ROOM
 #include "cell_content.h"
 #include "database.h"
 #include "enums.h"
@@ -36,7 +36,7 @@ QString normalizedViewName(const QString &viewName)
 
 } // namespace
 
-#ifndef LIBMAN_NO_CORE
+#ifndef LIBMAN_NO_ROOM
 void writeExportedXschemRc(const QString &destRoot)
 {
     const QString path = QDir(destRoot).filePath(QStringLiteral("xschemrc"));
@@ -94,15 +94,15 @@ void CoreExportService::exportXschemReferencedCells(const QString &converterPath
 
     std::unordered_set<std::string> models;
     try {
-        const core::Database db = core::Database::loadFromFile(sourceCorePath.toStdString());
-        const core::Cell *cell = db.lib().findCell(cellName.toStdString());
+        const room::Database db = room::Database::loadFromFile(sourceCorePath.toStdString());
+        const room::Cell *cell = db.lib().findCell(cellName.toStdString());
         if (cell != nullptr) {
-            if (const core::CellContent *content = cell->findContent(core::ViewType::Schematic)) {
-                for (const core::Instance &inst : content->block().instances()) {
+            if (const room::CellContent *content = cell->findContent(room::ViewType::Schematic)) {
+                for (const room::Instance &inst : content->block().instances()) {
                     if (inst.cellName() != "Lib") {
                         continue;
                     }
-                    for (const core::Property &prop : inst.properties()) {
+                    for (const room::Property &prop : inst.properties()) {
                         if (prop.name == "param.1" && !prop.value.empty()) {
                             models.insert(prop.value);
                         }
@@ -117,7 +117,7 @@ void CoreExportService::exportXschemReferencedCells(const QString &converterPath
     for (const std::string &model : models) {
         const QString modelName = QString::fromStdString(model);
         for (const QString &viewStem : {QStringLiteral("schematic"), QStringLiteral("symbol")}) {
-            const QString needle = modelName + QLatin1Char('.') + viewStem + QStringLiteral(".core");
+            const QString needle = modelName + QLatin1Char('.') + viewStem + QStringLiteral(".room");
             QString corePath;
             for (const QString &techLib : techLibs) {
                 for (const QString &path : m_mainWindow->resolveTechLibraryCorePaths(techLib)) {
@@ -172,10 +172,10 @@ QString CoreExportService::formatDisplayName(Format format)
 QStringList CoreExportService::sourceNameFilters()
 {
     return {
-        QStringLiteral("*.core"),
-        QStringLiteral("*.layout.core"),
-        QStringLiteral("*.schematic.core"),
-        QStringLiteral("*.symbol.core"),
+        QStringLiteral("*.room"),
+        QStringLiteral("*.layout.room"),
+        QStringLiteral("*.schematic.room"),
+        QStringLiteral("*.symbol.room"),
     };
 }
 
@@ -250,9 +250,9 @@ CoreExportService::ExportItemResult CoreExportService::exportOne(Format format,
         return result;
     }
 
-    const CoreViewIdentity identity = parseCoreViewIdentity(sourceInfo.absoluteFilePath());
+    const RoomViewIdentity identity = parseRoomViewIdentity(sourceInfo.absoluteFilePath());
     if (!identity.valid) {
-        result.message = QStringLiteral("Not a recognized CORE view file.");
+        result.message = QStringLiteral("Not a recognized ROOM view file.");
         return result;
     }
 
@@ -308,7 +308,7 @@ CoreExportService::ExportItemResult CoreExportService::exportOne(Format format,
         return result;
     }
 
-#ifndef LIBMAN_NO_CORE
+#ifndef LIBMAN_NO_ROOM
     if (format == Format::Xschem && identity.viewName.compare(QStringLiteral("schematic"), Qt::CaseInsensitive) == 0) {
         writeExportedXschemRc(destRoot);
         exportXschemReferencedCells(converterPath, destRoot, sourceInfo.absoluteFilePath(), identity.cellName);

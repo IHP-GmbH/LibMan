@@ -1,7 +1,7 @@
 #ifndef IMPORTDIALOG_H
 #define IMPORTDIALOG_H
 
-#include "core_import_service.h"
+#include "room_import_service.h"
 
 #include <QDialog>
 

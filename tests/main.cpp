@@ -23,8 +23,8 @@
 #include "tst_mainwindow_categories.h"
 #include "tst_coverage_expansion.h"
 #include "tst_coverage_80.h"
-#include "tst_core_path_utils.h"
-#include "tst_core_file_lock.h"
+#include "tst_room_path_utils.h"
+#include "tst_room_file_lock.h"
 
 namespace
 {

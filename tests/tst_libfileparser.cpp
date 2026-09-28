@@ -427,7 +427,7 @@ void LibFileParserTest::parseFile_sg13g2_projects_fixture_pathsExist()
                  qPrintable(QStringLiteral("missing library entry for '%1': %2")
                                 .arg(def.name, def.path)));
 
-        if(def.path.endsWith(QLatin1String(".core"))
+        if(def.path.endsWith(QLatin1String(".room"))
            || def.path.endsWith(QLatin1String(".gds"))
            || def.path.endsWith(QLatin1String(".oas"))
            || def.path.endsWith(QLatin1String(".lstr"))) {
@@ -490,7 +490,7 @@ void LibFileParserTest::parseFile_wildcardDefine_preservesPattern()
     QVERIFY(dir.isValid());
 
     QDir().mkpath(dir.path() + "/sg13g2_pr/bondpad");
-    QVERIFY(writeTextFile(dir.path() + "/sg13g2_pr/bondpad/bondpad.symbol.core", "core"));
+    QVERIFY(writeTextFile(dir.path() + "/sg13g2_pr/bondpad/bondpad.symbol.room", "core"));
 
     const QString libFile = dir.path() + "/wildcard.lib";
     QVERIFY(writeTextFile(libFile, "define(\"sg13g2_pr\", \"sg13g2_pr/*\");\n"));

@@ -1,13 +1,13 @@
 # Import external views (File → Import)
 
-LibMan can convert schematics and layouts from other EDA formats into **CORE** view files and register them in the current project.
+LibMan can convert schematics and layouts from other EDA formats into **ROOM** view files and register them in the current project.
 
 | Menu | Description |
 |------|-------------|
 | **File → Import...** | Open the import dialog |
-| **File → Export...** | Export selected CORE views to GDS, Xschem, or Qucs |
+| **File → Export...** | Export selected ROOM views to GDS, Xschem, or Qucs |
 
-Import requires a **CORE-enabled** build (`CONFIG+=no_core` disables this menu).
+Import requires a **CORE-enabled** build (`CONFIG+=no_room` disables this menu).
 
 ---
 
@@ -20,7 +20,7 @@ Import requires a **CORE-enabled** build (`CONFIG+=no_core` disables this menu).
 | **Single file / Folder** | Import one file or every matching file in a directory |
 | **Path** | Source file or folder (Browse...) |
 | **Log** | Per-file success or failure after **Import** (updates progressively) |
-| **Overwrite existing cell views** | Replace `*.core` files that already exist for the same cell/view |
+| **Overwrite existing cell views** | Replace `*.room` files that already exist for the same cell/view |
 
 The target library defaults to the library currently selected in the main window.
 
@@ -31,7 +31,7 @@ The target library defaults to the library currently selected in the main window
 For each source file:
 
 1. LibMan creates `\<library-root>/\<cell>/\<cell>.\<view>.core` (or copies a native `.oas` file when no converter is available).
-2. A **CORE converter** is run as an external process.
+2. A **ROOM converter** is run as an external process.
 3. The new view is registered in LibMan (`LIBRARY_<lib>/<cell>/<view>`).
 4. If a project file is open, **File → Save** runs automatically — a new `define("library", "path");` line is appended to `.projects`.
 
@@ -44,20 +44,20 @@ Cell name is taken from the source file base name (`OTA1336.sch` → cell `OTA13
 | Qucs | `.sch` | `qucs_to_core` | `schematic` |
 | OAS | `.oas`, `.oas.gz` | `oas_to_core` if present, else native copy | `layout` or `oas` |
 
-GDS import uses `--all-cells` so multi-cell libraries are preserved in one `.layout.core` file per source GDS.
+GDS import uses `--all-cells` so multi-cell libraries are preserved in one `.layout.room` file per source GDS.
 
 ---
 
 ## Converter tools (next to `libman.exe`)
 
-LibMan does not embed converters in-process. On build, these tools from [CommonDB](https://github.com/IHP-GmbH/CommonDB) are copied next to the executable:
+LibMan does not embed converters in-process. On build, these tools from [CommonDB](https://github.com/IHP-GmbH/Room) are copied next to the executable:
 
 - `gds_to_core`, `core_to_gds`
 - `xschem_to_core`, `core_to_xschem`
 - `qucs_to_core`, `core_to_qucs`
-- `oas_to_core` (when CORE is built with ZLIB)
+- `oas_to_core` (when ROOM is built with ZLIB)
 
-**Search order** (`core/converter_paths.cpp`):
+**Search order** (`room/converter_paths.cpp`):
 
 1. `LIBMAN_CONVERTER_DIR` environment variable (if set)
 2. Directory containing `libman.exe`
@@ -74,16 +74,16 @@ $env:LIBMAN_CONVERTER_DIR = "C:\path\to\converters"
 
 | Build system | Behaviour |
 |--------------|-----------|
-| **CMake** | `CORE_BUILD_EXAMPLES=ON` in `cmake/FetchCore.cmake`; POST_BUILD copies converters to `$<TARGET_FILE_DIR:libman>` |
-| **qmake** | `scripts/fetch_core.cmd` / `fetch_core_linux.sh` build converter targets; `core_converter_deploy.pri` copies them after link |
+| **CMake** | `CORE_BUILD_EXAMPLES=ON` in `cmake/FetchRoom.cmake`; POST_BUILD copies converters to `$<TARGET_FILE_DIR:libman>` |
+| **qmake** | `scripts/fetch_room.cmd` / `fetch_room_linux.sh` build converter targets; `core_converter_deploy.pri` copies them after link |
 
-After changing CORE or fetch scripts, delete `.deps/core-build/libman_core_built.stamp` (qmake) or reconfigure CMake so converters are rebuilt.
+After changing ROOM or fetch scripts, delete `.deps/core-build/libman_core_built.stamp` (qmake) or reconfigure CMake so converters are rebuilt.
 
 ---
 
 ## Export (File → Export...)
 
-Export CORE views from the current project to external formats:
+Export ROOM views from the current project to external formats:
 
 | Format | Result extensions | Converter |
 |--------|-------------------|-----------|
@@ -91,7 +91,7 @@ Export CORE views from the current project to external formats:
 | Xschem | `.sch` / `.sym` | `core_to_xschem` |
 | Qucs | `.sch` | `core_to_qucs` |
 
-Pick a destination folder and one or more `*.core` view files (or use the project tree selection). Converters are resolved the same way as import (`LIBMAN_CONVERTER_DIR`, directory next to `libman.exe`).
+Pick a destination folder and one or more `*.room` view files (or use the project tree selection). Converters are resolved the same way as import (`LIBMAN_CONVERTER_DIR`, directory next to `libman.exe`).
 
 ---
 
@@ -100,11 +100,11 @@ Pick a destination folder and one or more `*.core` view files (or use the projec
 Imported views appear like any other view in `.projects`:
 
 ```text
-define("my_lib", "my_lib/inv/inv.schematic.core");
-define("my_lib", "my_lib/ota/ota.layout.core");
+define("my_lib", "my_lib/inv/inv.schematic.room");
+define("my_lib", "my_lib/ota/ota.layout.room");
 ```
 
-Use **[Project Editor](PROJECT_EDITOR.md)** (`Ctrl+E`) to review or edit entries. See also [CORE integration](CORE_INTEGRATION.md) for view naming (`*.schematic.core`, `*.layout.core`, …).
+Use **[Project Editor](PROJECT_EDITOR.md)** (`Ctrl+E`) to review or edit entries. See also [ROOM integration](ROOM_INTEGRATION.md) for view naming (`*.schematic.room`, `*.layout.room`, …).
 
 ---
 
@@ -121,10 +121,10 @@ Use **[Project Editor](PROJECT_EDITOR.md)** (`Ctrl+E`) to review or edit entries
 
 | Symptom | What to check |
 |---------|----------------|
-| `Converter 'gds_to_core' was not found` | Rebuild with CORE; confirm `gds_to_core.exe` is next to `libman.exe` or set `LIBMAN_CONVERTER_DIR` |
+| `Converter 'gds_to_core' was not found` | Rebuild with ROOM; confirm `gds_to_core.exe` is next to `libman.exe` or set `LIBMAN_CONVERTER_DIR` |
 | `Cell view already exists` | Delete the existing cell folder or pick another library |
-| Import menu disabled / error about `no_core` | Rebuild without `CONFIG+=no_core`; CI stub builds omit Import |
-| OAS imports as `.oas` not `.layout.core` | `oas_to_core` was not built (ZLIB missing in CORE build); native OAS copy still works |
+| Import menu disabled / error about `no_core` | Rebuild without `CONFIG+=no_room`; CI stub builds omit Import |
+| OAS imports as `.oas` not `.layout.room` | `oas_to_core` was not built (ZLIB missing in ROOM build); native OAS copy still works |
 | Project file unchanged | Open a `.projects` file first; otherwise use **File → Save** after import |
 
 More: [Troubleshooting](../reference/TROUBLESHOOTING.md).
@@ -133,7 +133,7 @@ More: [Troubleshooting](../reference/TROUBLESHOOTING.md).
 
 ## Related topics
 
-- [CORE integration](CORE_INTEGRATION.md) — fetch/build CommonDB, view types
+- [ROOM integration](ROOM_INTEGRATION.md) — fetch/build CommonDB, view types
 - [Project Editor](PROJECT_EDITOR.md) — edit `define()` entries
 - [Xschem integration](XSCHEM_INTEGRATION.md) — open imported schematics on Windows
 - [Build guide](../BUILD.md) — CMake and qmake

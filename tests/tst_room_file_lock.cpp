@@ -1,14 +1,14 @@
-#include "tst_core_file_lock.h"
+#include "tst_room_file_lock.h"
 
-#include "core/core_file_lock.h"
+#include "room/room_file_lock.h"
 
 #include <QFile>
 #include <QTemporaryDir>
 
 void CoreFileLockTest::lockPath_appendsLckSuffix()
 {
-    QCOMPARE(lockFilePathForCore(QStringLiteral("/tmp/cell.schematic.core")),
-             QStringLiteral("/tmp/cell.schematic.core.lck"));
+    QCOMPARE(lockFilePathForCore(QStringLiteral("/tmp/cell.schematic.room")),
+             QStringLiteral("/tmp/cell.schematic.room.lck"));
 }
 
 void CoreFileLockTest::readLockFile_missingReturnsNotPresent()
@@ -16,7 +16,7 @@ void CoreFileLockTest::readLockFile_missingReturnsNotPresent()
     QTemporaryDir dir;
     QVERIFY(dir.isValid());
 
-    const QString corePath = dir.filePath(QStringLiteral("inv.schematic.core"));
+    const QString corePath = dir.filePath(QStringLiteral("inv.schematic.room"));
     const CoreFileLockInfo info = readCoreLockFile(corePath);
 
     QVERIFY(!info.present);
@@ -28,14 +28,14 @@ void CoreFileLockTest::readLockFile_parsesHolderMetadata()
     QTemporaryDir dir;
     QVERIFY(dir.isValid());
 
-    const QString corePath = dir.filePath(QStringLiteral("inv.schematic.core"));
+    const QString corePath = dir.filePath(QStringLiteral("inv.schematic.room"));
     const QString lockPath = lockFilePathForCore(corePath);
 
     QFile lockFile(lockPath);
     QVERIFY(lockFile.open(QIODevice::WriteOnly | QIODevice::Text));
     lockFile.write(R"({
   "version": 1,
-  "corePath": "inv.schematic.core",
+  "corePath": "inv.schematic.room",
   "holder": {
     "user": "anton",
     "host": "workstation-01",

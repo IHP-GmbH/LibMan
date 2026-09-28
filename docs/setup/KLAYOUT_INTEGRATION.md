@@ -1,13 +1,13 @@
 # KLayout integration
 
-LibMan opens layout views (`gds`, `oas`, `lstr`, `layout` / `*.layout.core`) in [KLayout](https://www.klayout.de/) via a persistent **KLayout server** — a background KLayout instance that polls a JSON command file.
+LibMan opens layout views (`gds`, `oas`, `lstr`, `layout` / `*.layout.room`) in [KLayout](https://www.klayout.de/) via a persistent **KLayout server** — a background KLayout instance that polls a JSON command file.
 
 ## Tool Manager setup
 
 | Property | Typical value |
 |----------|----------------|
 | **Layout** tool | Path to `klayout` (or `klayout.exe`) |
-| **LayoutViews** | `gds,oas,lstr,layout` (default includes `core` alias for layout CORE) |
+| **LayoutViews** | `gds,oas,lstr,layout` (default includes `core` alias for layout ROOM) |
 
 Schematic/symbol views use a separate tool (e.g. Xschem via WSL); see [Xschem integration](XSCHEM_INTEGRATION.md).
 
@@ -21,7 +21,7 @@ Double-click **opens KLayout** and does **not** expand or collapse the tree node
 
 LibMan:
 
-1. Resolves the file path sent to KLayout (GDS/OAS/LStream directly; `*.layout.core` natively when the [mcore](https://github.com/adatsuk/KLayout-coredb) streamer is installed).
+1. Resolves the file path sent to KLayout (GDS/OAS/LStream directly; `*.layout.room` natively when the [mcore](https://github.com/adatsuk/KLayout-coredb) streamer is installed).
 2. Picks a **root cell** to activate (see [Root cell selection](#root-cell-selection)).
 3. Starts KLayout with the server script if needed, then sends an `open` command with the file and cell name.
 4. On a later double-click on the same layout root while KLayout is already running, sends a `select` command (file is not reloaded).
@@ -38,12 +38,12 @@ When you open the layout **view root**, LibMan chooses the KLayout cell as follo
 |----------|------|---------|
 | 1 | LibMan **group name** (selected cell in the groups list) if that name exists in the layout file | Group `sg13g2_io`, GDS contains `sg13g2_io` → opens `sg13g2_io` |
 | 2 | **Single top cell** in the file hierarchy | One wrapper cell `TOP` with children shown in the tree → opens `TOP` |
-| 3 | **First top cell** (sorted) when several top-level cells exist | `sg13g2_stdcell.layout.core` with 84 stdcells, group `sg13g2_stdcell` not in file → opens first cell alphabetically (e.g. `sg13g2_and2_1`) |
+| 3 | **First top cell** (sorted) when several top-level cells exist | `sg13g2_stdcell.layout.room` with 84 stdcells, group `sg13g2_stdcell` not in file → opens first cell alphabetically (e.g. `sg13g2_and2_1`) |
 | 4 | No matching cell | File opens without an explicit cell selection (KLayout default) |
 
-Hierarchy is taken from the in-memory cache when the tree was expanded; otherwise LibMan reads it synchronously from the file (GDS/OAS/LStream/CORE parsers).
+Hierarchy is taken from the in-memory cache when the tree was expanded; otherwise LibMan reads it synchronously from the file (GDS/OAS/LStream/ROOM parsers).
 
-This matches the tree rules for CORE layout: a single wrapper top cell is shown as its children in the UI, but KLayout still activates the real top cell when you open the layout root.
+This matches the tree rules for ROOM layout: a single wrapper top cell is shown as its children in the UI, but KLayout still activates the real top cell when you open the layout root.
 
 ## KLayout server protocol
 
@@ -56,15 +56,15 @@ Commands are written as JSON to a temp file (`libman_klayout_cmd_<pid>.json`), p
 
 An `.alive` sidecar file reports the server PID for health checks.
 
-## CORE layout files
+## ROOM layout files
 
-`*.layout.core` files are passed **directly** to KLayout (no temporary GDS export) when the mcore plugin is available. Build it from [KLayout-coredb](https://github.com/adatsuk/KLayout-coredb) (or link `integrations/klayout/mcore` from CommonDB into your KLayout tree).
+`*.layout.room` files are passed **directly** to KLayout (no temporary GDS export) when the mcore plugin is available. Build it from [KLayout-coredb](https://github.com/adatsuk/KLayout-coredb) (or link `integrations/klayout/mcore` from CommonDB into your KLayout tree).
 
-See also: [CORE integration](CORE_INTEGRATION.md).
+See also: [ROOM integration](ROOM_INTEGRATION.md).
 
 ## Layout XOR
 
-Compare two layout views (`gds`, `oas`, `lstr`, `layout` / `*.layout.core`) from the views context menu — same two-step flow as copy/paste:
+Compare two layout views (`gds`, `oas`, `lstr`, `layout` / `*.layout.room`) from the views context menu — same two-step flow as copy/paste:
 
 1. Right-click the **first** layout view (or a cell under it) → **XOR...**  
    LibMan remembers `library/cell/view` and logs:  
@@ -79,7 +79,7 @@ Compare two layout views (`gds`, `oas`, `lstr`, `layout` / `*.layout.core`) from
 
    Clicking the link opens cell **COMPARE** so master and differences are visible in one window.
 
-**CORE layouts:** operands may be `*.layout.core`. The batch KLayout must be the same build that has the **mcore** streamer (KLayout-coredb). Otherwise the script prints a hint and exits with an error.
+**ROOM layouts:** operands may be `*.layout.room`. The batch KLayout must be the same build that has the **mcore** streamer (KLayout-coredb). Otherwise the script prints a hint and exits with an error.
 
 **Clear XOR selection** cancels a pending first operand. After a successful start, the pending selection is cleared.
 
@@ -91,11 +91,11 @@ Cell resolution matches open-layout rules (selected hierarchy cell, else preferr
 |---------|--------|
 | KLayout does not start | **Layout** tool path in Tool Manager; executable exists |
 | File opens but wrong/empty cell | Group name may not exist in file; expand layout tree once so hierarchy cache is warm |
-| `*.layout.core` not recognized | mcore streamer not installed in KLayout |
+| `*.layout.room` not recognized | mcore streamer not installed in KLayout |
 | Second double-click does nothing | KLayout server died; close KLayout and double-click again to restart |
 | Double-click expands tree instead of opening | Expected: only **child cells** expand; layout **root** opens KLayout. Use the disclosure arrow to expand |
 | XOR menu missing | Select a layout view (`gds`/`oas`/`lstr`/`layout`) or a cell under it |
 | XOR fails to start | Same Layout tool as open; `klayout -b` must be available |
-| XOR on `*.layout.core` fails | mcore plugin required in the same KLayout used by the Layout tool |
+| XOR on `*.layout.room` fails | mcore plugin required in the same KLayout used by the Layout tool |
 
 More: [Troubleshooting](../reference/TROUBLESHOOTING.md).

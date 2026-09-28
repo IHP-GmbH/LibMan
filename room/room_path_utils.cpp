@@ -1,4 +1,4 @@
-#include "core/core_path_utils.h"
+#include "room/room_path_utils.h"
 
 #include <QDir>
 #include <QFileInfo>
@@ -7,7 +7,7 @@ namespace {
 
 bool endsWithCore(const QString &name)
 {
-    return name.endsWith(QStringLiteral(".core"), Qt::CaseInsensitive);
+    return name.endsWith(QStringLiteral(".room"), Qt::CaseInsensitive);
 }
 
 QString normalizedViewSuffix(const QString &suffix)
@@ -35,16 +35,16 @@ bool isKnownCoreView(const QString &viewName)
 
 } // namespace
 
-CoreViewIdentity parseCoreViewIdentity(const QString &filePath)
+RoomViewIdentity parseRoomViewIdentity(const QString &filePath)
 {
-    CoreViewIdentity identity;
+    RoomViewIdentity identity;
     const QFileInfo fi(filePath);
     const QString baseName = fi.fileName();
     if (!endsWithCore(baseName)) {
         return identity;
     }
 
-    const QString stem = baseName.left(baseName.size() - QStringLiteral(".core").size());
+    const QString stem = baseName.left(baseName.size() - QStringLiteral(".room").size());
     const int dot = stem.lastIndexOf(QLatin1Char('.'));
     if (dot <= 0) {
         identity.cellName = stem.trimmed();
@@ -64,28 +64,28 @@ CoreViewIdentity parseCoreViewIdentity(const QString &filePath)
     return identity;
 }
 
-bool isCoreViewName(const QString &viewName)
+bool isRoomViewName(const QString &viewName)
 {
     const QString normalized = normalizedViewSuffix(viewName);
     return isKnownCoreView(normalized) || normalized == QStringLiteral("core");
 }
 
-bool isLayoutCoreViewName(const QString &viewName)
+bool isLayoutRoomViewName(const QString &viewName)
 {
     const QString normalized = normalizedViewSuffix(viewName);
     return normalized == QStringLiteral("layout") || normalized == QStringLiteral("core");
 }
 
-QString coreViewFileName(const QString &cellName, const QString &viewName)
+QString roomViewFileName(const QString &cellName, const QString &viewName)
 {
     const QString normalized = normalizedViewSuffix(viewName);
     if (normalized == QStringLiteral("core")) {
-        return cellName + QStringLiteral(".layout.core");
+        return cellName + QStringLiteral(".layout.room");
     }
-    return cellName + QLatin1Char('.') + normalized + QStringLiteral(".core");
+    return cellName + QLatin1Char('.') + normalized + QStringLiteral(".room");
 }
 
-QString coreViewFilePath(const QString &directory, const QString &cellName, const QString &viewName)
+QString roomViewFilePath(const QString &directory, const QString &cellName, const QString &viewName)
 {
-    return QFileInfo(QDir(directory).filePath(coreViewFileName(cellName, viewName))).absoluteFilePath();
+    return QFileInfo(QDir(directory).filePath(roomViewFileName(cellName, viewName))).absoluteFilePath();
 }

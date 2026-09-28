@@ -1,5 +1,5 @@
-#ifndef CORE_FILE_LOCK_H
-#define CORE_FILE_LOCK_H
+#ifndef ROOM_FILE_LOCK_H
+#define ROOM_FILE_LOCK_H
 
 #include <QString>
 
@@ -29,4 +29,4 @@ CoreFileLockInfo readActiveCoreLockFile(const QString &corePath);
 
 QString formatCoreLockInfoBlock(const CoreFileLockInfo &info);
 
-#endif // CORE_FILE_LOCK_H
+#endif // ROOM_FILE_LOCK_H

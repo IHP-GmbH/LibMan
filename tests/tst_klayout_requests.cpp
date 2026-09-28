@@ -198,9 +198,9 @@ void KLayoutRequestsTest::resolveKLayoutRootCell_emptyHierarchyReturnsEmpty()
 void KLayoutRequestsTest::loadLayoutHierarchySnapshot_layoutCore_fixture()
 {
     const QString fixture =
-        QDir(QDir::currentPath()).filePath(QStringLiteral("data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.layout.core"));
+        QDir(QDir::currentPath()).filePath(QStringLiteral("data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.layout.room"));
     if (!QFileInfo::exists(fixture)) {
-        QSKIP("sg13g2_stdcell.layout.core fixture not found");
+        QSKIP("sg13g2_stdcell.layout.room fixture not found");
     }
 
     LayoutHierarchySnapshot hierarchy;

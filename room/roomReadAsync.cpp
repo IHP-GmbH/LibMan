@@ -3,10 +3,10 @@
 #include <QStatusBar>
 #include <QTreeWidget>
 
-#include "core/corecellreader.h"
+#include "room/roomcellreader.h"
 #include "src/mainwindow.h"
 
-void MainWindow::loadCoreHierarchyAsync(const QString &corePath,
+void MainWindow::loadRoomHierarchyAsync(const QString &corePath,
                                         const std::shared_ptr<CoreCacheEntry> &entry,
                                         QTreeWidgetItem *targetItem,
                                         const QString &requestedCellName)
@@ -20,7 +20,7 @@ void MainWindow::loadCoreHierarchyAsync(const QString &corePath,
     }
 
     entry->loading = true;
-    statusBar()->showMessage(tr("Scanning CORE hierarchy…"), 0);
+    statusBar()->showMessage(tr("Scanning ROOM hierarchy…"), 0);
 
     if (targetItem) {
         setLoadingSpinner(targetItem, true);
@@ -47,12 +47,12 @@ void MainWindow::loadCoreHierarchyAsync(const QString &corePath,
                     for (const QString &e : entry->errors) {
                         error(e, false);
                     }
-                    statusBar()->showMessage(tr("CORE load failed."), 10000);
+                    statusBar()->showMessage(tr("ROOM load failed."), 10000);
                     return;
                 }
 
                 statusBar()->showMessage(
-                    tr("CORE loaded: %1 cells").arg(entry->hierarchy.allCells.size()),
+                    tr("ROOM loaded: %1 cells").arg(entry->hierarchy.allCells.size()),
                     10000);
 
                 if (!targetItem) {
@@ -73,7 +73,7 @@ void MainWindow::loadCoreHierarchyAsync(const QString &corePath,
         CoreCacheEntry out;
         out.path = QFileInfo(corePath).absoluteFilePath();
 
-        CoreCellReader reader(out.path);
+        RoomCellReader reader(out.path);
         if (!reader.readHierarchy(out.hierarchy)) {
             out.errors = reader.getErrors();
             out.loaded = false;

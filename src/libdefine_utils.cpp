@@ -92,7 +92,7 @@ QStringList expandWildcardDefinePath(const QString &projectDir, const QString &p
         return paths;
     }
 
-    const QStringList nameFilters{QStringLiteral("*.core")};
+    const QStringList nameFilters{QStringLiteral("*.room")};
 
     const QDirIterator::IteratorFlags flags =
         isCellLevelWildcard(pattern) ? QDirIterator::NoIteratorFlags : QDirIterator::Subdirectories;

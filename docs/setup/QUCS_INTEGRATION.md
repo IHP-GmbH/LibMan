@@ -1,6 +1,6 @@
 # Qucs-S integration (Windows)
 
-LibMan runs on **Windows**. **Qucs-S** (CORE-enabled) also runs natively on Windows — no WSL. Double-click a schematic/symbol view → `run-qucs-s.bat` → Qucs-S opens the `.schematic.core` / `.symbol.core` file. Simulation is done **inside Qucs-S** (Simulate → ngspice).
+LibMan runs on **Windows**. **Qucs-S** (CORE-enabled) also runs natively on Windows — no WSL. Double-click a schematic/symbol view → `run-qucs-s.bat` → Qucs-S opens the `.schematic.room` / `.symbol.room` file. Simulation is done **inside Qucs-S** (Simulate → ngspice).
 
 Xschem (WSL) remains available as a second schematic tool — see [Xschem integration](XSCHEM_INTEGRATION.md).
 
@@ -11,19 +11,19 @@ LibMan (Windows)
   double-click schematic / symbol
     → run-qucs-s.bat
       → qucs-s.exe <path>
-        → load *.schematic.core / *.symbol.core (CORE bridge)
+        → load *.schematic.room / *.symbol.room (ROOM bridge)
         → Simulation → ngspice_con.exe
 ```
 
 | View in LibMan | File suffix | Tool |
 |----------------|-------------|------|
-| `schematic` | `*.schematic.core` | Qucs-S **or** Xschem (pick in Tool Manager / multi-tool) |
-| `symbol` | `*.symbol.core` | same |
-| `layout` | `*.layout.core` | [KLayout](KLAYOUT_INTEGRATION.md) |
+| `schematic` | `*.schematic.room` | Qucs-S **or** Xschem (pick in Tool Manager / multi-tool) |
+| `symbol` | `*.symbol.room` | same |
+| `layout` | `*.layout.room` | [KLayout](KLAYOUT_INTEGRATION.md) |
 
 ## Prerequisites
 
-### Qucs-S (CORE build)
+### Qucs-S (ROOM build)
 
 Checkout and build sibling to CommonDB/LibMan:
 
@@ -134,15 +134,15 @@ Same primitive env as Xschem (`projectfile.cpp`):
 
 | Variable | Purpose |
 |----------|---------|
-| `CORE_PRIMITIVE_LIBS_FILE` | List of `*.symbol.core` (design + tech) |
+| `CORE_PRIMITIVE_LIBS_FILE` | List of `*.symbol.room` (design + tech) |
 | `LIBMAN_TECH_LIBRARY` | Library names |
 | `QUCS_PRIMITIVE_LIB` | `IHP_PDK_nonlinear_components` (Qucs `<Lib>` bundle) |
 
-Qucs-S CORE load uses `PrimitiveResolver` + skips Xschem-only decorations (`code_shown`, `launcher`, …).
+Qucs-S ROOM load uses `PrimitiveResolver` + skips Xschem-only decorations (`code_shown`, `launcher`, …).
 
 ## Simulation tips
 
-1. Open a **Qucs-native** TB (has `.TR` / `.DC` + `INCLSCR` + `Lib` / CORE hierarchy) — not only an Xschem TB that relied on `code_shown` NGSPICE blocks.
+1. Open a **Qucs-native** TB (has `.TR` / `.DC` + `INCLSCR` + `Lib` / ROOM hierarchy) — not only an Xschem TB that relied on `code_shown` NGSPICE blocks.
 2. In Qucs-S: check **Simulation → Simulators Settings** → Ngspice = `ngspice_con.exe` (or full path under `Spice64\bin`).
 3. Press **Simulate** (F2 / toolbar). Plots use diagram nodes like `ngspice/v(vout)`.
 
@@ -151,10 +151,10 @@ Qucs-S CORE load uses `PrimitiveResolver` + skips Xschem-only decorations (`code
 | Schematic | Path |
 |-----------|------|
 | Official IHP DC NMOS | `IHP-Open-PDK/.../libs.tech/qucs-s/examples/dc_lv_nmos.sch` (File → Open) |
-| LibMan Qucs examples | `LibMan/tests/data/Qucs_examples/dc_lv_nmos/dc_lv_nmos.schematic.core` |
+| LibMan Qucs examples | `LibMan/tests/data/Qucs_examples/dc_lv_nmos/dc_lv_nmos.schematic.room` |
 | Flat inverter TB (Qucs) | `LibMan/tests/data/_invcheck/inverter_tb_qucs_sim.sch` |
 
-Xschem `inverter_tb.schematic.core` opens in Qucs but **drops** NGSPICE `code_shown` — add a Qucs `.TR` + `INCLSCR` (or use the flat TB above) before Simulate works like Xschem.
+Xschem `inverter_tb.schematic.room` opens in Qucs but **drops** NGSPICE `code_shown` — add a Qucs `.TR` + `INCLSCR` (or use the flat TB above) before Simulate works like Xschem.
 
 ## Troubleshooting
 
@@ -171,5 +171,5 @@ Xschem `inverter_tb.schematic.core` opens in Qucs but **drops** NGSPICE `code_sh
 
 - [Xschem integration](XSCHEM_INTEGRATION.md) — WSL schematic path
 - [Import](IMPORT.md) — `qucs_to_core` / `core_to_qucs`
-- [CORE integration](CORE_INTEGRATION.md)
-- Qucs-S CORE notes: `Qucs-S-coredb/docs/CORE.md`
+- [ROOM integration](ROOM_INTEGRATION.md)
+- Qucs-S ROOM notes: `Qucs-S-coredb/docs/CORE.md`

@@ -336,7 +336,7 @@ void MainWindow::showLibraryMenu(const QPoint &pos)
         }
 
         QAction *attachTech = new QAction(tr("Attach Tech Library..."), this);
-        attachTech->setStatusTip(tr("Add a tech/primitive CORE library for schematic tools (PDK, analogLib, commonLib, …)."));
+        attachTech->setStatusTip(tr("Add a tech/primitive ROOM library for schematic tools (PDK, analogLib, commonLib, …)."));
         connect(attachTech, &QAction::triggered, this, &MainWindow::attachTechLibrary);
         menu->addAction(attachTech);
 
@@ -861,10 +861,10 @@ void MainWindow::showProjectInfo()
         for(const QString &techLib : techLibs) {
             const QString corePath = resolveTechLibraryCorePath(techLib);
             if(!corePath.isEmpty()) {
-                extra += QStringLiteral("\tTech CORE (%1): ").arg(techLib) + corePath + QLatin1Char('\n');
+                extra += QStringLiteral("\tTech ROOM (%1): ").arg(techLib) + corePath + QLatin1Char('\n');
             }
             else {
-                extra += QStringLiteral("\tTech CORE (%1): (not found)\n").arg(techLib);
+                extra += QStringLiteral("\tTech ROOM (%1): (not found)\n").arg(techLib);
             }
         }
     }

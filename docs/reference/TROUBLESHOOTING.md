@@ -367,11 +367,11 @@ Corrupted `~/.xschem/geometry` with `1x1+` entries. See [Xschem integration — 
 
 ### `core_paths.h: No such file` / `can't find file core_paths.h`
 
-**Symptoms:** qmake build fails in `core/corecellreader.cpp` because CommonDB headers are missing.
+**Symptoms:** qmake build fails in `room/roomcellreader.cpp` because CommonDB headers are missing.
 
-**Cause:** LibMan was configured for full CORE linkage but [CommonDB](https://github.com/IHP-GmbH/CommonDB) is not checked out (private repo).
+**Cause:** LibMan was configured for full ROOM linkage but [CommonDB](https://github.com/IHP-GmbH/Room) is not checked out (private repo).
 
-**Solution (public build, no CORE):** plain `qmake` auto-disables CORE when GitHub probe fails (no `LIBMAN_CORE_GIT_TOKEN`):
+**Solution (public build, no ROOM):** plain `qmake` auto-disables ROOM when GitHub probe fails (no `LIBMAN_CORE_GIT_TOKEN`):
 
 ```bash
 cd build
@@ -381,9 +381,9 @@ make -j1 lstream_schemas
 make -j"$(nproc)"
 ```
 
-Or force stubs: `qmake CONFIG+=no_core ../libman.pro`.
+Or force stubs: `qmake CONFIG+=no_room ../libman.pro`.
 
-**Solution (full CORE):** set `LIBMAN_CORE_GIT_TOKEN` (or clone `.deps/CommonDB`), re-run `qmake`, then `make -j1 core_fetch`. See [CORE integration](../setup/CORE_INTEGRATION.md).
+**Solution (full ROOM):** set `LIBMAN_CORE_GIT_TOKEN` (or clone `.deps/Room`), re-run `qmake`, then `make -j1 room_fetch`. See [ROOM integration](../setup/ROOM_INTEGRATION.md).
 
 ---
 
@@ -406,7 +406,7 @@ Or force stubs: `qmake CONFIG+=no_core ../libman.pro`.
 **Symptoms:** Log shows `Converter 'xschem_to_core' was not found next to LibMan`.
 
 **Solution:**
-1. Rebuild with CORE enabled (not `CONFIG+=no_core`).
+1. Rebuild with ROOM enabled (not `CONFIG+=no_room`).
 2. Confirm converter `.exe` files sit next to `libman.exe` (CMake POST_BUILD or qmake `core_converter_deploy.pri`).
 3. Or set `LIBMAN_CONVERTER_DIR` to the tools directory.
 

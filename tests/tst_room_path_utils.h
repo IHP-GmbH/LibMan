@@ -1,5 +1,5 @@
-#ifndef TST_CORE_PATH_UTILS_H
-#define TST_CORE_PATH_UTILS_H
+#ifndef TST_ROOM_PATH_UTILS_H
+#define TST_ROOM_PATH_UTILS_H
 
 #include <QObject>
 

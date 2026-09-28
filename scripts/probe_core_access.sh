@@ -3,13 +3,13 @@
 set -euo pipefail
 
 LIBMAN_ROOT="${1:?LibMan repository root required}"
-CORE_REPO="${CORE_GITHUB_REPO:-IHP-GmbH/CommonDB}"
+CORE_REPO="${CORE_GITHUB_REPO:-IHP-GmbH/Room}"
 
-if [ -n "${LIBMAN_CORE_SOURCE_DIR:-}" ] && [ -f "${LIBMAN_CORE_SOURCE_DIR}/src/core_paths.h" ]; then
+if [ -n "${LIBMAN_ROOM_SOURCE_DIR:-}" ] && [ -f "${LIBMAN_ROOM_SOURCE_DIR}/src/room_paths.h" ]; then
     exit 0
 fi
 
-if [ -f "${LIBMAN_ROOT}/.deps/CommonDB/src/core_paths.h" ]; then
+if [ -f "${LIBMAN_ROOT}/.deps/Room/src/room_paths.h" ]; then
     exit 0
 fi
 

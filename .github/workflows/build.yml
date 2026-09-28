@@ -47,7 +47,7 @@ jobs:
             libtool \
             pkg-config
 
-      - name: Configure (qmake, no CORE)
+      - name: Configure (qmake, no ROOM)
         run: |
           mkdir -p build
           cd build
@@ -60,7 +60,7 @@ jobs:
           make -j1 lstream_schemas
           make -j"$(nproc)"
 
-      - name: Verify LIBMAN_NO_CORE build
+      - name: Verify LIBMAN_NO_ROOM build
         run: |
           test -f build/libman
 
@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CORE_CHECKOUT_TOKEN: ${{ secrets.GH_PAT || secrets.LIBMAN_CORE_GIT_TOKEN }}
-      LIBMAN_CORE_SOURCE_DIR: ${{ github.workspace }}/.deps/CommonDB
+      LIBMAN_ROOM_SOURCE_DIR: ${{ github.workspace }}/.deps/Room
 
     steps:
       - name: Checkout sources
@@ -82,15 +82,15 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Checkout CORE (CommonDB)
+      - name: Checkout ROOM (CommonDB)
         uses: actions/checkout@v4
         with:
-          repository: IHP-GmbH/CommonDB
-          path: .deps/CommonDB
+          repository: IHP-GmbH/Room
+          path: .deps/Room
           token: ${{ env.CORE_CHECKOUT_TOKEN }}
 
-      - name: Verify CORE (CommonDB) checkout
-        run: test -f .deps/CommonDB/src/core_paths.h
+      - name: Verify ROOM (CommonDB) checkout
+        run: test -f .deps/Room/src/room_paths.h
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -123,7 +123,7 @@ jobs:
           cd build
           make -j1 capnp_install
           make -j1 lstream_schemas
-          make -j1 core_fetch
+          make -j1 room_fetch
           make -j"$(nproc)"
 
       - name: Package Linux bundle (tar.gz)
@@ -167,7 +167,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       CORE_CHECKOUT_TOKEN: ${{ secrets.GH_PAT || secrets.LIBMAN_CORE_GIT_TOKEN }}
-      LIBMAN_CORE_SOURCE_DIR: ${{ github.workspace }}/.deps/CommonDB
+      LIBMAN_ROOM_SOURCE_DIR: ${{ github.workspace }}/.deps/Room
 
     steps:
       - name: Checkout sources
@@ -176,15 +176,15 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Checkout CORE (CommonDB)
+      - name: Checkout ROOM (CommonDB)
         uses: actions/checkout@v4
         with:
-          repository: IHP-GmbH/CommonDB
-          path: .deps/CommonDB
+          repository: IHP-GmbH/Room
+          path: .deps/Room
           token: ${{ env.CORE_CHECKOUT_TOKEN }}
 
-      - name: Verify CORE (CommonDB) checkout
-        run: test -f .deps/CommonDB/src/core_paths.h
+      - name: Verify ROOM (CommonDB) checkout
+        run: test -f .deps/Room/src/room_paths.h
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -238,7 +238,7 @@ jobs:
           cd build
           make -j1 capnp_install
           make -j1 lstream_schemas
-          make -j1 core_fetch
+          make -j1 room_fetch
           make -j"$(nproc)"
 
       - name: Package Ubuntu 24 bundle
@@ -280,7 +280,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CORE_CHECKOUT_TOKEN: ${{ secrets.GH_PAT || secrets.LIBMAN_CORE_GIT_TOKEN }}
-      LIBMAN_CORE_SOURCE_DIR: ${{ github.workspace }}/.deps/CommonDB
+      LIBMAN_ROOM_SOURCE_DIR: ${{ github.workspace }}/.deps/Room
 
     steps:
       - name: Checkout sources
@@ -289,15 +289,15 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Checkout CORE (CommonDB)
+      - name: Checkout ROOM (CommonDB)
         uses: actions/checkout@v4
         with:
-          repository: IHP-GmbH/CommonDB
-          path: .deps/CommonDB
+          repository: IHP-GmbH/Room
+          path: .deps/Room
           token: ${{ env.CORE_CHECKOUT_TOKEN }}
 
-      - name: Verify CORE (CommonDB) checkout
-        run: test -f .deps/CommonDB/src/core_paths.h
+      - name: Verify ROOM (CommonDB) checkout
+        run: test -f .deps/Room/src/room_paths.h
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -331,7 +331,7 @@ jobs:
           cd build-tests
           make -j1 capnp_install
           make -j1 lstream_schemas
-          make -j1 core_fetch
+          make -j1 room_fetch
           make -j"$(nproc)"
 
       - name: Export Cap'n Proto runtime path
@@ -365,7 +365,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CORE_CHECKOUT_TOKEN: ${{ secrets.GH_PAT || secrets.LIBMAN_CORE_GIT_TOKEN }}
-      LIBMAN_CORE_SOURCE_DIR: ${{ github.workspace }}/.deps/CommonDB
+      LIBMAN_ROOM_SOURCE_DIR: ${{ github.workspace }}/.deps/Room
 
     steps:
       - name: Checkout sources
@@ -374,15 +374,15 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Checkout CORE (CommonDB)
+      - name: Checkout ROOM (CommonDB)
         uses: actions/checkout@v4
         with:
-          repository: IHP-GmbH/CommonDB
-          path: .deps/CommonDB
+          repository: IHP-GmbH/Room
+          path: .deps/Room
           token: ${{ env.CORE_CHECKOUT_TOKEN }}
 
-      - name: Verify CORE (CommonDB) checkout
-        run: test -f .deps/CommonDB/src/core_paths.h
+      - name: Verify ROOM (CommonDB) checkout
+        run: test -f .deps/Room/src/room_paths.h
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -420,7 +420,7 @@ jobs:
           cd build-tests
           make -j1 capnp_install
           make -j1 lstream_schemas
-          make -j1 core_fetch
+          make -j1 room_fetch
           make -j"$(nproc)"
 
       - name: Export Cap'n Proto runtime path
@@ -455,7 +455,7 @@ jobs:
     runs-on: windows-latest
     env:
       CORE_CHECKOUT_TOKEN: ${{ secrets.GH_PAT || secrets.LIBMAN_CORE_GIT_TOKEN }}
-      LIBMAN_CORE_SOURCE_DIR: ${{ github.workspace }}/.deps/CommonDB
+      LIBMAN_ROOM_SOURCE_DIR: ${{ github.workspace }}/.deps/Room
 
     steps:
       - name: Checkout sources
@@ -464,15 +464,15 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Checkout CORE (CommonDB)
+      - name: Checkout ROOM (CommonDB)
         uses: actions/checkout@v4
         with:
-          repository: IHP-GmbH/CommonDB
-          path: .deps/CommonDB
+          repository: IHP-GmbH/Room
+          path: .deps/Room
           token: ${{ env.CORE_CHECKOUT_TOKEN }}
 
-      - name: Verify CORE (CommonDB) checkout
-        run: test -f .deps/CommonDB/src/core_paths.h
+      - name: Verify ROOM (CommonDB) checkout
+        run: test -f .deps/Room/src/room_paths.h
 
       - name: Install Qt (Qt 5.15.2 MinGW 64-bit)
         uses: jurplel/install-qt-action@v4
@@ -506,10 +506,10 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          qmake CONFIG+=release "LIBMAN_CORE_SOURCE_DIR=${LIBMAN_CORE_SOURCE_DIR}" ../libman.pro
+          qmake CONFIG+=release "LIBMAN_ROOM_SOURCE_DIR=${LIBMAN_ROOM_SOURCE_DIR}" ../libman.pro
           bash ../scripts/patch_capnp_makefile.sh
 
-      - name: Build CORE
+      - name: Build ROOM
         shell: cmd
         run: call scripts\fetch_core.cmd
 
@@ -571,7 +571,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CORE_CHECKOUT_TOKEN: ${{ secrets.GH_PAT || secrets.LIBMAN_CORE_GIT_TOKEN }}
-      LIBMAN_CORE_SOURCE_DIR: ${{ github.workspace }}/.deps/CommonDB
+      LIBMAN_ROOM_SOURCE_DIR: ${{ github.workspace }}/.deps/Room
     container:
       image: rockylinux:8
 
@@ -582,15 +582,15 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Checkout CORE (CommonDB)
+      - name: Checkout ROOM (CommonDB)
         uses: actions/checkout@v4
         with:
-          repository: IHP-GmbH/CommonDB
-          path: .deps/CommonDB
+          repository: IHP-GmbH/Room
+          path: .deps/Room
           token: ${{ env.CORE_CHECKOUT_TOKEN }}
 
-      - name: Verify CORE (CommonDB) checkout
-        run: test -f .deps/CommonDB/src/core_paths.h
+      - name: Verify ROOM (CommonDB) checkout
+        run: test -f .deps/Room/src/room_paths.h
 
       - name: Install build dependencies
         run: bash scripts/ci_deps_rhel8.sh
@@ -609,7 +609,7 @@ jobs:
           cd build
           make -j1 capnp_install
           make -j1 lstream_schemas
-          make -j1 core_fetch
+          make -j1 room_fetch
           make -j"$(nproc)"
 
       - name: Install linuxdeployqt

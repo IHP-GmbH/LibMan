@@ -21,8 +21,8 @@
 
 #include "gds/gdsreader.h"
 #include "lstream/lstreamcellwriter.h"
-#include "core/core_path_utils.h"
-#include "core/corecellreader.h"
+#include "room/room_path_utils.h"
+#include "room/roomcellreader.h"
 #include "libman_test_mode.h"
 
 /*!*********************************************************************************************************************
@@ -384,7 +384,7 @@ bool MainWindow::registerCreatedView(const QString &libName,
         viewItem->setData(0, RoleLStreamPath, viewPath);
         viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
     }
-    else if(isCoreViewName(viewName)) {
+    else if(isRoomViewName(viewName)) {
         configureCoreViewTreeItem(viewItem, viewName, viewPath);
         applyCoreViewLockPresentation(viewItem, viewName, viewPath);
     }
@@ -570,12 +570,12 @@ void MainWindow::addNewLStreamView()
 }
 
 /*!*********************************************************************************************************************
- * \brief Creates a new empty CORE view file for the current cell.
+ * \brief Creates a new empty ROOM view file for the current cell.
  **********************************************************************************************************************/
 void MainWindow::createCoreView(const QString &viewName)
 {
     const QString normalizedView = viewName.trimmed().toLower();
-    if (!isCoreViewName(normalizedView) || normalizedView == QStringLiteral("core")) {
+    if (!isRoomViewName(normalizedView) || normalizedView == QStringLiteral("core")) {
         return;
     }
 
@@ -606,12 +606,12 @@ void MainWindow::createCoreView(const QString &viewName)
         return;
     }
 
-    const QString viewPath = QDir::toNativeSeparators(coreViewFilePath(groupPath, groupName, normalizedView));
+    const QString viewPath = QDir::toNativeSeparators(roomViewFilePath(groupPath, groupName, normalizedView));
     if (QFileInfo(viewPath).exists()) {
         return;
     }
 
-    CoreCellReader reader(viewPath);
+    RoomCellReader reader(viewPath);
     reader.coreCreate(groupName, normalizedView);
 
     const QStringList errors = reader.getErrors();
@@ -626,7 +626,7 @@ void MainWindow::createCoreView(const QString &viewName)
 }
 
 /*!*********************************************************************************************************************
- * \brief Creates new CORE layout view and adds it to the list widget.
+ * \brief Creates new ROOM layout view and adds it to the list widget.
  **********************************************************************************************************************/
 void MainWindow::addNewCoreView()
 {
@@ -854,7 +854,7 @@ void MainWindow::showViewInfo()
         return;
     }
 
-    const QString extra = isCoreViewName(viewName) ? coreLockInfoExtraLines(viewPath) : QString();
+    const QString extra = isRoomViewName(viewName) ? coreLockInfoExtraLines(viewPath) : QString();
     showFolderInfo("View", viewName, viewPath, true, extra);
 }
 
@@ -1092,7 +1092,7 @@ bool MainWindow::resolveSelectedLayoutForXor(QString *viewName,
         resolvedView = QStringLiteral("lstr");
         resolvedPath = item->data(0, RoleLStreamPath).toString();
     }
-    else if(type == ItemViewCore && isLayoutCoreViewName(item->text(0))) {
+    else if(type == ItemViewCore && isLayoutRoomViewName(item->text(0))) {
         resolvedView = item->text(0);
         resolvedPath = item->data(0, RoleCorePath).toString();
     }

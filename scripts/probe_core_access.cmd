@@ -5,10 +5,10 @@ setlocal EnableExtensions
 set "LIBMAN_ROOT=%~1"
 if "%LIBMAN_ROOT%"=="" exit /b 1
 
-set "CORE_REPO=IHP-GmbH/CommonDB"
+set "CORE_REPO=IHP-GmbH/Room"
 
-if defined LIBMAN_CORE_SOURCE_DIR (
-    if exist "%LIBMAN_CORE_SOURCE_DIR%\src\core_paths.h" exit /b 0
+if defined LIBMAN_ROOM_SOURCE_DIR (
+    if exist "%LIBMAN_ROOM_SOURCE_DIR%\src\core_paths.h" exit /b 0
 )
 
 if exist "%LIBMAN_ROOT%\.deps\CommonDB\src\core_paths.h" exit /b 0

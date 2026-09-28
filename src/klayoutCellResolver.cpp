@@ -1,7 +1,7 @@
 #include "klayoutCellResolver.h"
 
-#include "core/corecellreader.h"
-#include "core/core_path_utils.h"
+#include "room/roomcellreader.h"
+#include "room/room_path_utils.h"
 #include "gds/gdsreader.h"
 #include "oas/oasReader.h"
 #include "src/lstreamcellreader.h"
@@ -26,7 +26,7 @@ LayoutHierarchySnapshot snapshotFromOas(const LayoutHierarchy &h)
     return out;
 }
 
-LayoutHierarchySnapshot snapshotFromCore(const CoreCellReader::CoreHierarchy &h)
+LayoutHierarchySnapshot snapshotFromCore(const RoomCellReader::CoreHierarchy &h)
 {
     LayoutHierarchySnapshot out;
     out.topCells = h.topCells;
@@ -47,9 +47,9 @@ LayoutHierarchySnapshot snapshotFromLStream(const QStringList &cellNames)
 
 bool isLayoutCorePath(const QString &path)
 {
-    const CoreViewIdentity identity = parseCoreViewIdentity(path);
+    const RoomViewIdentity identity = parseRoomViewIdentity(path);
     if (identity.valid) {
-        return isLayoutCoreViewName(identity.viewName);
+        return isLayoutRoomViewName(identity.viewName);
     }
 
     return QFileInfo(path).suffix().compare(QStringLiteral("core"), Qt::CaseInsensitive) == 0;
@@ -90,8 +90,8 @@ bool loadLayoutHierarchySnapshot(const QString &layoutPath,
     const QString suffix = fi.suffix().toLower();
 
     if (isLayoutCorePath(layoutPath)) {
-        CoreCellReader reader(layoutPath);
-        CoreCellReader::CoreHierarchy hierarchy;
+        RoomCellReader reader(layoutPath);
+        RoomCellReader::CoreHierarchy hierarchy;
         if (!reader.readHierarchy(hierarchy)) {
             if (errors) {
                 *errors = reader.getErrors();

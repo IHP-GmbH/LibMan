@@ -1,4 +1,4 @@
-#include "core/corecellreader.h"
+#include "room/roomcellreader.h"
 
 #include "core_paths.h"
 #include "database.h"
@@ -7,31 +7,31 @@
 
 namespace {
 
-core::ViewType viewTypeForName(const QString &viewName)
+room::ViewType viewTypeForName(const QString &viewName)
 {
-    const std::optional<core::ViewType> parsed = core::parseViewTypeName(viewName.toStdString());
+    const std::optional<room::ViewType> parsed = room::parseViewTypeName(viewName.toStdString());
     if (parsed.has_value()) {
         return *parsed;
     }
-    return core::ViewType::Layout;
+    return room::ViewType::Layout;
 }
 
 } // namespace
 
-CoreCellReader::CoreCellReader(const QString &fileName)
+RoomCellReader::RoomCellReader(const QString &fileName)
     : m_fileName(fileName)
 {
 }
 
-void CoreCellReader::coreCreate(const QString &cellName, const QString &viewName)
+void RoomCellReader::coreCreate(const QString &cellName, const QString &viewName)
 {
     try {
-        const core::ViewType fileView = viewTypeForName(viewName);
-        core::Database db;
+        const room::ViewType fileView = viewTypeForName(viewName);
+        room::Database db;
         db.setGenerator("LibMan");
-        core::Cell &cell = db.lib().getOrCreateCell(cellName.toStdString());
+        room::Cell &cell = db.lib().getOrCreateCell(cellName.toStdString());
         cell.getOrCreateContent(fileView);
-        if (fileView == core::ViewType::Layout) {
+        if (fileView == room::ViewType::Layout) {
             db.lib().refreshIndex(fileView);
         }
         db.saveToFile(m_fileName.toStdString(), fileView);
@@ -41,20 +41,20 @@ void CoreCellReader::coreCreate(const QString &cellName, const QString &viewName
     }
 }
 
-bool CoreCellReader::readHierarchy(CoreHierarchy &out)
+bool RoomCellReader::readHierarchy(CoreHierarchy &out)
 {
     try {
-        core::Database db = core::Database::loadFromFile(m_fileName.toStdString());
-        core::Lib &lib = db.lib();
+        room::Database db = room::Database::loadFromFile(m_fileName.toStdString());
+        room::Lib &lib = db.lib();
 
-        const core::ViewType fileView = db.fileView();
-        if (fileView == core::ViewType::Layout) {
+        const room::ViewType fileView = db.fileView();
+        if (fileView == room::ViewType::Layout) {
             lib.refreshIndex(fileView);
         } else if (!lib.hasIndex()) {
             lib.refreshIndex(fileView);
         }
 
-        const core::LibIndex &idx = lib.index();
+        const room::LibIndex &idx = lib.index();
 
         for (const std::string &top : idx.topCells) {
             const QString name = QString::fromStdString(top);
@@ -62,7 +62,7 @@ bool CoreCellReader::readHierarchy(CoreHierarchy &out)
             out.allCells.insert(name);
         }
 
-        for (const core::Cell &cell : lib.cells()) {
+        for (const room::Cell &cell : lib.cells()) {
             out.allCells.insert(QString::fromStdString(cell.name()));
         }
 
@@ -75,7 +75,7 @@ bool CoreCellReader::readHierarchy(CoreHierarchy &out)
         }
 
         if (out.topCells.isEmpty()) {
-            for (const core::Cell &cell : lib.cells()) {
+            for (const room::Cell &cell : lib.cells()) {
                 out.topCells << QString::fromStdString(cell.name());
             }
         }

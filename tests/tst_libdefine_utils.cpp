@@ -34,8 +34,8 @@ void LibDefineUtilsTest::wildcardDefine_expandsLibraryPattern()
     QVERIFY(dir.isValid());
 
     const QString projectDir = dir.path();
-    QVERIFY(writeTextFile(projectDir + "/analogLib/R/R.symbol.core", "core"));
-    QVERIFY(writeTextFile(projectDir + "/analogLib/C/C.symbol.core", "core"));
+    QVERIFY(writeTextFile(projectDir + "/analogLib/R/R.symbol.room", "core"));
+    QVERIFY(writeTextFile(projectDir + "/analogLib/C/C.symbol.room", "core"));
     QVERIFY(writeTextFile(projectDir + "/analogLib/notes.txt", "skip"));
 
     const QStringList expanded =
@@ -50,8 +50,8 @@ void LibDefineUtilsTest::wildcardDefine_expandsLibraryPattern()
         normalized << normalizedPath(path);
     }
 
-    QVERIFY(normalized.contains(normalizedPath(projectDir + QStringLiteral("/analogLib/C/C.symbol.core"))));
-    QVERIFY(normalized.contains(normalizedPath(projectDir + QStringLiteral("/analogLib/R/R.symbol.core"))));
+    QVERIFY(normalized.contains(normalizedPath(projectDir + QStringLiteral("/analogLib/C/C.symbol.room"))));
+    QVERIFY(normalized.contains(normalizedPath(projectDir + QStringLiteral("/analogLib/R/R.symbol.room"))));
 }
 
 void LibDefineUtilsTest::wildcardDefine_expandsCellPattern()
@@ -60,8 +60,8 @@ void LibDefineUtilsTest::wildcardDefine_expandsCellPattern()
     QVERIFY(dir.isValid());
 
     const QString projectDir = dir.path();
-    QVERIFY(writeTextFile(projectDir + "/analogLib/MyDev/MyDev.symbol.core", "core"));
-    QVERIFY(writeTextFile(projectDir + "/analogLib/MyDev/MyDev.schematic.core", "core"));
+    QVERIFY(writeTextFile(projectDir + "/analogLib/MyDev/MyDev.symbol.room", "core"));
+    QVERIFY(writeTextFile(projectDir + "/analogLib/MyDev/MyDev.schematic.room", "core"));
 
     const QStringList expanded =
         libdefine::expandWildcardDefinePath(projectDir, QStringLiteral("analogLib/MyDev/*"));
@@ -102,7 +102,7 @@ void LibDefineUtilsTest::wildcardDefine_coversExpandedFiles()
     QVERIFY(dir.isValid());
 
     const QString projectDir = dir.path();
-    const QString corePath = projectDir + "/analogLib/R/R.symbol.core";
+    const QString corePath = projectDir + "/analogLib/R/R.symbol.room";
     QVERIFY(writeTextFile(corePath, "core"));
 
     QVERIFY(libdefine::isPathCoveredByWildcardDefine(projectDir,

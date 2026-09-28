@@ -167,7 +167,14 @@
          </item>
         </layout>
        </widget>
-       <widget class="QGroupBox" name="groupBox_3">
+       <widget class="QSplitter" name="splitterView">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="childrenCollapsible">
+         <bool>true</bool>
+        </property>
+        <widget class="QGroupBox" name="groupBox_3">
         <property name="title">
          <string>View</string>
         </property>
@@ -203,6 +210,17 @@
           </layout>
          </item>
         </layout>
+       </widget>
+       <widget class="QGroupBox" name="groupSnapshot">
+        <property name="title">
+         <string>Snapshot</string>
+        </property>
+        <layout class="QVBoxLayout" name="snapshotLayout">
+         <item>
+          <widget class="QWidget" name="snapshotHost"/>
+         </item>
+        </layout>
+       </widget>
        </widget>
       </widget>
       <widget class="QGroupBox" name="groupBox_4">
@@ -307,6 +325,7 @@
    <addaction name="actionReload"/>
    <addaction name="actionShow_Documents"/>
    <addaction name="actionShow_Categories"/>
+   <addaction name="actionShow_Snapshot"/>
   </widget>
   <action name="actionProject">
    <property name="text">
@@ -447,6 +466,21 @@
    </property>
    <property name="text">
     <string>Show Categories</string>
+   </property>
+  </action>
+  <action name="actionShow_Snapshot">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icons.qrc">
+     <normaloff>:/icons/show_snapshot.svg</normaloff>:/icons/show_snapshot.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Show Snapshot</string>
+   </property>
+   <property name="toolTip">
+    <string>Show or hide the schematic, symbol, and layout snapshot</string>
    </property>
   </action>
   <action name="actionCategory">

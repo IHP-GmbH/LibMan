@@ -1,6 +1,6 @@
-=== CORE text dump ===
+=== ROOM text dump ===
 version: 1.0
-generator: CORE gds_to_core
+generator: ROOM gds_to_core
 technology: sg13g2
 lib: sg13g2_stdcell
 layers: 15

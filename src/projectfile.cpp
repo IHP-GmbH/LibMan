@@ -27,7 +27,7 @@
 #include "property.h"
 #include "libfileparser.h"
 #include "libdefine_utils.h"
-#include "core/core_path_utils.h"
+#include "room/room_path_utils.h"
 #include "libman_test_mode.h"
 
 /*!******************************************************************************************************************
@@ -51,7 +51,7 @@ bool MainWindow::resolveCellViewFromPath(const QString &filePath,
         return false;
     }
 
-    const CoreViewIdentity coreIdentity = parseCoreViewIdentity(filePath);
+    const RoomViewIdentity coreIdentity = parseRoomViewIdentity(filePath);
     if (coreIdentity.valid) {
         *groupName = coreIdentity.cellName;
         *viewName = coreIdentity.viewName;
@@ -78,13 +78,13 @@ void MainWindow::configureCoreViewTreeItem(QTreeWidgetItem *viewItem,
                                            const QString &viewName,
                                            const QString &viewPath) const
 {
-    if (!viewItem || !isCoreViewName(viewName)) {
+    if (!viewItem || !isRoomViewName(viewName)) {
         return;
     }
 
     viewItem->setData(0, RoleType, ItemViewCore);
     viewItem->setData(0, RoleCorePath, viewPath);
-    if (isLayoutCoreViewName(viewName)) {
+    if (isLayoutRoomViewName(viewName)) {
         viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
     }
 }
@@ -203,7 +203,7 @@ void MainWindow::loadProjectFile(const QString &fileName)
             const QStringList expanded =
                 libdefine::expandWildcardDefinePath(projectDir.absolutePath(), storedPath);
             if(expanded.isEmpty()) {
-                error(QString("Wildcard define matched no CORE files for '%1': %2")
+                error(QString("Wildcard define matched no ROOM files for '%1': %2")
                           .arg(libName, storedPath));
             }
 
@@ -425,7 +425,7 @@ QStringList MainWindow::discoverCellNamesFromDisk(const QString &libraryName) co
         }
 
         const QDir cellDir(subDir.absoluteFilePath());
-        const QStringList cores = cellDir.entryList(QStringList() << QStringLiteral("*.core"), QDir::Files);
+        const QStringList cores = cellDir.entryList(QStringList() << QStringLiteral("*.room"), QDir::Files);
         for(const QString &coreName : cores) {
             QString groupName;
             QString viewName;
@@ -459,7 +459,7 @@ QStringList MainWindow::discoverViewNamesFromDisk(const QString &libraryName,
         return views;
     }
 
-    const QFileInfoList coreFiles = cellDir.entryInfoList(QStringList() << QStringLiteral("*.core"),
+    const QFileInfoList coreFiles = cellDir.entryInfoList(QStringList() << QStringLiteral("*.room"),
                                                           QDir::Files,
                                                           QDir::Name);
     for(const QFileInfo &coreFile : coreFiles) {
@@ -904,13 +904,13 @@ QStringList MainWindow::resolveTechLibraryCorePaths(const QString &techLibraryNa
 
     if(rootInfo.isDir()) {
         QDir dir(rootInfo.absoluteFilePath());
-        const QString preferred = dir.filePath(techLibraryName + QStringLiteral(".core"));
+        const QString preferred = dir.filePath(techLibraryName + QStringLiteral(".room"));
         if(QFileInfo::exists(preferred)) {
             paths.append(QFileInfo(preferred).absoluteFilePath());
             return paths;
         }
 
-        const QStringList cores = dir.entryList(QStringList() << QStringLiteral("*.core"),
+        const QStringList cores = dir.entryList(QStringList() << QStringLiteral("*.room"),
                                                 QDir::Files,
                                                 QDir::Name);
         if(cores.size() == 1) {
@@ -935,7 +935,7 @@ QStringList MainWindow::resolveTechLibraryCorePaths(const QString &techLibraryNa
         }
 
         const QString path = m_properties->get<QString>(it.key()).trimmed();
-        if(path.endsWith(QStringLiteral(".core"), Qt::CaseInsensitive)) {
+        if(path.endsWith(QStringLiteral(".room"), Qt::CaseInsensitive)) {
             paths.append(path);
         }
     }
@@ -947,7 +947,7 @@ QStringList MainWindow::resolveTechLibraryCorePaths(const QString &techLibraryNa
         const QDir libDir(QFileInfo(m_currentProjFile).absoluteDir().filePath(techLibraryName));
         if(libDir.exists()) {
             QDirIterator it(libDir.absolutePath(),
-                            QStringList() << QStringLiteral("*.symbol.core"),
+                            QStringList() << QStringLiteral("*.symbol.room"),
                             QDir::Files,
                             QDirIterator::Subdirectories);
             while(it.hasNext()) {
@@ -986,7 +986,7 @@ bool MainWindow::isSchematicLikeView(const QString &viewName) const
     if(view == QStringLiteral("sch") || view == QStringLiteral("sym")) {
         return true;
     }
-    if(view.endsWith(QStringLiteral(".core"))) {
+    if(view.endsWith(QStringLiteral(".room"))) {
         return view.contains(QStringLiteral("schematic")) || view.contains(QStringLiteral("symbol"));
     }
 
@@ -1027,9 +1027,9 @@ void MainWindow::launchSchematicTool(const QString &tool, const QString &viewPat
         techLibs.append(techLib);
     }
     QStringList nativePaths;
-    // Design-library symbol cores (e.g. inverter.symbol.core for inverter_tb hierarchy).
+    // Design-library symbol cores (e.g. inverter.symbol.room for inverter_tb hierarchy).
     for(const QString &path : resolveTechLibraryCorePaths(libName)) {
-        if(!path.endsWith(QStringLiteral(".symbol.core"), Qt::CaseInsensitive)) {
+        if(!path.endsWith(QStringLiteral(".symbol.room"), Qt::CaseInsensitive)) {
             continue;
         }
         const QString native = QDir::toNativeSeparators(path);

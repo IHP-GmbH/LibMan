@@ -37,10 +37,10 @@ Detailed setup and configuration information:
 
 1. **[VS Code Setup](setup/VSCODE_SETUP.md)** - Complete VS Code configuration guide
 2. **[Directory Structure](setup/DIRECTORY_STRUCTURE.md)** - Where everything is located
-3. **[CORE integration](setup/CORE_INTEGRATION.md)** - Automatic fetch/build of CommonDB
+3. **[ROOM integration](setup/ROOM_INTEGRATION.md)** - Automatic fetch/build of CommonDB
 4. **[KLayout integration](setup/KLAYOUT_INTEGRATION.md)** - Layout views, server, root cell selection
 5. **[Project Editor](setup/PROJECT_EDITOR.md)** - Edit `define(library, path)` entries (`Ctrl+E`)
-6. **[Import](setup/IMPORT.md)** - Convert GDS, Xschem, Qucs, OAS into CORE views (`File → Import...`)
+6. **[Import](setup/IMPORT.md)** - Convert GDS, Xschem, Qucs, OAS into ROOM views (`File → Import...`)
 7. **[Xschem integration](setup/XSCHEM_INTEGRATION.md)** - Schematic/symbol on Windows via WSL launchers
 8. **[Qucs-S integration](setup/QUCS_INTEGRATION.md)** - Schematic/symbol in Qucs-S + ngspice on Windows
 

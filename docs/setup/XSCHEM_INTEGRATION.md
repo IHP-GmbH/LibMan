@@ -1,6 +1,6 @@
 # Xschem integration (Windows + WSL)
 
-LibMan runs on **Windows**. Xschem in this flow runs in **WSL** (Linux GUI via WSLg). LibMan double-clicks a schematic/symbol view → Windows launcher → WSL → Xschem with CORE integration.
+LibMan runs on **Windows**. Xschem in this flow runs in **WSL** (Linux GUI via WSLg). LibMan double-clicks a schematic/symbol view → Windows launcher → WSL → Xschem with ROOM integration.
 
 Layout views use [KLayout](KLAYOUT_INTEGRATION.md) natively on Windows; schematic/symbol use this guide.
 
@@ -13,14 +13,14 @@ LibMan (Windows)
       → wsl bash open-xschem-wsl.sh <path>
         → xschem --rcfile <xschemrc>
           → core.tcl (coretcl.so)
-            → open *.schematic.core / *.symbol.core
+            → open *.schematic.room / *.symbol.room
 ```
 
 | View in LibMan | File suffix | Tool |
 |----------------|-------------|------|
-| `schematic` | `*.schematic.core` | Xschem (WSL) |
-| `symbol` | `*.symbol.core` | Xschem (WSL) |
-| `layout` | `*.layout.core` | KLayout (Windows) |
+| `schematic` | `*.schematic.room` | Xschem (WSL) |
+| `symbol` | `*.symbol.room` | Xschem (WSL) |
+| `layout` | `*.layout.room` | KLayout (Windows) |
 
 ## Prerequisites
 
@@ -58,7 +58,7 @@ parent/
   CommonDB/        ← sibling checkout (coretcl.so build)
   LibMan/          ← optional; Windows app
   KLayout-coredb/  ← optional; https://github.com/adatsuk/KLayout-coredb (mcore plugin)
-  Qucs-S-coredb/   ← optional; https://github.com/adatsuk/Qucs-S-coredb (CORE in Qucs-S)
+  Qucs-S-coredb/   ← optional; https://github.com/adatsuk/Qucs-S-coredb (ROOM in Qucs-S)
 ```
 
 Paths are resolved from script locations — no editing required when clones stay siblings.
@@ -78,7 +78,7 @@ Scripts live in the **XSchem-coredb** repo (not LibMan):
 |-----------|-------------------------|
 | `open-xschem-wsl.bat` | `%~dp0` + `wsl --cd` → runs `./open-xschem-wsl.sh` in `integrations/` |
 | `open-xschem-wsl.sh` | Parent of `integrations/` = **Xschem root** → `xschemrc` |
-| `xschemrc` | `[info script]` = Xschem root; `../CommonDB` = **CORE root** |
+| `xschemrc` | `[info script]` = Xschem root; `../CommonDB` = **ROOM root** |
 | `core.tcl` | Same; searches `integrations/coretcl.so` and `CommonDB/build-wsl/...` |
 
 Optional environment overrides (WSL / Tcl):
@@ -94,7 +94,7 @@ LibMan sets these when opening a schematic/symbol view with attached tech or des
 
 | Variable | Purpose |
 |----------|---------|
-| `CORE_PRIMITIVE_LIBS_FILE` | Temp file with one `*.symbol.core` path per line (preferred for large libraries) |
+| `CORE_PRIMITIVE_LIBS_FILE` | Temp file with one `*.symbol.room` path per line (preferred for large libraries) |
 | `CORE_PRIMITIVE_LIB` | First attached symbol core (legacy fallback) |
 | `LIBMAN_TECH_LIBRARY` | Semicolon-separated library names (`commonLib;ihp_sg13g2;…`) |
 | `QUCS_PRIMITIVE_LIB` | Qucs `<Lib>` bundle name for PDK cells |
@@ -106,11 +106,11 @@ LibMan Tool Manager still needs the **full Windows path** to `open-xschem-wsl.ba
 
 ### What the launcher does
 
-1. LibMan passes a **Windows** path to the view file (e.g. `C:\...\sg13g2_stdcell.schematic.core`).
+1. LibMan passes a **Windows** path to the view file (e.g. `C:\...\sg13g2_stdcell.schematic.room`).
 2. `.bat` calls WSL with that path as `%1`.
 3. `.sh` converts `C:\...` → `/mnt/c/...` (`wslpath` or fallback).
 4. By extension:
-   - `*.schematic.core` / `*.symbol.core` → sets `XSCHEM_OPEN_CORE` → `core.tcl` opens via CORE API after idle
+   - `*.schematic.room` / `*.symbol.room` → sets `XSCHEM_OPEN_CORE` → `core.tcl` opens via ROOM API after idle
    - `*.sch` / `*.sym` → sets `XSCHEM_OPEN_FILE` → direct `xschem load`
 5. Xschem starts with `--rcfile` pointing at project `xschemrc` (loads `core.tcl`).
 
@@ -137,17 +137,17 @@ D:\work\XSchem-coredb\integrations\open-xschem-wsl.bat
 
 Do **not** put `schematic.core` in Name(s) — LibMan matches the **view name** (`schematic`, `symbol`), not the file suffix.
 
-Default schematic-related views come from CORE file names (`schematic`, `symbol`, `layout`). Register `schematic` and `symbol` with the same Xschem launcher if both use WSL.
+Default schematic-related views come from ROOM file names (`schematic`, `symbol`, `layout`). Register `schematic` and `symbol` with the same Xschem launcher if both use WSL.
 
 ### Opening from LibMan
 
-1. Project file contains e.g. `define("lib", ".../cell.schematic.core");` — see [Project Editor](PROJECT_EDITOR.md).
+1. Project file contains e.g. `define("lib", ".../cell.schematic.room");` — see [Project Editor](PROJECT_EDITOR.md).
 2. Select **Cell** → double-click **schematic** (or **symbol**).
 3. LibMan runs the bat file with the absolute path to the `.core` file.
 
-## CORE + Xschem behaviour
+## ROOM + Xschem behaviour
 
-Authoritative storage is the **CORE file** (`.schematic.core` / `.symbol.core`), not `payload/*.sch`.
+Authoritative storage is the **ROOM file** (`.schematic.room` / `.symbol.room`), not `payload/*.sch`.
 
 With the native bridge (Xschem built from **XSchem-coredb** with `load_data` / `get_data`):
 
@@ -157,27 +157,27 @@ With the native bridge (Xschem built from **XSchem-coredb** with `load_data` / `
 | Edit | User edits in Xschem |
 | Save | `xschem get_data` → `coreapi_import_data` → writes `.core` |
 
-`payload/<cell>.sch` is no longer used as interchange for CORE-bound views. Older Xschem builds without `load_data` fall back to ephemeral temp files via `core.tcl`.
+`payload/<cell>.sch` is no longer used as interchange for ROOM-bound views. Older Xschem builds without `load_data` fall back to ephemeral temp files via `core.tcl`.
 
-Window/tab title shows the **CORE filename** (e.g. `cell.schematic.core`), not `payload/cell.sch`.
+Window/tab title shows the **ROOM filename** (e.g. `cell.schematic.room`), not `payload/cell.sch`.
 
 `xschemrc` sets `initial_geometry` so a corrupted `~/.xschem/geometry` (`1x1+...`) does not shrink the window to a tiny strip.
 
 ### File naming (CommonDB convention)
 
-| View | CORE file |
+| View | ROOM file |
 |------|-----------|
-| Schematic | `<cell>.schematic.core` |
-| Symbol | `<cell>.symbol.core` |
-| Layout | `<cell>.layout.core` |
+| Schematic | `<cell>.schematic.room` |
+| Symbol | `<cell>.symbol.room` |
+| Layout | `<cell>.layout.room` |
 
 ## Project layout example
 
 ```text
 sg13g2_stdcell/
   sg13g2_stdcell/
-    sg13g2_stdcell.schematic.core   ← LibMan opens this
-    sg13g2_stdcell.layout.core
+    sg13g2_stdcell.schematic.room   ← LibMan opens this
+    sg13g2_stdcell.layout.room
     payload/                        ← optional legacy cache (not used by native bridge)
       sg13g2_stdcell.sch
 ```
@@ -191,7 +191,7 @@ sg13g2_stdcell/
 | `coretcl.so not found` | Run `build-core-tcl.sh` in WSL; ensure `../CommonDB` exists or set `COMMONDB_ROOT` |
 | Xschem window is a tiny title bar | Corrupt `~/.xschem/geometry` with `1x1+` lines — remove them or delete file; `initial_geometry` in `xschemrc` helps |
 | Title shows `.sch` not `.core` | Update `integrations/core.tcl` (title hooks); restart Xschem |
-| Blank schematic | CORE file empty or export failed — check Messages in LibMan / Xschem stderr in WSL terminal |
+| Blank schematic | ROOM file empty or export failed — check Messages in LibMan / Xschem stderr in WSL terminal |
 | WSL `file not found` | Path conversion: ensure LibMan passes existing file; test `wslpath -u 'C:\...'` |
 | `MISSING SYMBOL` for lab_pin, PDK devices | Check `CORE_PRIMITIVE_LIBS_FILE` / `LIBMAN_TECH_LIBRARY` in WSL (`echo $CORE_PRIMITIVE_LIBS`); see `/tmp/xschem-libman-launch.log` |
 | `extra characters after close-quote` (Tcl) | Outdated `core.tcl` — update XSchem-coredb; usually a Tcl syntax error in symbol index build |
@@ -199,7 +199,7 @@ sg13g2_stdcell/
 
 ### Primitive libraries (commonLib / PDK)
 
-LibMan auto-discovers `<projectDir>/<lib>/**/*.symbol.core` for attached tech libraries and writes paths to `CORE_PRIMITIVE_LIBS_FILE` before launching Xschem or Qucs-S. `commonLib` holds Xschem device symbols (`lab_pin`, `res`, `title-3`, …); PDK cells come from `sg13g2_pr` or design libraries. Qucs skips Xschem-only decorations (`lab_wire`, `code_shown`) but maps passives to native Qucs components.
+LibMan auto-discovers `<projectDir>/<lib>/**/*.symbol.room` for attached tech libraries and writes paths to `CORE_PRIMITIVE_LIBS_FILE` before launching Xschem or Qucs-S. `commonLib` holds Xschem device symbols (`lab_pin`, `res`, `title-3`, …); PDK cells come from `sg13g2_pr` or design libraries. Qucs skips Xschem-only decorations (`lab_wire`, `code_shown`) but maps passives to native Qucs components.
 
 ### Clean geometry cache (WSL)
 
@@ -211,12 +211,12 @@ grep -v '1x1+' ~/.xschem/geometry > ~/.xschem/geometry.tmp && mv ~/.xschem/geome
 
 ```powershell
 D:\work\XSchem-coredb\integrations\open-xschem-wsl.bat ^
-  D:\work\LibMan\tests\data\sg13g2_stdcell\sg13g2_stdcell\sg13g2_stdcell.schematic.core
+  D:\work\LibMan\tests\data\sg13g2_stdcell\sg13g2_stdcell\sg13g2_stdcell.schematic.room
 ```
 
 ## Related docs
 
-- [CORE integration](CORE_INTEGRATION.md) — building CommonDB / CORE in LibMan
+- [ROOM integration](ROOM_INTEGRATION.md) — building CommonDB / ROOM in LibMan
 - [KLayout integration](KLAYOUT_INTEGRATION.md) — layout views on Windows
-- [Project Editor](PROJECT_EDITOR.md) — adding `*.schematic.core` to the project file
+- [Project Editor](PROJECT_EDITOR.md) — adding `*.schematic.room` to the project file
 - XSchem-coredb repo: `integrations/core.tcl`, `integrations/open-xschem-wsl.*`, `xschemrc` — [github.com/adatsuk/XSchem-coredb](https://github.com/adatsuk/XSchem-coredb)

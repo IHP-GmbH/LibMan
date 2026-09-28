@@ -59,8 +59,8 @@ SOURCES += \
     $$PWD/../src/projecteditor.cpp \
     $$PWD/../src/importdialog.cpp \
     $$PWD/../src/exportdialog.cpp \
-    $$PWD/../src/core_import_service.cpp \
-    $$PWD/../src/core_export_service.cpp \
+    $$PWD/../src/room_import_service.cpp \
+    $$PWD/../src/room_export_service.cpp \
     $$PWD/../src/property.cpp \
     $$PWD/../src/toolcustomtool.cpp \
     $$PWD/../src/view_tools.cpp \
@@ -75,22 +75,24 @@ SOURCES += \
     $$PWD/../src/categorycontextmenu.cpp \
     $$PWD/../src/about.cpp \
     $$PWD/../src/newview.cpp \
-    $$PWD/../core/core_path_utils.cpp \
-    $$PWD/../core/core_file_lock.cpp \
-    $$PWD/../core/converter_paths.cpp \
+    $$PWD/../src/snapshotscene.cpp \
+    $$PWD/../src/snapshotview.cpp \
+    $$PWD/../room/room_path_utils.cpp \
+    $$PWD/../room/room_file_lock.cpp \
+    $$PWD/../room/converter_paths.cpp \
     main.cpp \
 
 LIBMAN_ROOT = $$dirname(_PRO_FILE_)/..
 include($$LIBMAN_ROOT/core_build_config.pri)
 
-contains(CONFIG, no_core) {
-    DEFINES += LIBMAN_NO_CORE
-    SOURCES += $$PWD/../core/libman_no_core_stubs.cpp
+contains(CONFIG, no_room) {
+    DEFINES += LIBMAN_NO_ROOM
+    SOURCES += $$PWD/../room/libman_no_room_stubs.cpp
 } else {
     SOURCES += \
-        $$PWD/../core/corecellreader.cpp \
-        $$PWD/../core/coreReadAsync.cpp \
-        $$PWD/../core/coreKlayoutBridge.cpp
+        $$PWD/../room/roomcellreader.cpp \
+        $$PWD/../room/roomReadAsync.cpp \
+        $$PWD/../room/roomKlayoutBridge.cpp
 }
 
 SOURCES += \
@@ -107,8 +109,8 @@ SOURCES += \
     tst_toolmanager.cpp \
     tst_coverage_expansion.cpp \
     tst_coverage_80.cpp \
-    tst_core_path_utils.cpp \
-    tst_core_file_lock.cpp
+    tst_room_path_utils.cpp \
+    tst_room_file_lock.cpp
 
 HEADERS += \
     $$PWD/tst_libman_gui.h \
@@ -136,16 +138,16 @@ HEADERS += \
     $$PWD/../src/projecteditor.h \
     $$PWD/../src/importdialog.h \
     $$PWD/../src/exportdialog.h \
-    $$PWD/../src/core_import_service.h \
-    $$PWD/../src/core_export_service.h \
+    $$PWD/../src/room_import_service.h \
+    $$PWD/../src/room_export_service.h \
     $$PWD/../src/property.h \
     $$PWD/../src/toolmanager.h \
     $$PWD/../src/viewtoolstablewidget.h \
     $$PWD/../src/toolpickerdialog.h \
     $$PWD/../src/about.h \
     $$PWD/../src/newview.h \
-    $$PWD/../core/corecellreader.h \
-    $$PWD/../core/coreKlayoutBridge.h \
+    $$PWD/../room/roomcellreader.h \
+    $$PWD/../room/roomKlayoutBridge.h \
     tst_dialogs.h \
     tst_klayout_requests.h \
     tst_libfileparser.h \
@@ -159,8 +161,8 @@ HEADERS += \
     tst_toolmanager.h \
     tst_coverage_expansion.h \
     tst_coverage_80.h \
-    tst_core_path_utils.h \
-    tst_core_file_lock.h \
+    tst_room_path_utils.h \
+    tst_room_file_lock.h \
     test_paths.h
 
 FORMS += \
@@ -179,9 +181,9 @@ RESOURCES += \
 TESTDATA += \
     $$PWD/data/sg13g2.projects \
     $$PWD/data/ota1336.projects \
-    $$PWD/data/OTA1336/schematic/xschem/OTA1336.schematic.core \
-    $$PWD/data/OTA1336/schematic/xschem/OTA1336.symbol.core \
-    $$PWD/data/OTA1336/testbenches/ac/xschem/OTA1336_tb.schematic.core \
+    $$PWD/data/OTA1336/schematic/xschem/OTA1336.schematic.room \
+    $$PWD/data/OTA1336/schematic/xschem/OTA1336.symbol.room \
+    $$PWD/data/OTA1336/testbenches/ac/xschem/OTA1336_tb.schematic.room \
     $$PWD/data/sample.gds \
     $$PWD/data/sg13g2_stdcell/Test/Test.gds \
     $$PWD/data/sg13g2_stdcell/Test/Test.oas \
@@ -190,15 +192,15 @@ TESTDATA += \
     $$PWD/data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.gds \
     $$PWD/data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.oas \
     $$PWD/data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.lstr \
-    $$PWD/data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.layout.core \
-    $$PWD/data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.schematic.core \
+    $$PWD/data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.layout.room \
+    $$PWD/data/sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.schematic.room \
     $$PWD/data/sg13g2_stdcell/lstr/sg13g2_stdcell.lstr
 
 # Cap'n Proto (same clone-on-make flow as libman.pro)
 LIBMAN_ROOT = $$dirname(_PRO_FILE_)/..
 include($$LIBMAN_ROOT/capnp_deps.pri)
-!contains(CONFIG, no_core) {
-    include($$LIBMAN_ROOT/core_deps.pri)
+!contains(CONFIG, no_room) {
+    include($$LIBMAN_ROOT/room_deps.pri)
 }
 
 CAPNP_GEN_DIR = $$LIBMAN_ROOT/capnp
@@ -221,6 +223,6 @@ coverage {
 }
 
 include($$LIBMAN_ROOT/capnp_deps_finalize.pri)
-!contains(CONFIG, no_core) {
-    include($$LIBMAN_ROOT/core_deps_finalize.pri)
+!contains(CONFIG, no_room) {
+    include($$LIBMAN_ROOT/room_deps_finalize.pri)
 }
