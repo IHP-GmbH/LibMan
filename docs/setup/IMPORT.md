@@ -123,7 +123,7 @@ Use **[Project Editor](PROJECT_EDITOR.md)** (`Ctrl+E`) to review or edit entries
 |---------|----------------|
 | `Converter 'gds_to_core' was not found` | Rebuild with ROOM; confirm `gds_to_core.exe` is next to `libman.exe` or set `LIBMAN_CONVERTER_DIR` |
 | `Cell view already exists` | Delete the existing cell folder or pick another library |
-| Import menu disabled / error about `no_core` | Rebuild without `CONFIG+=no_room`; CI stub builds omit Import |
+| Import menu disabled / error about `no_room` | Rebuild without `CONFIG+=no_room`; CI stub builds omit Import |
 | OAS imports as `.oas` not `.layout.room` | `oas_to_core` was not built (ZLIB missing in ROOM build); native OAS copy still works |
 | Project file unchanged | Open a `.projects` file first; otherwise use **File → Save** after import |
 

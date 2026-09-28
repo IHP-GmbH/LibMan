@@ -102,7 +102,7 @@ See [Quick Start](getting-started/QUICK_START.md) and [Dependencies](getting-sta
 
 | Job | Build system | ROOM |
 |-----|--------------|------|
-| `build-linux-no-core` | qmake + make (Ubuntu) | **No** CommonDB; verifies public build |
+| `build-linux-no-room` | qmake + make (Ubuntu) | **No** CommonDB; verifies public build |
 | `build-linux` | qmake + make (Ubuntu) | Full ROOM when `GH_PAT` / `LIBMAN_CORE_GIT_TOKEN` is set |
 | `build-ubuntu24` | qmake + make (Ubuntu 24.04) | ROOM + portable Qt bundle (`libman-linux-ubuntu24`) |
 | `build-rhel8` | qmake + make (Rocky Linux 8 container) | Same; artifact `libman-rhel8.tar.gz` for RHEL 8.10 |

@@ -117,7 +117,7 @@ Link targets are already set in `CMakeLists.txt` (`ROOM::room`, `ROOM::room_util
 
 | Job | ROOM |
 |-----|------|
-| `build-linux-no-core` | No token — probe fails, stubs only |
+| `build-linux-no-room` | No token — probe fails, stubs only |
 | `build-linux`, `tests-linux`, `build-windows`, `build-rhel8`, `build-ubuntu24` | `GH_PAT` (or legacy `LIBMAN_CORE_GIT_TOKEN`) — CommonDB checkout + full ROOM |
 
 Add repository secret (org-level `GH_PAT` is preferred — same token as Qucs/XSchem/KLayout CI):

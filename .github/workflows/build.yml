@@ -19,8 +19,8 @@ jobs:
   # Public build without CommonDB (no secrets required)
   # ============================================================
 
-  build-linux-no-core:
-    name: build-linux-no-core
+  build-linux-no-room:
+    name: build-linux-no-room
     runs-on: ubuntu-latest
 
     steps:
