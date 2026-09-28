@@ -511,7 +511,7 @@ jobs:
 
       - name: Build ROOM
         shell: cmd
-        run: call scripts\fetch_core.cmd
+        run: call scripts\fetch_room.cmd
 
       - name: Build (mingw32-make)
         shell: bash
