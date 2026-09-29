@@ -25,6 +25,7 @@
 #include <QTextEdit>
 #include <QStandardPaths>
 #include <QRegularExpression>
+#include <cstdio>
 
 #include <QListWidgetItem>
 #include <QVBoxLayout>
@@ -141,9 +142,11 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     snapshotLayout->addWidget(m_snapshotView);
 
     m_projectEditor = new ProjectEditor(this);
+    fprintf(stderr, "MW: editor created\n"); fflush(stderr);
     m_projectEditor->setMinimumWidth(420);
     m_ui->splitter_2->addWidget(m_projectEditor);
     m_projectEditor->hide();
+    fprintf(stderr, "MW: editor hidden\n"); fflush(stderr);
 
     m_ui->groupCats->setVisible(false);
     m_ui->groupDocs->setVisible(false);
@@ -186,6 +189,7 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
 
     setWindowTitle(getLibManTitle());
 
+    fprintf(stderr, "MW: load project\n"); fflush(stderr);
     if(QFileInfo(projFile).exists()) {
         loadProjectFile(projFile);
     }
@@ -225,6 +229,7 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     });
 
     m_ui->listViews->setHeaderHidden(true);
+    fprintf(stderr, "MW: ctor done\n"); fflush(stderr);
 }
 
 /*!*******************************************************************************************************************

@@ -21,13 +21,16 @@
 #include <QMessageBox>
 #include <QTimer>
 #include <QTreeWidget>
+#include <cstdio>
 
 ProjectEditor::ProjectEditor(MainWindow *parent)
     : QWidget(parent)
     , m_ui(new Ui::ProjectEditor)
     , m_mainWindow(parent)
 {
+    fprintf(stderr, "PE: setupUi\n"); fflush(stderr);
     m_ui->setupUi(this);
+    fprintf(stderr, "PE: policies\n"); fflush(stderr);
     m_ui->labelTitle->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     m_ui->labelHelp->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
     m_ui->labelHelp->setWordWrap(false);
@@ -35,11 +38,13 @@ ProjectEditor::ProjectEditor(MainWindow *parent)
     m_ui->editorSplitter->setStretchFactor(0, 1);
     m_ui->editorSplitter->setStretchFactor(1, 2);
     m_ui->editorSplitter->setSizes({180, 360});
+    fprintf(stderr, "PE: buttons\n"); fflush(stderr);
     for (QPushButton *button : {m_ui->btnAddLibrary, m_ui->btnRemoveLibrary, m_ui->btnAddPath,
                                 m_ui->btnRemovePath, m_ui->btnSave, m_ui->btnClose}) {
         button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     }
 
+    fprintf(stderr, "PE: browser\n"); fflush(stderr);
     m_browser = new QtTreePropertyBrowser(m_ui->browserHost);
     m_browser->setResizeMode(QtTreePropertyBrowser::Interactive);
     m_browser->setPropertiesWithoutValueMarked(true);
@@ -59,6 +64,7 @@ ProjectEditor::ProjectEditor(MainWindow *parent)
 
     connect(m_ui->libraryTree, &QTreeWidget::itemSelectionChanged, this, &ProjectEditor::onLibrarySelectionChanged);
     connect(m_manager, &VariantManager::valueChanged, this, &ProjectEditor::onPathValueChanged);
+    fprintf(stderr, "PE: ctor done\n"); fflush(stderr);
 }
 
 ProjectEditor::~ProjectEditor()
