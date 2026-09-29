@@ -29,8 +29,8 @@ ProjectEditor::ProjectEditor(MainWindow *parent)
 {
     m_ui->setupUi(this);
     m_ui->labelTitle->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    m_ui->labelHelp->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    m_ui->editorSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_ui->labelHelp->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
+    m_ui->labelHelp->setWordWrap(false);
     m_ui->verticalLayout->setStretch(m_ui->verticalLayout->indexOf(m_ui->editorSplitter), 1);
     m_ui->editorSplitter->setStretchFactor(0, 1);
     m_ui->editorSplitter->setStretchFactor(1, 2);
