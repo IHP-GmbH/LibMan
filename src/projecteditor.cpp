@@ -12,7 +12,6 @@
 #include <QBrush>
 #include <QDir>
 #include <QFontMetrics>
-#include <QHeaderView>
 #include <QSizePolicy>
 #include <QStyle>
 #include <QFileDialog>
@@ -47,10 +46,7 @@ ProjectEditor::ProjectEditor(MainWindow *parent)
     m_browser->setHeaderVisible(true);
     if (QTreeWidget *tree = m_browser->findChild<QTreeWidget *>()) {
         tree->setHeaderLabels({tr("Name"), tr("Path")});
-        QHeaderView *header = tree->header();
-        header->setStretchLastSection(true);
-        header->setSectionResizeMode(0, QHeaderView::Interactive);
-        header->setSectionResizeMode(1, QHeaderView::Interactive);
+        tree->header()->setStretchLastSection(true);
     }
     m_ui->browserLayout->addWidget(m_browser);
 
@@ -220,7 +216,9 @@ void ProjectEditor::fitNameColumn()
     const int extra = tree->indentation()
         + tree->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) * 2
         + 8;
-    tree->header()->resizeSection(0, textWidth + extra);
+    if (tree->header()->count() > 0) {
+        m_browser->setSplitterPosition(textWidth + extra);
+    }
 }
 
 void ProjectEditor::refreshLibraryLabel(int index)
