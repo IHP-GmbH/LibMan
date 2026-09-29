@@ -25,13 +25,11 @@
 #include <QTextEdit>
 #include <QStandardPaths>
 #include <QRegularExpression>
-#include <cstdio>
 
 #include <QListWidgetItem>
 #include <QVBoxLayout>
 
 #include "snapshotview.h"
-#include "projecteditor.h"
 
 #if QT_VERSION >= 0x050000
 #include <QScreen>
@@ -141,13 +139,6 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     snapshotLayout->setContentsMargins(0, 0, 0, 0);
     snapshotLayout->addWidget(m_snapshotView);
 
-    m_projectEditor = new ProjectEditor(this);
-    fprintf(stderr, "MW: editor created\n"); fflush(stderr);
-    m_projectEditor->setMinimumWidth(420);
-    m_ui->splitter_2->addWidget(m_projectEditor);
-    m_projectEditor->hide();
-    fprintf(stderr, "MW: editor hidden\n"); fflush(stderr);
-
     m_ui->groupCats->setVisible(false);
     m_ui->groupDocs->setVisible(false);
     m_ui->groupSnapshot->setVisible(false);
@@ -189,7 +180,6 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
 
     setWindowTitle(getLibManTitle());
 
-    fprintf(stderr, "MW: load project\n"); fflush(stderr);
     if(QFileInfo(projFile).exists()) {
         loadProjectFile(projFile);
     }
@@ -229,7 +219,6 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     });
 
     m_ui->listViews->setHeaderHidden(true);
-    fprintf(stderr, "MW: ctor done\n"); fflush(stderr);
 }
 
 /*!*******************************************************************************************************************
@@ -549,7 +538,10 @@ void MainWindow::on_actionProjects_triggered()
 void MainWindow::on_actionEditProject_triggered()
 {
     if (!m_projectEditor) {
-        return;
+        m_projectEditor = new ProjectEditor(this);
+        m_projectEditor->setMinimumWidth(420);
+        m_ui->splitter_2->addWidget(m_projectEditor);
+        m_projectEditor->hide();
     }
 
     if (m_projectEditor->isVisible()) {
