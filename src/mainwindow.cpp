@@ -30,6 +30,7 @@
 #include <QVBoxLayout>
 
 #include "snapshotview.h"
+#include "projecteditor.h"
 
 #if QT_VERSION >= 0x050000
 #include <QScreen>
@@ -138,6 +139,11 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     auto *snapshotLayout = new QVBoxLayout(m_ui->snapshotHost);
     snapshotLayout->setContentsMargins(0, 0, 0, 0);
     snapshotLayout->addWidget(m_snapshotView);
+
+    m_projectEditor = new ProjectEditor(this);
+    m_projectEditor->setMinimumWidth(420);
+    m_ui->splitter_2->addWidget(m_projectEditor);
+    m_projectEditor->hide();
 
     m_ui->groupCats->setVisible(false);
     m_ui->groupDocs->setVisible(false);
@@ -537,8 +543,44 @@ void MainWindow::on_actionProjects_triggered()
 
 void MainWindow::on_actionEditProject_triggered()
 {
-    ProjectEditor editor(this);
-    editor.exec();
+    if (!m_projectEditor) {
+        return;
+    }
+
+    if (m_projectEditor->isVisible()) {
+        if (!m_projectEditor->confirmHide()) {
+            return;
+        }
+        m_projectEditor->hide();
+        return;
+    }
+
+    m_projectEditor->reloadFromDisk();
+    m_projectEditor->show();
+
+    QList<int> sizes = m_ui->splitter_2->sizes();
+    const int index = m_ui->splitter_2->indexOf(m_projectEditor);
+    if (index < 0 || index >= sizes.size()) {
+        return;
+    }
+
+    const int wanted = 520;
+    if (sizes.at(index) >= wanted) {
+        return;
+    }
+
+    int deficit = wanted - sizes.at(index);
+    sizes[index] = wanted;
+    for (int i = 0; i < sizes.size() && deficit > 0; ++i) {
+        if (i == index) {
+            continue;
+        }
+        const int spare = qMax(0, sizes.at(i) - 140);
+        const int take = qMin(deficit, spare);
+        sizes[i] -= take;
+        deficit -= take;
+    }
+    m_ui->splitter_2->setSizes(sizes);
 }
 
 void MainWindow::on_actionImport_triggered()

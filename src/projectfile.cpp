@@ -569,7 +569,8 @@ QList<QPair<QString, QString>> MainWindow::projectEntriesForEditor() const
 }
 
 bool MainWindow::saveProjectEntriesToFile(const QString &fileName,
-                                          const QList<QPair<QString, QString>> &entries)
+                                          const QList<QPair<QString, QString>> &entries,
+                                          bool keepMissingPaths)
 {
     if (fileName.isEmpty()) {
         return false;
@@ -614,9 +615,11 @@ bool MainWindow::saveProjectEntriesToFile(const QString &fileName,
         if (libdefine::isWildcardDefinePath(filePath)) {
             const QString scanRoot = libdefine::wildcardScanRoot(baseDir.absolutePath(), filePath);
             if (scanRoot.isEmpty()) {
-                error(QString("Skipping library entry '%1': wildcard path does not exist: %2")
-                          .arg(libName, filePath));
-                continue;
+                if (!keepMissingPaths) {
+                    error(QString("Skipping library entry '%1': wildcard path does not exist: %2")
+                              .arg(libName, filePath));
+                    continue;
+                }
             }
 
             out << "define("
@@ -632,8 +635,20 @@ bool MainWindow::saveProjectEntriesToFile(const QString &fileName,
             : baseDir.absoluteFilePath(filePath);
         const QFileInfo fi(resolvedPath);
         if (!fi.exists()) {
-            error(QString("Skipping library entry '%1': path does not exist: %2")
-                      .arg(libName, resolvedPath));
+            if (!keepMissingPaths) {
+                error(QString("Skipping library entry '%1': path does not exist: %2")
+                          .arg(libName, resolvedPath));
+                continue;
+            }
+
+            const QString storedPath = QDir::isAbsolutePath(filePath)
+                ? QDir::toNativeSeparators(baseDir.relativeFilePath(QDir::cleanPath(filePath)))
+                : QDir::toNativeSeparators(filePath);
+            out << "define("
+                << toLibStringLiteral(libName)
+                << ", "
+                << toLibStringLiteral(storedPath)
+                << ");\n";
             continue;
         }
 

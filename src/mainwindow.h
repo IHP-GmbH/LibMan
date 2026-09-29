@@ -30,6 +30,7 @@ class QListWidgetItem;
 class QTreeWidgetItem;
 class QFileSystemWatcher;
 class SnapshotView;
+class ProjectEditor;
 
 namespace Ui {
 class MainWindow;
@@ -236,7 +237,8 @@ private slots:
     void                                saveProjectFile(const QString &);
     QList<QPair<QString, QString>>      projectEntriesForEditor() const;
     bool                                saveProjectEntriesToFile(const QString &fileName,
-                                                                 const QList<QPair<QString, QString>> &entries);
+                                                                 const QList<QPair<QString, QString>> &entries,
+                                                                 bool keepMissingPaths = false);
     void                                setRecentProject(const QString &);
     QString                             resolveProjectPath(const QString& projectsFile, const QString& rawPath);
     QString                             findRepresentativeLibraryFile(const QString &libName) const;
@@ -551,6 +553,7 @@ private:
     QHash<QString, std::shared_ptr<LStreamCacheEntry>> m_lstreamCache;     /*!< LStream hierarchy cache: abs path -> entry. */
     QHash<QString, std::shared_ptr<CoreCacheEntry>> m_coreCache;           /*!< ROOM hierarchy cache: abs path -> entry. */
     SnapshotView                       *m_snapshotView = nullptr;         /*!< Schematic/symbol thumbnail under the view list. */
+    ProjectEditor                      *m_projectEditor = nullptr;        /*!< .projects editor pane in the main splitter. */
 };
 
 /*!*******************************************************************************************************************

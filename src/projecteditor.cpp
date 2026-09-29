@@ -3,55 +3,66 @@
 
 #include "mainwindow.h"
 #include "libfileparser.h"
+#include "libdefine_utils.h"
 
-#include <QCloseEvent>
+#include "extension/variantfactory.h"
+#include "extension/variantmanager.h"
+#include "QtPropertyBrowser/qttreepropertybrowser.h"
+
+#include <QBrush>
+#include <QDir>
+#include <QFontMetrics>
+#include <QHeaderView>
+#include <QSizePolicy>
+#include <QStyle>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <QHeaderView>
-#include <QMenu>
+#include <QInputDialog>
+#include <QLineEdit>
 #include <QMessageBox>
-#include <QSet>
 #include <QTimer>
-#include <algorithm>
-#include <QTableWidgetItem>
-
-namespace {
-
-bool rowHasContent(QTableWidget *table, int row)
-{
-    if (!table || row < 0 || row >= table->rowCount()) {
-        return false;
-    }
-
-    const QTableWidgetItem *libItem = table->item(row, 0);
-    const QTableWidgetItem *pathItem = table->item(row, 1);
-    return (libItem && !libItem->text().trimmed().isEmpty())
-        || (pathItem && !pathItem->text().trimmed().isEmpty());
-}
-
-} // namespace
+#include <QTreeWidget>
 
 ProjectEditor::ProjectEditor(MainWindow *parent)
-    : QDialog(parent)
+    : QWidget(parent)
     , m_ui(new Ui::ProjectEditor)
     , m_mainWindow(parent)
 {
     m_ui->setupUi(this);
-    m_filePath = m_mainWindow ? m_mainWindow->getCurrentProjectFile() : QString();
+    m_ui->labelTitle->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    m_ui->labelHelp->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+    m_ui->editorSplitter->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    m_ui->verticalLayout->setStretch(m_ui->verticalLayout->indexOf(m_ui->editorSplitter), 1);
+    m_ui->editorSplitter->setStretchFactor(0, 1);
+    m_ui->editorSplitter->setStretchFactor(1, 2);
+    m_ui->editorSplitter->setSizes({180, 360});
+    for (QPushButton *button : {m_ui->btnAddLibrary, m_ui->btnRemoveLibrary, m_ui->btnAddPath,
+                                m_ui->btnRemovePath, m_ui->btnSave, m_ui->btnClose}) {
+        button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    }
 
-    initTable();
-    loadEntries();
-    updateWindowTitle();
+    m_browser = new QtTreePropertyBrowser(m_ui->browserHost);
+    m_browser->setResizeMode(QtTreePropertyBrowser::Interactive);
+    m_browser->setPropertiesWithoutValueMarked(true);
+    m_browser->setHeaderVisible(true);
+    if (QTreeWidget *tree = m_browser->findChild<QTreeWidget *>()) {
+        tree->setHeaderLabels({tr("Name"), tr("Path")});
+        QHeaderView *header = tree->header();
+        header->setStretchLastSection(true);
+        header->setSectionResizeMode(0, QHeaderView::Interactive);
+        header->setSectionResizeMode(1, QHeaderView::Interactive);
+    }
+    m_ui->browserLayout->addWidget(m_browser);
 
-    connect(m_ui->actionSave, &QAction::triggered, this, &ProjectEditor::on_actionSave_triggered);
-    connect(m_ui->actionSaveAs, &QAction::triggered, this, &ProjectEditor::on_actionSaveAs_triggered);
-    connect(m_ui->actionClose, &QAction::triggered, this, &ProjectEditor::on_actionClose_triggered);
-    connect(m_ui->tableEntries, &QTableWidget::customContextMenuRequested,
-            this, &ProjectEditor::on_tableEntries_customContextMenuRequested);
-    connect(m_ui->tableEntries, &QTableWidget::cellChanged,
-            this, &ProjectEditor::on_tableEntries_cellChanged);
-    connect(m_ui->tableEntries, &QTableWidget::cellDoubleClicked,
-            this, &ProjectEditor::on_tableEntries_cellDoubleClicked);
+    m_manager = new VariantManager(m_browser);
+    QtVariantEditorFactory *factory = new VariantFactory(m_browser);
+    m_browser->setFactoryForManager(static_cast<QtVariantPropertyManager *>(m_manager), factory);
+
+    m_paths = m_manager->addProperty(QtVariantPropertyManager::groupTypeId(), tr("Paths"));
+    m_browser->addProperty(m_paths);
+
+    connect(m_ui->libraryTree, &QTreeWidget::itemSelectionChanged, this, &ProjectEditor::onLibrarySelectionChanged);
+    connect(m_manager, &VariantManager::valueChanged, this, &ProjectEditor::onPathValueChanged);
 }
 
 ProjectEditor::~ProjectEditor()
@@ -59,133 +70,50 @@ ProjectEditor::~ProjectEditor()
     delete m_ui;
 }
 
-void ProjectEditor::initTable()
+void ProjectEditor::reloadFromDisk()
 {
-    QTableWidget *table = m_ui->tableEntries;
-    table->setColumnCount(2);
-    table->setHorizontalHeaderLabels({tr("Library"), tr("Path")});
-    table->horizontalHeader()->setStretchLastSection(true);
-    table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    table->verticalHeader()->setVisible(true);
-    table->setAlternatingRowColors(true);
-}
+    m_filePath = m_mainWindow ? m_mainWindow->getCurrentProjectFile() : QString();
 
-void ProjectEditor::loadEntries()
-{
-    m_loadingTable = true;
-    m_ui->tableEntries->setRowCount(0);
-
-    if (m_mainWindow) {
-        const QList<QPair<QString, QString>> rows = m_mainWindow->projectEntriesForEditor();
-        for (const auto &row : rows) {
-            const int index = m_ui->tableEntries->rowCount();
-            m_ui->tableEntries->insertRow(index);
-            m_ui->tableEntries->setItem(index, 0, new QTableWidgetItem(row.first));
-            m_ui->tableEntries->setItem(index, 1, new QTableWidgetItem(row.second));
-        }
-    }
-
-    appendEmptyRow();
-    m_loadingTable = false;
-    setDocumentModified(false);
-}
-
-void ProjectEditor::appendEmptyRow()
-{
-    const int row = m_ui->tableEntries->rowCount();
-    m_ui->tableEntries->insertRow(row);
-    m_ui->tableEntries->setItem(row, 0, new QTableWidgetItem());
-    m_ui->tableEntries->setItem(row, 1, new QTableWidgetItem());
-}
-
-void ProjectEditor::ensureTrailingEmptyRow()
-{
-    if (m_ui->tableEntries->rowCount() == 0) {
-        appendEmptyRow();
-        return;
-    }
-
-    const int lastRow = m_ui->tableEntries->rowCount() - 1;
-    if (rowHasContent(m_ui->tableEntries, lastRow)) {
-        appendEmptyRow();
-    }
-}
-
-QList<QPair<QString, QString>> ProjectEditor::collectEntries() const
-{
-    QList<QPair<QString, QString>> entries;
-    QTableWidget *table = m_ui->tableEntries;
-
-    for (int row = 0; row < table->rowCount(); ++row) {
-        const QTableWidgetItem *libItem = table->item(row, 0);
-        const QTableWidgetItem *pathItem = table->item(row, 1);
-        const QString libName = libItem ? libItem->text().trimmed() : QString();
-        const QString path = pathItem ? pathItem->text().trimmed() : QString();
-
-        if (libName.isEmpty() && path.isEmpty()) {
-            continue;
-        }
-
-        if (libName.isEmpty() || path.isEmpty()) {
-            continue;
-        }
-
-        entries.append(qMakePair(libName, path));
-    }
-
-    return entries;
-}
-
-void ProjectEditor::setDocumentModified(bool modified)
-{
-    m_modified = modified;
-    updateWindowTitle();
-}
-
-void ProjectEditor::updateWindowTitle()
-{
-    QString title = tr("Project Editor");
+    QVector<LibraryEntry> libraries;
     if (!m_filePath.isEmpty()) {
-        title += QStringLiteral(": %1").arg(m_filePath);
+        LibFileParser parser;
+        if (parser.parseFile(m_filePath)) {
+            for (const LibDefinition &def : parser.data().definitions) {
+                const QString libName = def.name.trimmed();
+                const QString path = def.path.trimmed();
+                if (libName.isEmpty() || path.isEmpty()) {
+                    continue;
+                }
+
+                int index = -1;
+                for (int i = 0; i < libraries.size(); ++i) {
+                    if (libraries.at(i).name == libName) {
+                        index = i;
+                        break;
+                    }
+                }
+                if (index < 0) {
+                    LibraryEntry entry;
+                    entry.name = libName;
+                    libraries.append(entry);
+                    index = libraries.size() - 1;
+                }
+                libraries[index].paths.append(path);
+            }
+        }
     }
-    if (m_modified) {
-        title += QStringLiteral(" *");
+
+    setLibraries(libraries);
+    m_modified = false;
+    if (!m_filePath.isEmpty()) {
+        m_ui->labelTitle->setText(tr("Project Editor — %1").arg(QFileInfo(m_filePath).fileName()));
     }
-    setWindowTitle(title);
+    else {
+        m_ui->labelTitle->setText(tr("Project Editor"));
+    }
 }
 
-QString ProjectEditor::projectFileFilter() const
-{
-    return tr("LibMan project (*.projects *.lib);;All files (*)");
-}
-
-bool ProjectEditor::saveToFile(const QString &filePath)
-{
-    if (!m_mainWindow || filePath.isEmpty()) {
-        return false;
-    }
-
-    const QList<QPair<QString, QString>> entries = collectEntries();
-    m_mainWindow->m_ignoreProjectFileChange = true;
-    const bool saved = m_mainWindow->saveProjectEntriesToFile(filePath, entries);
-    if (saved) {
-        QTimer::singleShot(100, m_mainWindow, [mw = m_mainWindow]() {
-            mw->m_ignoreProjectFileChange = false;
-        });
-    } else {
-        m_mainWindow->m_ignoreProjectFileChange = false;
-    }
-    if (!saved) {
-        return false;
-    }
-
-    m_filePath = QFileInfo(filePath).absoluteFilePath();
-    m_mainWindow->loadProjectFile(m_filePath);
-    setDocumentModified(false);
-    return true;
-}
-
-bool ProjectEditor::confirmDiscardChanges()
+bool ProjectEditor::confirmHide()
 {
     if (!m_modified) {
         return true;
@@ -199,215 +127,371 @@ bool ProjectEditor::confirmDiscardChanges()
         QMessageBox::Save);
 
     if (answer == QMessageBox::Save) {
-        on_actionSave_triggered();
+        on_btnSave_clicked();
         return !m_modified;
     }
     if (answer == QMessageBox::Discard) {
+        m_modified = false;
         return true;
     }
     return false;
 }
 
-void ProjectEditor::on_actionSave_triggered()
+void ProjectEditor::setLibraries(const QVector<LibraryEntry> &libraries)
+{
+    m_loading = true;
+    m_currentLibrary = -1;
+    m_libraries = libraries;
+    m_ui->libraryTree->clear();
+
+    for (int i = 0; i < m_libraries.size(); ++i) {
+        auto *item = new QTreeWidgetItem(m_ui->libraryTree);
+        item->setData(0, Qt::UserRole, i);
+        refreshLibraryLabel(i);
+    }
+
+    m_loading = false;
+    if (m_ui->libraryTree->topLevelItemCount() > 0) {
+        m_ui->libraryTree->setCurrentItem(m_ui->libraryTree->topLevelItem(0));
+    }
+    else {
+        showLibrary(-1);
+    }
+}
+
+void ProjectEditor::flushCurrentPaths()
+{
+    if (m_currentLibrary < 0 || m_currentLibrary >= m_libraries.size() || !m_paths) {
+        return;
+    }
+
+    QStringList paths;
+    const QList<QtProperty *> properties = m_paths->subProperties();
+    for (QtProperty *property : properties) {
+        const QString path = m_manager->value(property).toString().trimmed();
+        if (!path.isEmpty()) {
+            paths.append(path);
+        }
+    }
+    m_libraries[m_currentLibrary].paths = paths;
+}
+
+void ProjectEditor::showLibrary(int index)
+{
+    m_loading = true;
+    const QList<QtProperty *> existing = m_paths->subProperties();
+    for (QtProperty *property : existing) {
+        m_paths->removeSubProperty(property);
+        delete property;
+    }
+
+    m_currentLibrary = index;
+    if (index >= 0 && index < m_libraries.size()) {
+        m_paths->setPropertyName(m_libraries.at(index).name);
+        for (const QString &path : m_libraries.at(index).paths) {
+            addPathProperty(path);
+        }
+    }
+    else {
+        m_paths->setPropertyName(tr("Paths"));
+    }
+
+    const QList<QtBrowserItem *> top = m_browser->topLevelItems();
+    for (QtBrowserItem *item : top) {
+        m_browser->setExpanded(item, true);
+    }
+    fitNameColumn();
+    m_loading = false;
+}
+
+void ProjectEditor::fitNameColumn()
+{
+    QTreeWidget *tree = m_browser ? m_browser->findChild<QTreeWidget *>() : nullptr;
+    if (!tree) {
+        return;
+    }
+
+    QFontMetrics metrics(tree->font());
+    int textWidth = metrics.horizontalAdvance(tr("Paths"));
+    for (const LibraryEntry &library : m_libraries) {
+        textWidth = qMax(textWidth, metrics.horizontalAdvance(library.name));
+    }
+
+    const int extra = tree->indentation()
+        + tree->style()->pixelMetric(QStyle::PM_FocusFrameHMargin) * 2
+        + 8;
+    tree->header()->resizeSection(0, textWidth + extra);
+}
+
+void ProjectEditor::refreshLibraryLabel(int index)
+{
+    if (index < 0 || index >= m_libraries.size()) {
+        return;
+    }
+
+    int missing = 0;
+    for (const QString &path : m_libraries.at(index).paths) {
+        if (!pathExists(path)) {
+            ++missing;
+        }
+    }
+
+    QString label = m_libraries.at(index).name;
+    if (missing > 0) {
+        label += tr(" (%1 missing)").arg(missing);
+    }
+
+    for (int row = 0; row < m_ui->libraryTree->topLevelItemCount(); ++row) {
+        QTreeWidgetItem *item = m_ui->libraryTree->topLevelItem(row);
+        if (item && item->data(0, Qt::UserRole).toInt() == index) {
+            item->setText(0, label);
+            item->setForeground(0, missing > 0 ? QBrush(Qt::red) : QBrush());
+            break;
+        }
+    }
+}
+
+QtVariantProperty *ProjectEditor::addPathProperty(const QString &path)
+{
+    const bool wildcard = libdefine::isWildcardDefinePath(path);
+    QtVariantProperty *item = m_manager->addProperty(VariantManager::filePathTypeId(), pathLabel(path));
+    item->setWhatsThis(wildcard ? QStringLiteral("folder") : QStringLiteral("file"));
+    item->setAttribute(QStringLiteral("filter"), viewFileFilter());
+    item->setValue(QDir::toNativeSeparators(path));
+    item->setToolTip(pathExists(path) ? tr("Path exists") : tr("Path is in the project file but was not loaded"));
+    item->setStatusTip(wildcard ? QStringLiteral("wildcard") : QString());
+    m_paths->addSubProperty(item);
+    return item;
+}
+
+QString ProjectEditor::pathLabel(const QString &path) const
+{
+    QString label = QFileInfo(path).fileName();
+    if (label.isEmpty()) {
+        label = tr("Path");
+    }
+    if (!pathExists(path)) {
+        label += tr(" (missing)");
+    }
+    return label;
+}
+
+bool ProjectEditor::pathExists(const QString &path) const
+{
+    const QString trimmed = path.trimmed();
+    if (trimmed.isEmpty()) {
+        return false;
+    }
+
+    if (libdefine::isWildcardDefinePath(trimmed)) {
+        if (m_filePath.isEmpty()) {
+            return false;
+        }
+        return !libdefine::wildcardScanRoot(QFileInfo(m_filePath).absolutePath(), trimmed).isEmpty();
+    }
+
+    return QFileInfo(trimmed).exists();
+}
+
+void ProjectEditor::refreshPathLabel(QtProperty *property)
+{
+    if (!property || m_manager->propertyType(property) != VariantManager::filePathTypeId()) {
+        return;
+    }
+
+    const QString path = m_manager->value(property).toString();
+    const QString label = pathLabel(path);
+    if (property->propertyName() != label) {
+        property->setPropertyName(label);
+    }
+    property->setToolTip(pathExists(path)
+                             ? tr("Path exists")
+                             : tr("Path is in the project file but was not loaded"));
+}
+
+QList<QPair<QString, QString>> ProjectEditor::collectEntries() const
+{
+    QList<QPair<QString, QString>> entries;
+    for (const LibraryEntry &library : m_libraries) {
+        for (const QString &path : library.paths) {
+            if (library.name.trimmed().isEmpty() || path.trimmed().isEmpty()) {
+                continue;
+            }
+            entries.append(qMakePair(library.name.trimmed(), QDir::toNativeSeparators(path.trimmed())));
+        }
+    }
+    return entries;
+}
+
+QString ProjectEditor::viewFileFilter() const
+{
+    return tr("Library files (*.room *.sch *.sym *.gds *.oas *.lstr);;All files (*)");
+}
+
+bool ProjectEditor::saveToFile(const QString &filePath)
+{
+    if (!m_mainWindow || filePath.isEmpty()) {
+        return false;
+    }
+
+    flushCurrentPaths();
+    const QList<QPair<QString, QString>> entries = collectEntries();
+    m_mainWindow->m_ignoreProjectFileChange = true;
+    const bool saved = m_mainWindow->saveProjectEntriesToFile(filePath, entries, true);
+    if (saved) {
+        QTimer::singleShot(100, m_mainWindow, [mw = m_mainWindow]() {
+            mw->m_ignoreProjectFileChange = false;
+        });
+    }
+    else {
+        m_mainWindow->m_ignoreProjectFileChange = false;
+        return false;
+    }
+
+    m_filePath = QFileInfo(filePath).absoluteFilePath();
+    m_mainWindow->loadProjectFile(m_filePath);
+    m_modified = false;
+    reloadFromDisk();
+    return true;
+}
+
+void ProjectEditor::on_btnAddLibrary_clicked()
+{
+    bool ok = false;
+    const QString name = QInputDialog::getText(this,
+                                                tr("Add Library"),
+                                                tr("Library name:"),
+                                                QLineEdit::Normal,
+                                                QString(),
+                                                &ok).trimmed();
+    if (!ok || name.isEmpty()) {
+        return;
+    }
+
+    flushCurrentPaths();
+    LibraryEntry entry;
+    entry.name = name;
+    m_libraries.append(entry);
+    const int index = m_libraries.size() - 1;
+
+    auto *item = new QTreeWidgetItem(m_ui->libraryTree);
+    item->setData(0, Qt::UserRole, index);
+    refreshLibraryLabel(index);
+    m_ui->libraryTree->setCurrentItem(item);
+    m_modified = true;
+}
+
+void ProjectEditor::on_btnRemoveLibrary_clicked()
+{
+    QTreeWidgetItem *item = m_ui->libraryTree->currentItem();
+    if (!item) {
+        return;
+    }
+
+    const int index = item->data(0, Qt::UserRole).toInt();
+    if (index < 0 || index >= m_libraries.size()) {
+        return;
+    }
+
+    m_currentLibrary = -1;
+    m_libraries.removeAt(index);
+    setLibraries(m_libraries);
+    m_modified = true;
+}
+
+void ProjectEditor::on_btnAddPath_clicked()
+{
+    if (m_currentLibrary < 0) {
+        QMessageBox::information(this, tr("Project Editor"), tr("Select a library first."));
+        return;
+    }
+
+    addPathProperty(QString());
+    const QList<QtBrowserItem *> top = m_browser->topLevelItems();
+    for (QtBrowserItem *item : top) {
+        m_browser->setExpanded(item, true);
+    }
+    m_modified = true;
+}
+
+void ProjectEditor::on_btnRemovePath_clicked()
+{
+    QtBrowserItem *current = m_browser->currentItem();
+    if (!current) {
+        return;
+    }
+
+    QtProperty *property = current->property();
+    if (!property || property == m_paths) {
+        return;
+    }
+    if (m_manager->propertyType(property) != VariantManager::filePathTypeId()) {
+        return;
+    }
+
+    m_paths->removeSubProperty(property);
+    delete property;
+    flushCurrentPaths();
+    refreshLibraryLabel(m_currentLibrary);
+    m_modified = true;
+}
+
+void ProjectEditor::on_btnClose_clicked()
+{
+    if (!confirmHide()) {
+        return;
+    }
+    hide();
+}
+
+void ProjectEditor::on_btnSave_clicked()
 {
     if (m_filePath.isEmpty()) {
-        on_actionSaveAs_triggered();
+        const QString initialDir = m_mainWindow ? m_mainWindow->getCurrentProjectDirectory() : QString();
+        const QString filePath = QFileDialog::getSaveFileName(
+            this,
+            tr("Save project file"),
+            initialDir,
+            tr("LibMan project (*.projects *.lib);;All files (*)"));
+        if (filePath.isEmpty()) {
+            return;
+        }
+        saveToFile(filePath);
         return;
     }
 
     saveToFile(m_filePath);
 }
 
-void ProjectEditor::on_actionSaveAs_triggered()
+void ProjectEditor::onLibrarySelectionChanged()
 {
-    QString initialDir;
-    if (!m_filePath.isEmpty()) {
-        initialDir = QFileInfo(m_filePath).absolutePath();
-    }
-    else if (m_mainWindow) {
-        initialDir = m_mainWindow->getCurrentProjectDirectory();
-    }
-
-    const QString filePath = QFileDialog::getSaveFileName(
-        this,
-        tr("Save project file"),
-        initialDir,
-        projectFileFilter());
-
-    if (filePath.isEmpty()) {
+    if (m_loading) {
         return;
     }
 
-    saveToFile(filePath);
-}
-
-void ProjectEditor::on_actionClose_triggered()
-{
-    if (!confirmDiscardChanges()) {
-        return;
-    }
-    reject();
-}
-
-void ProjectEditor::closeEvent(QCloseEvent *event)
-{
-    if (!confirmDiscardChanges()) {
-        event->ignore();
-        return;
-    }
-    event->accept();
-}
-
-void ProjectEditor::on_tableEntries_customContextMenuRequested(const QPoint &pos)
-{
-    QTableWidget *table = m_ui->tableEntries;
-    const int row = table->rowAt(pos.y());
-
-    QMenu menu(this);
-    QAction *addAction = menu.addAction(tr("Add Library..."), this, &ProjectEditor::addLibraryRow);
-    addAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+I")));
-
-    QAction *deleteAction = menu.addAction(tr("Delete"), this, &ProjectEditor::deleteSelectedRows);
-    deleteAction->setShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+D")));
-
-    if (row >= 0) {
-        menu.addSeparator();
-        menu.addAction(tr("Browse path..."), [this, row]() { browsePathForRow(row); });
+    flushCurrentPaths();
+    if (m_currentLibrary >= 0) {
+        refreshLibraryLabel(m_currentLibrary);
     }
 
-    menu.exec(table->viewport()->mapToGlobal(pos));
-}
-
-void ProjectEditor::on_tableEntries_cellChanged(int row, int column)
-{
-    Q_UNUSED(column);
-
-    if (m_loadingTable || row < 0) {
+    QTreeWidgetItem *item = m_ui->libraryTree->currentItem();
+    if (!item) {
+        showLibrary(-1);
         return;
     }
 
-    ensureTrailingEmptyRow();
-    setDocumentModified(true);
+    showLibrary(item->data(0, Qt::UserRole).toInt());
 }
 
-void ProjectEditor::on_tableEntries_cellDoubleClicked(int row, int column)
+void ProjectEditor::onPathValueChanged(QtProperty *property, const QVariant &value)
 {
-    if (column == 1 && row >= 0) {
-        browsePathForRow(row);
-    }
-}
-
-void ProjectEditor::addLibraryRow()
-{
-    int row = m_ui->tableEntries->currentRow();
-    if (row < 0) {
-        row = m_ui->tableEntries->rowCount() - 1;
-    }
-    else {
-        ++row;
-    }
-
-    m_ui->tableEntries->insertRow(row);
-    m_ui->tableEntries->setItem(row, 0, new QTableWidgetItem());
-    m_ui->tableEntries->setItem(row, 1, new QTableWidgetItem());
-    m_ui->tableEntries->setCurrentCell(row, 0);
-    m_ui->tableEntries->editItem(m_ui->tableEntries->item(row, 0));
-    setDocumentModified(true);
-    ensureTrailingEmptyRow();
-}
-
-void ProjectEditor::deleteSelectedRows()
-{
-    const QList<QTableWidgetItem *> selected = m_ui->tableEntries->selectedItems();
-    if (selected.isEmpty()) {
+    Q_UNUSED(value);
+    if (m_loading) {
         return;
     }
 
-    QSet<int> rows;
-    for (QTableWidgetItem *item : selected) {
-        rows.insert(item->row());
-    }
-
-    QList<int> sortedRows = rows.values();
-    std::sort(sortedRows.begin(), sortedRows.end(), std::greater<int>());
-
-    for (int row : sortedRows) {
-        m_ui->tableEntries->removeRow(row);
-    }
-
-    if (m_ui->tableEntries->rowCount() == 0) {
-        appendEmptyRow();
-    }
-    else {
-        ensureTrailingEmptyRow();
-    }
-
-    setDocumentModified(true);
-}
-
-void ProjectEditor::browsePathForRow(int row)
-{
-    if (row < 0 || row >= m_ui->tableEntries->rowCount()) {
-        return;
-    }
-
-    QString initialDir;
-    if (!m_filePath.isEmpty()) {
-        initialDir = QFileInfo(m_filePath).absolutePath();
-    }
-    else if (m_mainWindow) {
-        initialDir = m_mainWindow->getCurrentProjectDirectory();
-    }
-
-    QTableWidgetItem *pathItem = m_ui->tableEntries->item(row, 1);
-    const QString currentPath = pathItem ? pathItem->text().trimmed() : QString();
-    if (!currentPath.isEmpty()) {
-        const QFileInfo currentFi(currentPath);
-        if (currentFi.isAbsolute() && currentFi.exists()) {
-            initialDir = currentFi.absolutePath();
-        }
-        else if (!m_filePath.isEmpty()) {
-            const QString resolved = QFileInfo(QFileInfo(m_filePath).absoluteDir(), currentPath).absolutePath();
-            if (QFileInfo(resolved).exists()) {
-                initialDir = resolved;
-            }
-        }
-    }
-
-    const QString chosen = QFileDialog::getOpenFileName(
-        this,
-        tr("Select library view file"),
-        initialDir,
-        tr("All files (*)"));
-
-    if (chosen.isEmpty()) {
-        return;
-    }
-
-    QTableWidgetItem *libItem = m_ui->tableEntries->item(row, 0);
-    if (!libItem || libItem->text().trimmed().isEmpty()) {
-        for (int r = row - 1; r >= 0; --r) {
-            const QTableWidgetItem *prevLib = m_ui->tableEntries->item(r, 0);
-            if (!prevLib || prevLib->text().trimmed().isEmpty()) {
-                continue;
-            }
-            if (!libItem) {
-                libItem = new QTableWidgetItem();
-                m_ui->tableEntries->setItem(row, 0, libItem);
-            }
-            libItem->setText(prevLib->text());
-            break;
-        }
-    }
-
-    const QString storedPath =
-        QDir::toNativeSeparators(QFileInfo(chosen).absoluteFilePath());
-
-    if (!pathItem) {
-        pathItem = new QTableWidgetItem();
-        m_ui->tableEntries->setItem(row, 1, pathItem);
-    }
-    pathItem->setText(storedPath);
-    ensureTrailingEmptyRow();
-    setDocumentModified(true);
+    refreshPathLabel(property);
+    flushCurrentPaths();
+    refreshLibraryLabel(m_currentLibrary);
+    m_modified = true;
 }
