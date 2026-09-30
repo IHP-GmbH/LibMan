@@ -6,6 +6,8 @@
 
 LibMan — an easy way to manage your open source design flow
 
+Uses **[ROOM](https://github.com/IHP-GmbH/Room)** ([Reusable Open Object Model](https://ihp-gmbh.github.io/Room/)) for `.room` cell views, import/export converters, and optional layout/schematic bridges. Without Room access LibMan still builds with stubs (`LIBMAN_NO_ROOM`); see [ROOM integration](docs/setup/ROOM_INTEGRATION.md).
+
 ---
 
 ## 📚 **Development Documentation**
@@ -18,7 +20,7 @@ LibMan — an easy way to manage your open source design flow
 | **All Documentation** | [Documentation Index](docs/INDEX.md) |
 | **Setup Help** | [VS Code Setup](docs/setup/VSCODE_SETUP.md) |
 | **Project / libraries** | [Project Editor](docs/setup/PROJECT_EDITOR.md) · [Import](docs/setup/IMPORT.md) |
-| **Layout / ROOM** | [KLayout](docs/setup/KLAYOUT_INTEGRATION.md) · [CORE](docs/setup/ROOM_INTEGRATION.md) |
+| **Layout / ROOM** | [KLayout](docs/setup/KLAYOUT_INTEGRATION.md) · [ROOM](docs/setup/ROOM_INTEGRATION.md) · [API docs](https://ihp-gmbh.github.io/Room/) |
 | **Schematic (WSL)** | [Xschem integration](docs/setup/XSCHEM_INTEGRATION.md) |
 | **Troubleshooting** | [Common Issues](docs/reference/TROUBLESHOOTING.md) |
 | **Quick Reference** | [Shortcuts & Commands](docs/reference/QUICK_REFERENCE.md) |

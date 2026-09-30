@@ -6,6 +6,8 @@
 
 Welcome! This is your central hub for all LibMan documentation. Use the sections below to find what you need.
 
+LibMan integrates **[ROOM](https://github.com/IHP-GmbH/Room)** for cell views and converters — see [ROOM integration](setup/ROOM_INTEGRATION.md) and the [ROOM API docs](https://ihp-gmbh.github.io/Room/).
+
 ---
 
 ## 🚀 Quick Links (What Do You Want to Do?)
@@ -41,7 +43,7 @@ Detailed setup and configuration information:
 
 1. **[VS Code Setup](setup/VSCODE_SETUP.md)** - Complete VS Code configuration guide
 2. **[Directory Structure](setup/DIRECTORY_STRUCTURE.md)** - Where everything is located
-3. **[ROOM integration](setup/ROOM_INTEGRATION.md)** - Automatic fetch/build of CommonDB
+3. **[ROOM integration](setup/ROOM_INTEGRATION.md)** - [ROOM](https://github.com/IHP-GmbH/Room) fetch/build ([API docs](https://ihp-gmbh.github.io/Room/))
 4. **[KLayout integration](setup/KLAYOUT_INTEGRATION.md)** - Layout views, server, root cell selection
 5. **[Project Editor](setup/PROJECT_EDITOR.md)** - Edit `define(library, path)` entries (`Ctrl+E`)
 6. **[Import](setup/IMPORT.md)** - Convert GDS, Xschem, Qucs, OAS into ROOM views (`File → Import...`)

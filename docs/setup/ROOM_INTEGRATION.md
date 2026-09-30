@@ -1,6 +1,6 @@
-# ROOM (CommonDB) integration
+# ROOM integration
 
-LibMan can optionally link [CORE](https://github.com/IHP-GmbH/Room). CommonDB is a **private** repository. At configure time LibMan probes GitHub API access to `IHP-GmbH/Room` (`curl` + `LIBMAN_CORE_GIT_TOKEN` / `GITHUB_TOKEN` if set). If the repo is reachable — ROOM is enabled; otherwise stub implementations are used (`LIBMAN_NO_ROOM`).
+LibMan links **[ROOM](https://github.com/IHP-GmbH/Room)** ([HTML API docs](https://ihp-gmbh.github.io/Room/)) for `.room` views and format converters. ROOM is a **public** repository (`IHP-GmbH/Room`). At configure time LibMan probes GitHub access to that repo; if reachable, ROOM is enabled, otherwise stubs are used (`LIBMAN_NO_ROOM`).
 
 ## Default behaviour
 
@@ -27,10 +27,11 @@ cmake --build build -j
 
 | Method | When |
 |--------|------|
-| `export LIBMAN_CORE_GIT_TOKEN=ghp_...` | PAT with `repo` read on `IHP-GmbH/Room` |
+| *(default)* | Public clone of `IHP-GmbH/Room` — no token required |
+| `export LIBMAN_CORE_GIT_TOKEN=ghp_...` | Optional PAT (rate limits / private forks) |
 | `export GITHUB_TOKEN=...` | Same (fallback env var) |
 | Clone to `.deps/Room` | Local checkout (no probe needed) |
-| `LIBMAN_ROOM_SOURCE_DIR=/path/to/CommonDB` | Side-by-side development tree |
+| `LIBMAN_ROOM_SOURCE_DIR=/path/to/Room` | Side-by-side development tree |
 
 After a successful probe, qmake builds fetch ROOM on `make room_fetch` (or automatically when the target exists in CI).
 
