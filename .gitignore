@@ -81,3 +81,8 @@ gcovr_verbose.txt
 coverage*.css
 coverage*.js
 coverage*.txt
+# --- EMTest local simulation dumps (keep models/views only) ---
+tests/data/EMTest/**/palace_model/
+tests/data/EMTest/**/__pycache__/
+tests/data/EMTest/**/emstudio_simulation.log
+tests/data/EMTest/**/*.msh
