@@ -207,6 +207,7 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     connect(m_coreLockRefreshTimer, &QTimer::timeout, this, [this]() {
         refreshCoreViewLockItems();
         syncCoreLockWatches();
+        maybeReloadCurrentCellViews();
     });
 
     m_coreLockPollTimer = new QTimer(this);
@@ -2018,6 +2019,13 @@ void MainWindow::loadViews(const QString &libName, const QString &groupName)
 
     m_ui->listViews->sortItems(0, Qt::AscendingOrder);
     syncCoreLockWatches();
+
+    const QString emPath = getViewPath(libName, groupName, QStringLiteral("emmodel"));
+    m_emModelWatchPath = emPath;
+    m_emModelWatchMtime = (!emPath.isEmpty() && QFileInfo::exists(emPath))
+            ? QFileInfo(emPath).lastModified()
+            : QDateTime();
+
     refreshSnapshot();
 }
 
@@ -2359,9 +2367,12 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
             }
         }
 
-        QString emstudio = m_properties->exists(QStringLiteral("EMSTUDIO"))
-            ? m_properties->get<QString>(QStringLiteral("EMSTUDIO")).trimmed()
-            : QString();
+        // Tool Manager maps view "emsetup" → EMStudio; nested items (nominal, …)
+        // keep viewName = emsetup so the same tool applies.
+        QString emstudio = getToolByView(QStringLiteral("emsetup"));
+        if(emstudio.isEmpty() && m_properties->exists(QStringLiteral("EMSTUDIO"))) {
+            emstudio = m_properties->get<QString>(QStringLiteral("EMSTUDIO")).trimmed();
+        }
         if(emstudio.isEmpty()) {
             emstudio = QStandardPaths::findExecutable(QStringLiteral("EMStudio"));
 #ifdef Q_OS_WIN
@@ -2377,7 +2388,9 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
             return;
         }
         if(!modelPath.isEmpty()) {
-            info(tr("EM setup model: %1\nSet property EMSTUDIO to the EMStudio executable to open it.")
+            info(tr("EM setup model: %1\n"
+                    "Configure the EM tool for view 'emsetup' in Tool Manager "
+                    "(or set property EMSTUDIO) to open it.")
                      .arg(QDir::toNativeSeparators(modelPath)));
             return;
         }
@@ -2824,7 +2837,7 @@ void MainWindow::refreshSnapshot()
 
     const QList<QTreeWidgetItem *> selected = m_ui->listViews->selectedItems();
     if (selected.isEmpty()) {
-        m_snapshotView->clearScene(tr("Select a schematic, symbol, or layout"));
+        m_snapshotView->clearScene(tr("Select a schematic, symbol, layout, or emmodel"));
         return;
     }
 
@@ -2838,18 +2851,62 @@ void MainWindow::refreshSnapshot()
     const QString viewName = root->text(0).trimmed();
     const QString view = viewName.toLower();
     const bool isLayout = isLayoutRoomViewName(view);
+    const bool isEmModel = (view == QLatin1String("emmodel"));
+    const bool isEmSetup = isEmSetupViewName(view);
     if (view != QLatin1String("schematic") && view != QLatin1String("symbol")
         && view != QLatin1String("sch") && view != QLatin1String("sym")
-        && !isLayout) {
-        m_snapshotView->clearScene(tr("Snapshot is available for schematic, symbol, and layout"));
+        && !isLayout && !isEmModel && !isEmSetup) {
+        m_snapshotView->clearScene(
+            tr("Snapshot is available for schematic, symbol, layout, and emmodel (ROOM layout)"));
         return;
     }
 
     QString viewPath;
     if (root->data(0, RoleType).toInt() == ItemViewCore) {
         viewPath = root->data(0, RoleCorePath).toString();
+    } else if (root->data(0, RoleType).toInt() == ItemViewEmSetup) {
+        viewPath = root->data(0, RoleEmSetupPath).toString();
     } else {
         viewPath = getViewPath(getCurrentLibraryName(), getCurrentGroupName(), viewName);
+    }
+
+    const auto symbolResolver = [this](const QString &name) {
+        return symbolCoreForCell(name);
+    };
+
+    // emmodel: preview the frozen ROOM layout from topology.layoutPath (layout_room).
+    if (isEmModel) {
+        if (viewPath.isEmpty() || !QFileInfo::exists(viewPath)) {
+            m_snapshotView->clearScene(tr("No file for this view"));
+            return;
+        }
+        QString topCell;
+        const QString layoutRoom = layoutRoomPathFromEmModel(viewPath, &topCell);
+        if (layoutRoom.isEmpty()) {
+            m_snapshotView->clearScene(
+                tr("No ROOM layout in this emmodel\n"
+                   "(topology.layoutPath must be *.layout.room)"));
+            return;
+        }
+        if (topCell.isEmpty()) {
+            topCell = getCurrentGroupName();
+        }
+        m_snapshotView->setScene(
+            loadCoreSnapshot(layoutRoom, QStringLiteral("layout"), symbolResolver, topCell));
+        return;
+    }
+
+    // emsetup: show the cell's layout.room when present (same cell, ROOM only).
+    if (isEmSetup) {
+        const QString layoutPath =
+            getViewPath(getCurrentLibraryName(), getCurrentGroupName(), QStringLiteral("layout"));
+        if (layoutPath.isEmpty() || !QFileInfo::exists(layoutPath)) {
+            m_snapshotView->clearScene(tr("No ROOM layout view for this cell"));
+            return;
+        }
+        m_snapshotView->setScene(loadCoreSnapshot(
+            layoutPath, QStringLiteral("layout"), symbolResolver, getCurrentGroupName()));
+        return;
     }
 
     if (viewPath.isEmpty() || !QFileInfo::exists(viewPath)) {
@@ -2864,9 +2921,7 @@ void MainWindow::refreshSnapshot()
         focusCell = getCurrentGroupName();
     }
 
-    m_snapshotView->setScene(loadCoreSnapshot(viewPath, view, [this](const QString &name) {
-        return symbolCoreForCell(name);
-    }, focusCell));
+    m_snapshotView->setScene(loadCoreSnapshot(viewPath, view, symbolResolver, focusCell));
 }
 
 /*!*******************************************************************************************************************
@@ -3400,6 +3455,20 @@ void MainWindow::syncCoreLockWatches()
     QSet<QString> wantedDirs;
     QSet<QString> wantedFiles;
 
+    // Always watch the selected cell directory so externally created views
+    // (e.g. EMStudio Output → Create → *.emmodel.room) appear without Reload.
+    const QString curLib = getCurrentLibraryName();
+    const QString curCell = getCurrentGroupName();
+    if(!curLib.isEmpty() && !curCell.isEmpty()) {
+        const QString libRoot = getLibraryPath(curLib);
+        if(!libRoot.isEmpty()) {
+            const QString cellDir = QDir(libRoot).filePath(curCell);
+            if(QDir(cellDir).exists()) {
+                wantedDirs.insert(normalizedWatchPath(cellDir));
+            }
+        }
+    }
+
     for(int i = 0; i < m_ui->listViews->topLevelItemCount(); ++i) {
         QTreeWidgetItem *item = m_ui->listViews->topLevelItem(i);
         if(item->data(0, RoleType).toInt() != ItemViewCore) {
@@ -3490,6 +3559,99 @@ void MainWindow::scheduleCoreLockRefresh()
 {
     if(m_coreLockRefreshTimer != nullptr) {
         m_coreLockRefreshTimer->start();
+    }
+}
+
+void MainWindow::maybeReloadCurrentCellViews()
+{
+    if(m_reloadingCellViews || !m_ui || !m_ui->listViews) {
+        return;
+    }
+
+    const QString libName = getCurrentLibraryName();
+    const QString cellName = getCurrentGroupName();
+    if(libName.isEmpty() || cellName.isEmpty()) {
+        m_emModelWatchPath.clear();
+        m_emModelWatchMtime = QDateTime();
+        return;
+    }
+
+    QStringList diskViews = getCurrentViews(libName, cellName);
+    QStringList treeViews;
+    treeViews.reserve(m_ui->listViews->topLevelItemCount());
+    for(int i = 0; i < m_ui->listViews->topLevelItemCount(); ++i) {
+        if(QTreeWidgetItem *item = m_ui->listViews->topLevelItem(i)) {
+            treeViews << item->text(0);
+        }
+    }
+    diskViews.sort(Qt::CaseInsensitive);
+    treeViews.sort(Qt::CaseInsensitive);
+
+    const QString emPath = getViewPath(libName, cellName, QStringLiteral("emmodel"));
+    QDateTime emMtime;
+    if(!emPath.isEmpty() && QFileInfo::exists(emPath)) {
+        emMtime = QFileInfo(emPath).lastModified();
+    }
+
+    const bool emmodelOnDisk = diskViews.contains(QStringLiteral("emmodel"), Qt::CaseInsensitive);
+    const bool emmodelInTree = treeViews.contains(QStringLiteral("emmodel"), Qt::CaseInsensitive);
+    const bool emmodelContentChanged =
+        emmodelOnDisk
+        && !emPath.isEmpty()
+        && !m_emModelWatchPath.isEmpty()
+        && QFileInfo(m_emModelWatchPath).absoluteFilePath()
+               == QFileInfo(emPath).absoluteFilePath()
+        && m_emModelWatchMtime.isValid()
+        && emMtime.isValid()
+        && emMtime != m_emModelWatchMtime;
+
+    if(diskViews == treeViews) {
+        if(emmodelContentChanged) {
+            info(tr("Updated emmodel for cell '%1' in library '%2'.")
+                     .arg(cellName, libName),
+                 false);
+            refreshSnapshot();
+        }
+        m_emModelWatchPath = emPath;
+        m_emModelWatchMtime = emMtime;
+        return;
+    }
+
+    QString selectedTop;
+    if(QTreeWidgetItem *cur = m_ui->listViews->currentItem()) {
+        while(cur->parent()) {
+            cur = cur->parent();
+        }
+        selectedTop = cur->text(0);
+    }
+
+    m_reloadingCellViews = true;
+    loadViews(libName, cellName);
+    m_reloadingCellViews = false;
+
+    if(!emmodelInTree && emmodelOnDisk) {
+        info(tr("Updated emmodel for cell '%1' in library '%2'.")
+                 .arg(cellName, libName),
+             false);
+    } else if(emmodelInTree && !emmodelOnDisk) {
+        info(tr("Removed emmodel view for cell '%1' in library '%2'.")
+                 .arg(cellName, libName),
+             false);
+    } else if(emmodelContentChanged) {
+        info(tr("Updated emmodel for cell '%1' in library '%2'.")
+                 .arg(cellName, libName),
+             false);
+    }
+
+    m_emModelWatchPath = emPath;
+    m_emModelWatchMtime = emMtime;
+
+    if(!selectedTop.isEmpty()) {
+        const QList<QTreeWidgetItem *> matches =
+            m_ui->listViews->findItems(selectedTop, Qt::MatchExactly);
+        if(!matches.isEmpty()) {
+            m_ui->listViews->setCurrentItem(matches.first());
+        }
     }
 }
 

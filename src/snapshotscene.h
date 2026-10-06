@@ -38,4 +38,11 @@ SnapshotScene loadCoreSnapshot(const QString &corePath,
                                const SnapshotSymbolResolver &symbolPathForCell,
                                const QString &cellName = QString());
 
+/*!
+ * From an EmModel ROOM file, resolve topology.layoutPath when it points at a
+ * ROOM layout (*.layout.room / *.room). Relative paths are resolved beside the
+ * emmodel file. Empty if missing, GDS-only, or unreadable.
+ */
+QString layoutRoomPathFromEmModel(const QString &emmodelPath, QString *topCellOut = nullptr);
+
 #endif

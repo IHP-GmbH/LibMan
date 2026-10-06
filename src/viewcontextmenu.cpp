@@ -11,8 +11,11 @@
 #include <QTextStream>
 #include <QFileDialog>
 #include <QInputDialog>
+#include <QMessageBox>
+#include <QLineEdit>
 #include <QGuiApplication>
 #include <QListWidgetItem>
+#include <QRegularExpression>
 #include <QStandardPaths>
 
 #include "property.h"
@@ -131,6 +134,27 @@ void MainWindow::showViewMenu(const QPoint &pos)
     QList<QTreeWidgetItem *> items = m_ui->listViews->selectedItems();
     if(items.count()) {
         menu->addSeparator();
+
+        bool emSetupSelected = false;
+        for(QTreeWidgetItem *it : items) {
+            if(!it) {
+                continue;
+            }
+            const int t = it->data(0, RoleType).toInt();
+            if(t == ItemViewEmSetup || t == ItemEmSetupVariant
+               || isEmSetupViewName(it->text(0))) {
+                emSetupSelected = true;
+                break;
+            }
+        }
+        if(emSetupSelected) {
+            QAction *attachModel = new QAction(tr("&Attach Model..."), this);
+            attachModel->setIcon(QIcon(":/icons/emsetup.svg"));
+            attachModel->setStatusTip(
+                tr("Copy an EMStudio model into this emsetup (subview named after the model)."));
+            connect(attachModel, &QAction::triggered, this, &MainWindow::attachEmSetupModel);
+            menu->addAction(attachModel);
+        }
 
         QAction *copyView = new QAction(tr("&Copy"), this);
         copyView->setIcon(QIcon(":/icons/copy.svg"));
@@ -745,28 +769,49 @@ QString MainWindow::writeEmSetupModelTemplate(const QString &modelPath,
         return {};
     }
 
-    QString layoutLiteral = QStringLiteral("\"\"");
+    // Solvers see ./<cellOrLayoutStem>.gds beside this script (RunDir = model dir);
+    // layout_room is the ROOM source for EMStudio's Layout File field (converted on Run).
+    QString gdsStem = cellName.trimmed();
+    QString layoutRoomLine;
     if (!layoutPath.isEmpty()) {
         const QDir modelDir = QFileInfo(modelPath).absoluteDir();
         QString rel = QDir::fromNativeSeparators(modelDir.relativeFilePath(layoutPath));
         if (rel.isEmpty()) {
-            rel = QDir::fromNativeSeparators(layoutPath);
+            rel = QDir::fromNativeSeparators(QFileInfo(layoutPath).absoluteFilePath());
         }
-        layoutLiteral = QStringLiteral("os.path.normpath(os.path.join(os.path.dirname(__file__), %1))")
-                            .arg(QLatin1Char('\'') + rel.replace(QLatin1Char('\''), QStringLiteral("\\'"))
-                                 + QLatin1Char('\''));
+        rel.replace(QLatin1Char('\\'), QLatin1Char('/'));
+        rel.replace(QStringLiteral("\""), QStringLiteral("\\\""));
+        const QString lower = rel.toLower();
+        if (lower.endsWith(QLatin1String(".layout.room")) || lower.endsWith(QLatin1String(".room"))) {
+            layoutRoomLine = QStringLiteral("layout_room = \"%1\"\n").arg(rel);
+            QString base = QFileInfo(layoutPath).fileName();
+            if (base.endsWith(QLatin1String(".layout.room"), Qt::CaseInsensitive))
+                base.chop(QStringLiteral(".layout.room").size());
+            else if (base.endsWith(QLatin1String(".room"), Qt::CaseInsensitive))
+                base.chop(QStringLiteral(".room").size());
+            if (!base.isEmpty())
+                gdsStem = base;
+        } else if (lower.endsWith(QLatin1String(".gds")) || lower.endsWith(QLatin1String(".gdsii"))) {
+            gdsStem = QFileInfo(layoutPath).completeBaseName();
+        }
     }
+    if (gdsStem.isEmpty())
+        gdsStem = QFileInfo(modelPath).completeBaseName();
+    gdsStem.replace(QStringLiteral("\""), QStringLiteral("\\\""));
+    const QString gdsLiteral = QStringLiteral("\"./%1.gds\"").arg(gdsStem);
+
+    const QString cellEscaped = QString(cellName).replace(QStringLiteral("\""), QStringLiteral("\\\""));
 
     const QString body = QStringLiteral(
         "# EMStudio model created by LibMan (emsetup)\n"
-        "# Open this file in EMStudio. Layout File may be GDS or ROOM.\n"
-        "\n"
-        "import os\n"
+        "# gds_filename is the companion GDS next to this model (ROOM→GDS on Run).\n"
         "\n"
         "start_simulation = False\n"
         "\n"
-        "gds_filename = %1\n"
-        "cellname = \"%2\"\n"
+        "%1"
+        "gds_filename = %2\n"
+        "gds_cellname = \"%3\"\n"
+        "cellname = \"%3\"\n"
         "XML_filename = \"\"\n"
         "\n"
         "settings = {}\n"
@@ -780,11 +825,259 @@ QString MainWindow::writeEmSetupModelTemplate(const QString &modelPath,
         "settings['start_simulation'] = False\n"
         "\n"
         "# Fill ports / stackup / solver settings in EMStudio, then Run.\n")
-                             .arg(layoutLiteral, cellName);
+                             .arg(layoutRoomLine, gdsLiteral, cellEscaped);
 
     f.write(body.toUtf8());
     f.close();
     return QFileInfo(modelPath).absoluteFilePath();
+}
+
+QTreeWidgetItem *MainWindow::findEmSetupViewItem() const
+{
+    for(int i = 0; i < m_ui->listViews->topLevelItemCount(); ++i) {
+        QTreeWidgetItem *item = m_ui->listViews->topLevelItem(i);
+        if(!item) {
+            continue;
+        }
+        const int type = item->data(0, RoleType).toInt();
+        if(type == ItemViewEmSetup || isEmSetupViewName(item->text(0))) {
+            return item;
+        }
+    }
+    return nullptr;
+}
+
+void MainWindow::refreshEmSetupVariantItems(QTreeWidgetItem *emItem) const
+{
+    if(!emItem) {
+        return;
+    }
+    while(emItem->childCount() > 0) {
+        delete emItem->takeChild(0);
+    }
+    const QString emPath = emItem->data(0, RoleEmSetupPath).toString();
+    if(emPath.isEmpty() || !QDir(emPath).exists()) {
+        return;
+    }
+    const QFileInfoList variants =
+        QDir(emPath).entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    for(const QFileInfo &variant : variants) {
+        auto *child = new QTreeWidgetItem(emItem);
+        child->setText(0, variant.fileName());
+        child->setData(0, RoleType, ItemEmSetupVariant);
+        child->setData(0, RoleEmSetupPath, variant.absoluteFilePath());
+    }
+}
+
+bool MainWindow::copyEmSetupModelBundle(const QString &sourceModelPy,
+                                        const QString &destVariantDir,
+                                        QString *errorMsg) const
+{
+    const QFileInfo srcFi(sourceModelPy);
+    if(!srcFi.isFile()) {
+        if(errorMsg) {
+            *errorMsg = tr("Model file not found:\n%1").arg(sourceModelPy);
+        }
+        return false;
+    }
+
+    QDir dest(destVariantDir);
+    if(!dest.exists() && !QDir().mkpath(destVariantDir)) {
+        if(errorMsg) {
+            *errorMsg = tr("Cannot create directory:\n%1").arg(destVariantDir);
+        }
+        return false;
+    }
+
+    const QString destPy = dest.filePath(srcFi.fileName());
+    if(QFileInfo::exists(destPy) && !QFile::remove(destPy)) {
+        if(errorMsg) {
+            *errorMsg = tr("Cannot overwrite:\n%1").arg(destPy);
+        }
+        return false;
+    }
+    if(!QFile::copy(srcFi.absoluteFilePath(), destPy)) {
+        if(errorMsg) {
+            *errorMsg = tr("Failed to copy model:\n%1").arg(srcFi.absoluteFilePath());
+        }
+        return false;
+    }
+
+    // Convenience alias for double-click open (looks for model.py first).
+    if(srcFi.fileName().compare(QStringLiteral("model.py"), Qt::CaseInsensitive) != 0) {
+        const QString alias = dest.filePath(QStringLiteral("model.py"));
+        if(QFileInfo::exists(alias)) {
+            QFile::remove(alias);
+        }
+        QFile::copy(destPy, alias);
+    }
+
+    // Sibling layout / stackup / local helper modules (same folder as the model).
+    const QDir srcDir = srcFi.absoluteDir();
+    const QStringList patterns{
+        QStringLiteral("*.gds"),
+        QStringLiteral("*.gdsii"),
+        QStringLiteral("*.xml"),
+        QStringLiteral("*.layout.room"),
+        QStringLiteral("_*.py"),
+    };
+    for(const QString &pattern : patterns) {
+        const QFileInfoList files = srcDir.entryInfoList(QStringList() << pattern, QDir::Files);
+        for(const QFileInfo &fi : files) {
+            if(fi.absoluteFilePath() == srcFi.absoluteFilePath()) {
+                continue;
+            }
+            const QString target = dest.filePath(fi.fileName());
+            if(QFileInfo::exists(target)) {
+                QFile::remove(target);
+            }
+            if(!QFile::copy(fi.absoluteFilePath(), target)) {
+                if(errorMsg) {
+                    *errorMsg = tr("Failed to copy:\n%1").arg(fi.absoluteFilePath());
+                }
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+/*!*********************************************************************************************************************
+ * \brief Copies an existing EMStudio model into <cell>.emsetup/<modelName>/ and refreshes the View tree.
+ **********************************************************************************************************************/
+void MainWindow::attachEmSetupModel()
+{
+    const QString libName = getCurrentLibraryName();
+    if(libName.isEmpty()) {
+        return;
+    }
+    const QString libRoot = getLibraryPath(libName);
+    if(libRoot.isEmpty() || !QFileInfo(libRoot).exists()) {
+        return;
+    }
+    const QString groupName = getCurrentGroupName();
+    if(groupName.isEmpty()) {
+        return;
+    }
+
+    QString startDir;
+    if(m_properties->exists(QStringLiteral("EmSetupAttachDir"))) {
+        startDir = m_properties->get<QString>(QStringLiteral("EmSetupAttachDir"));
+    }
+    if(startDir.isEmpty() || !QDir(startDir).exists()) {
+        startDir = QDir::homePath();
+    }
+
+    const QString sourcePy = libmanAutomatedTestRun()
+        ? QString()
+        : QFileDialog::getOpenFileName(this,
+                                       tr("Attach EMStudio Model"),
+                                       startDir,
+                                       tr("Python models (*.py);;All files (*)"));
+    if(sourcePy.isEmpty()) {
+        return;
+    }
+
+    m_properties->set(QStringLiteral("EmSetupAttachDir"),
+                      QFileInfo(sourcePy).absolutePath());
+
+    QString variant = QFileInfo(sourcePy).completeBaseName().trimmed();
+    variant.replace(QRegularExpression(QStringLiteral("[\\\\/:*?\"<>|]")), QStringLiteral("_"));
+    variant = variant.trimmed();
+    if(variant.isEmpty()) {
+        error(tr("Cannot derive a subview name from the model file."), false);
+        return;
+    }
+
+    if(!libmanAutomatedTestRun()) {
+        bool ok = false;
+        variant = QInputDialog::getText(this,
+                                        tr("EM Setup Subview"),
+                                        tr("Subview name under emsetup:"),
+                                        QLineEdit::Normal,
+                                        variant,
+                                        &ok).trimmed();
+        if(!ok || variant.isEmpty()) {
+            return;
+        }
+        variant.replace(QRegularExpression(QStringLiteral("[\\\\/:*?\"<>|]")), QStringLiteral("_"));
+        if(variant.isEmpty() || variant == QLatin1String(".") || variant == QLatin1String("..")) {
+            error(tr("Invalid subview name."), false);
+            return;
+        }
+    }
+
+    const QString groupPath = QDir::toNativeSeparators(libRoot + "/" + groupName);
+    if(!QDir().mkpath(groupPath)) {
+        error(tr("Failed to create cell directory '%1'.").arg(groupPath), false);
+        return;
+    }
+
+    const QString emRoot = emSetupDirPath(groupPath, groupName);
+    if(!QDir().mkpath(emRoot)) {
+        error(tr("Failed to create emsetup directory '%1'.").arg(emRoot), false);
+        return;
+    }
+
+    const QString variantDir = QDir(emRoot).filePath(variant);
+    if(QDir(variantDir).exists()) {
+        if(libmanAutomatedTestRun()) {
+            QDir(variantDir).removeRecursively();
+        } else {
+            const auto reply = QMessageBox::question(
+                this,
+                tr("Attach Model"),
+                tr("Subview '%1' already exists. Replace its contents?").arg(variant),
+                QMessageBox::Yes | QMessageBox::No,
+                QMessageBox::No);
+            if(reply != QMessageBox::Yes) {
+                return;
+            }
+            if(!QDir(variantDir).removeRecursively()) {
+                error(tr("Failed to clear existing subview:\n%1").arg(variantDir), false);
+                return;
+            }
+        }
+    }
+
+    QString err;
+    if(!copyEmSetupModelBundle(sourcePy, variantDir, &err)) {
+        error(err.isEmpty() ? tr("Failed to copy model.") : err, false);
+        return;
+    }
+
+    // Register emsetup view if this is the first attach / create.
+    if(!findEmSetupViewItem()) {
+        registerCreatedView(libName, groupName, QStringLiteral("emsetup"),
+                            QDir::toNativeSeparators(emRoot));
+    } else {
+        const QString key = getLibraryKeyPrefix() + libName + "/" + groupName
+                            + QStringLiteral("/emsetup");
+        if(!m_properties->exists(key)) {
+            m_properties->set(key, QDir::toNativeSeparators(emRoot));
+        }
+        setStateChanged();
+        if(!m_currentProjFile.isEmpty() && !libmanAutomatedTestRun()) {
+            saveProjectFile(m_currentProjFile);
+        }
+    }
+
+    if(QTreeWidgetItem *emItem = findEmSetupViewItem()) {
+        emItem->setData(0, RoleEmSetupPath, QDir::toNativeSeparators(emRoot));
+        refreshEmSetupVariantItems(emItem);
+        emItem->setExpanded(true);
+        // Select the new / updated variant.
+        for(int i = 0; i < emItem->childCount(); ++i) {
+            QTreeWidgetItem *child = emItem->child(i);
+            if(child && child->text(0) == variant) {
+                m_ui->listViews->setCurrentItem(child);
+                break;
+            }
+        }
+    }
+
+    info(tr("Attached model '%1' as emsetup/%2")
+             .arg(QFileInfo(sourcePy).fileName(), variant));
 }
 
 /*!*********************************************************************************************************************
@@ -917,28 +1210,73 @@ void MainWindow::removeSelectedView()
         return;
     }
 
+    // emsetup/<variant> children vs top-level views (emsetup root is a directory).
+    QList<QTreeWidgetItem *> variantItems;
+    QStringList viewNames;
+    bool emSetupRootSelected = false;
+    for(QTreeWidgetItem *item : items) {
+        if(!item) {
+            continue;
+        }
+        const int type = item->data(0, RoleType).toInt();
+        QTreeWidgetItem *parent = item->parent();
+        const bool underEmSetup = parent
+                && (parent->data(0, RoleType).toInt() == ItemViewEmSetup
+                    || isEmSetupViewName(parent->text(0)));
+        if(type == ItemEmSetupVariant || underEmSetup) {
+            if(!emSetupRootSelected) {
+                variantItems << item;
+            }
+            continue;
+        }
+        if(parent) {
+            continue;
+        }
+        const QString viewName = item->text(0).trimmed();
+        if(viewName.isEmpty()) {
+            continue;
+        }
+        if(isEmSetupViewName(viewName) || type == ItemViewEmSetup) {
+            emSetupRootSelected = true;
+            variantItems.clear(); // whole emsetup folder goes away
+        }
+        if(!viewNames.contains(viewName)) {
+            viewNames << viewName;
+        }
+    }
+
+    if(viewNames.isEmpty() && variantItems.isEmpty()) {
+        return;
+    }
+
     bool deleteFiles = false;
     if(!promptDeleteChoice(&deleteFiles)) {
         return;
     }
 
-    QStringList viewNames;
-    for(QTreeWidgetItem *item : items) {
-        if(!item || item->parent()) {
+    bool changed = false;
+
+    // Subviews under emsetup (nominal, palace_cmim, …): delete the variant folder / tree row.
+    for(QTreeWidgetItem *item : variantItems) {
+        if(!item) {
             continue;
         }
-
-        const QString viewName = item->text(0).trimmed();
-        if(!viewName.isEmpty() && !viewNames.contains(viewName)) {
-            viewNames << viewName;
+        const QString path = item->data(0, RoleEmSetupPath).toString();
+        if(deleteFiles && !path.isEmpty() && QFileInfo::exists(path)) {
+            info(tr("Removing emsetup variant '%1'").arg(path));
+            const QFileInfo fi(path);
+            if(fi.isDir()) {
+                QDir(path).removeRecursively();
+            } else {
+                QFile::remove(path);
+            }
         }
+        if(QTreeWidgetItem *parent = item->parent()) {
+            delete parent->takeChild(parent->indexOfChild(item));
+        }
+        changed = true;
     }
 
-    if(viewNames.isEmpty()) {
-        return;
-    }
-
-    bool changed = false;
     for(const QString &viewName : viewNames) {
         const QString key = getLibraryKeyPrefix() + libName + "/" + groupName + "/" + viewName;
         const QString viewPath = getViewPath(libName, groupName, viewName);

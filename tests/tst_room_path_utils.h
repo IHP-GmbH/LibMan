@@ -11,6 +11,7 @@ private slots:
     void layoutCorePath_parsesCellAndView();
     void schematicCorePath_parsesCellAndView();
     void legacyCorePath_defaultsToLayout();
+    void emmodelCorePath_parsesCellAndView();
     void emSetupPath_parsesCellAndView();
 };
 

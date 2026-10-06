@@ -40,11 +40,10 @@
     {
       "label": "_cleanBrokenCoreUtils",
       "type": "shell",
-      "command": "powershell",
+      "command": "cmd",
       "args": [
-        "-NoProfile",
-        "-Command",
-        "Remove-Item -Force -ErrorAction SilentlyContinue build/_deps/commondb-build/libcore_utils.a; Remove-Item -Force -ErrorAction SilentlyContinue build/_deps/commondb-build/CMakeFiles/core_utils.dir/utils/xschem_io.cpp.obj, build/_deps/commondb-build/CMakeFiles/core_utils.dir/utils/qucs_importer.cpp.obj, build/_deps/commondb-build/CMakeFiles/core_utils.dir/utils/qucs_exporter.cpp.obj"
+        "/c",
+        "del /q /f build\\_deps\\commondb-build\\libcore_utils.a 2>nul & del /q /f build\\_deps\\commondb-build\\CMakeFiles\\core_utils.dir\\utils\\xschem_io.cpp.obj 2>nul & del /q /f build\\_deps\\commondb-build\\CMakeFiles\\core_utils.dir\\utils\\qucs_importer.cpp.obj 2>nul & del /q /f build\\_deps\\commondb-build\\CMakeFiles\\core_utils.dir\\utils\\qucs_exporter.cpp.obj 2>nul & exit /b 0"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -132,6 +131,7 @@
         "_cleanBrokenCoreUtils",
         "_configureLibMan"
       ],
+      "dependsOrder": "sequence",
       "group": {
         "kind": "build",
         "isDefault": true

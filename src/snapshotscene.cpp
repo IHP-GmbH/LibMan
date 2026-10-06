@@ -1,11 +1,13 @@
 #include "snapshotscene.h"
 
+#include <QDir>
 #include <QFileInfo>
 
 #include <cmath>
 
 #ifndef LIBMAN_NO_ROOM
 #include "database.h"
+#include "em_model_data.h"
 #include "enums.h"
 #endif
 
@@ -511,4 +513,85 @@ SnapshotScene loadCoreSnapshot(const QString &corePath,
     scene.message = QStringLiteral("Snapshot needs a ROOM build");
 #endif
     return scene;
+}
+
+namespace {
+
+bool looksLikeRoomLayoutPath(const QString &path)
+{
+    const QString name = QFileInfo(path).fileName().toLower();
+    return name.endsWith(QLatin1String(".layout.room"))
+        || (name.endsWith(QLatin1String(".room"))
+            && !name.endsWith(QLatin1String(".emmodel.room"))
+            && !name.endsWith(QLatin1String(".schematic.room"))
+            && !name.endsWith(QLatin1String(".symbol.room"))
+            && !name.endsWith(QLatin1String(".abstract.room")));
+}
+
+QString resolveBeside(const QString &baseFile, const QString &maybeRelative)
+{
+    const QString trimmed = maybeRelative.trimmed();
+    if (trimmed.isEmpty()) {
+        return {};
+    }
+    const QFileInfo fi(trimmed);
+    if (fi.isAbsolute()) {
+        return QFileInfo(trimmed).absoluteFilePath();
+    }
+    return QFileInfo(QDir(QFileInfo(baseFile).absolutePath()).filePath(trimmed)).absoluteFilePath();
+}
+
+} // namespace
+
+QString layoutRoomPathFromEmModel(const QString &emmodelPath, QString *topCellOut)
+{
+    if (topCellOut) {
+        topCellOut->clear();
+    }
+#ifndef LIBMAN_NO_ROOM
+    if (emmodelPath.isEmpty() || !QFileInfo::exists(emmodelPath)) {
+        return {};
+    }
+    try {
+        const room::Database db = room::Database::loadFromFile(emmodelPath.toStdString());
+        const room::EmModelViewData *model = nullptr;
+        for (const room::Cell &cell : db.lib().cells()) {
+            if (const room::CellContent *content = cell.findContent(room::ViewType::EmModel)) {
+                if (content->hasEmModelPayload()) {
+                    model = &content->emModel();
+                    break;
+                }
+            }
+        }
+        if (model == nullptr && db.fileView() == room::ViewType::EmModel) {
+            for (const room::Cell &cell : db.lib().cells()) {
+                if (const room::CellContent *content = cell.findContent(db.fileView())) {
+                    if (content->hasEmModelPayload()) {
+                        model = &content->emModel();
+                        break;
+                    }
+                }
+            }
+        }
+        if (model == nullptr) {
+            return {};
+        }
+
+        if (topCellOut && !model->topology.topCell.empty()) {
+            *topCellOut = QString::fromStdString(model->topology.topCell);
+        }
+
+        const QString layoutPath =
+            resolveBeside(emmodelPath, QString::fromStdString(model->topology.layoutPath));
+        if (!looksLikeRoomLayoutPath(layoutPath) || !QFileInfo::exists(layoutPath)) {
+            return {};
+        }
+        return QDir::toNativeSeparators(layoutPath);
+    } catch (...) {
+        return {};
+    }
+#else
+    Q_UNUSED(emmodelPath);
+    return {};
+#endif
 }

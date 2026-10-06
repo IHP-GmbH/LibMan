@@ -22,6 +22,9 @@ QString normalizedViewSuffix(const QString &suffix)
     if (lower == QStringLiteral("abs")) {
         return QStringLiteral("abstract");
     }
+    if (lower == QStringLiteral("em_model")) {
+        return QStringLiteral("emmodel");
+    }
     return lower;
 }
 
@@ -30,7 +33,8 @@ bool isKnownCoreView(const QString &viewName)
     return viewName == QStringLiteral("layout")
         || viewName == QStringLiteral("schematic")
         || viewName == QStringLiteral("symbol")
-        || viewName == QStringLiteral("abstract");
+        || viewName == QStringLiteral("abstract")
+        || viewName == QStringLiteral("emmodel");
 }
 
 } // namespace

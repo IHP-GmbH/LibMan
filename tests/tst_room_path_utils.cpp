@@ -29,6 +29,18 @@ void CorePathUtilsTest::legacyCorePath_defaultsToLayout()
     QCOMPARE(identity.viewName, QStringLiteral("layout"));
 }
 
+void CorePathUtilsTest::emmodelCorePath_parsesCellAndView()
+{
+    const RoomViewIdentity identity =
+        parseRoomViewIdentity(QStringLiteral("EMTest/cmim/cmim.emmodel.room"));
+    QVERIFY(identity.valid);
+    QCOMPARE(identity.cellName, QStringLiteral("cmim"));
+    QCOMPARE(identity.viewName, QStringLiteral("emmodel"));
+    QVERIFY(isRoomViewName(QStringLiteral("emmodel")));
+    QCOMPARE(roomViewFileName(QStringLiteral("cmim"), QStringLiteral("emmodel")),
+             QStringLiteral("cmim.emmodel.room"));
+}
+
 void CorePathUtilsTest::emSetupPath_parsesCellAndView()
 {
     QVERIFY(isEmSetupViewName(QStringLiteral("emsetup")));

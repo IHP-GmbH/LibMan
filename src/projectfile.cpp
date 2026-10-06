@@ -116,12 +116,13 @@ void MainWindow::applyViewTreeIcon(QTreeWidgetItem *viewItem, const QString &vie
         return;
     }
     const QString view = viewName.trimmed().toLower();
-    if (view == QStringLiteral("emsetup")) {
-        viewItem->setIcon(0, QIcon(QStringLiteral(":/icons/emsetup.svg")));
-    } else if (view == QStringLiteral("cdl") || view == QStringLiteral("spice")) {
+    // emsetup: icon only in Views → New menu, not in the View tree.
+    if (view == QStringLiteral("cdl") || view == QStringLiteral("spice")) {
         viewItem->setIcon(0, QIcon(QStringLiteral(":/icons/spice.svg")));
     } else if (view == QStringLiteral("schematic") || view == QStringLiteral("symbol")) {
         viewItem->setIcon(0, QIcon(QStringLiteral(":/icons/schematic.svg")));
+    } else if (view == QStringLiteral("emmodel")) {
+        viewItem->setIcon(0, QIcon(QStringLiteral(":/icons/emsetup.svg")));
     } else if (view == QStringLiteral("layout") || view == QStringLiteral("gds")
                || view == QStringLiteral("oas") || view == QStringLiteral("oasis")
                || view == QStringLiteral("lstr") || view == QStringLiteral("core")) {

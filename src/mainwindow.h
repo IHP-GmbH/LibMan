@@ -17,6 +17,7 @@ class QDropEvent;
 #include <QHash>
 #include <QSet>
 #include <QTimer>
+#include <QDateTime>
 #include <memory>
 
 class Properties;
@@ -203,6 +204,7 @@ private slots:
     void                                addNewCoreSchematicView();
     void                                addNewCoreSymbolView();
     void                                addNewEmSetupView();
+    void                                attachEmSetupModel();
 
     void                                addNewGroup();
     void                                addNewProject();
@@ -444,12 +446,19 @@ private:
                                                                   const QString &cellName,
                                                                   const QString &layoutPath,
                                                                   QString *errorMsg = nullptr) const;
+    QTreeWidgetItem *                   findEmSetupViewItem() const;
+    void                                refreshEmSetupVariantItems(QTreeWidgetItem *emItem) const;
+    bool                                copyEmSetupModelBundle(const QString &sourceModelPy,
+                                                               const QString &destVariantDir,
+                                                               QString *errorMsg = nullptr) const;
     void                                applyCoreViewLockPresentation(QTreeWidgetItem *viewItem,
                                                                       const QString &viewName,
                                                                       const QString &viewPath);
     void                                syncCoreLockWatches();
     void                                refreshCoreViewLockItems(const QString &changedPath = QString());
     void                                scheduleCoreLockRefresh();
+    /*! Reload View tree when disk views for the current cell differ (e.g. new .emmodel.room). */
+    void                                maybeReloadCurrentCellViews();
     QString                             coreLockInfoExtraLines(const QString &corePath) const;
     void                                createCoreView(const QString &viewName);
 
@@ -554,9 +563,12 @@ private:
     QHash<QTreeWidgetItem*, SpinnerState> m_spinnerStates;                 /*!< Spinner animation state per tree item. */
 
     QFileSystemWatcher                  *m_projFileWatcher = nullptr;      /*!< Watches current project file for external modifications (edit/replace/remove). */
-    QFileSystemWatcher                  *m_coreLockWatcher = nullptr;      /*!< Watches ROOM .lck sidecars for the current cell views. */
+    QFileSystemWatcher                  *m_coreLockWatcher = nullptr;      /*!< Watches cell dirs / ROOM .lck sidecars (locks + new views). */
     bool                                m_ignoreProjectFileChange = false; /*!< Suppresses watcher reaction during internal save operations. */
-    QSet<QString>                       m_coreLockWatchedDirs;             /*!< Directories watched for new .core.lck files. */
+    bool                                m_reloadingCellViews = false;      /*!< Guards loadViews against recursive watcher reloads. */
+    QString                             m_emModelWatchPath;                /*!< Last watched *.emmodel.room path for the current cell. */
+    QDateTime                           m_emModelWatchMtime;               /*!< Last known mtime of m_emModelWatchPath. */
+    QSet<QString>                       m_coreLockWatchedDirs;             /*!< Cell directories watched for .lck / new *.room views. */
     QSet<QString>                       m_coreLockWatchedFiles;            /*!< Existing .core.lck files watched for changes/removal. */
     QTimer                              *m_coreLockRefreshTimer = nullptr; /*!< Debounced refresh for Windows watcher races. */
     QTimer                              *m_coreLockPollTimer = nullptr;    /*!< Periodic stale-lock cleanup (WSL PID checks). */
