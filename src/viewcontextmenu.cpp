@@ -61,6 +61,7 @@ void MainWindow::showViewMenu(const QPoint &pos)
     menuViews->addAction(symbol);
 
     QAction *cdl = new QAction(tr("&CDL"), this);
+    cdl->setIcon(QIcon(":/icons/spice.svg"));
     cdl->setStatusTip(tr("Create new CDL view."));
     connect(cdl, &QAction::triggered, this, [this]() {
         if(libmanAutomatedTestRun()) {
@@ -103,6 +104,12 @@ void MainWindow::showViewMenu(const QPoint &pos)
     spice->setStatusTip(tr("Create new spice view."));
     connect(spice, &QAction::triggered, this, &MainWindow::addNewSpiceView);
     menuViews->addAction(spice);
+
+    QAction *emsetup = new QAction(tr("&EM Setup"), this);
+    emsetup->setIcon(QIcon(":/icons/emsetup.svg"));
+    emsetup->setStatusTip(tr("Create EM setup folder with an empty EMStudio model."));
+    connect(emsetup, &QAction::triggered, this, &MainWindow::addNewEmSetupView);
+    menuViews->addAction(emsetup);
 
     if(isViewCopied() && m_copyData.count()) {
         const QStringList views = getCurrentViews(libName, groupName);
@@ -372,21 +379,30 @@ bool MainWindow::registerCreatedView(const QString &libName,
     if(viewName == "gds") {
         viewItem->setData(0, RoleType, ItemViewGds);
         viewItem->setData(0, RoleGdsPath, viewPath);
+        applyViewTreeIcon(viewItem, viewName);
         viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
     }
     else if(viewName == "oas") {
         viewItem->setData(0, RoleType, ItemViewOas);
         viewItem->setData(0, RoleOasPath, viewPath);
+        applyViewTreeIcon(viewItem, viewName);
         viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
     }
     else if(viewName == "lstr") {
         viewItem->setData(0, RoleType, ItemViewLStream);
         viewItem->setData(0, RoleLStreamPath, viewPath);
+        applyViewTreeIcon(viewItem, viewName);
         viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+    }
+    else if(isEmSetupViewName(viewName)) {
+        configureEmSetupViewTreeItem(viewItem, viewPath);
     }
     else if(isRoomViewName(viewName)) {
         configureCoreViewTreeItem(viewItem, viewName, viewPath);
         applyCoreViewLockPresentation(viewItem, viewName, viewPath);
+    }
+    else {
+        applyViewTreeIcon(viewItem, viewName);
     }
 
     m_ui->listViews->sortItems(0, Qt::AscendingOrder);
@@ -644,6 +660,134 @@ void MainWindow::addNewCoreSymbolView()
 }
 
 /*!*********************************************************************************************************************
+ * \brief Creates <cell>.emsetup/nominal/ with an empty EMStudio model (uses layout view when present).
+ **********************************************************************************************************************/
+void MainWindow::addNewEmSetupView()
+{
+    const QString libName = getCurrentLibraryName();
+    if (libName.isEmpty()) {
+        return;
+    }
+
+    const QString libRoot = getLibraryPath(libName);
+    if (libRoot.isEmpty() || !QFileInfo(libRoot).exists()) {
+        return;
+    }
+
+    const QString groupName = getCurrentGroupName();
+    if (groupName.isEmpty()) {
+        return;
+    }
+
+    const QStringList views = getCurrentViews(libName, groupName);
+    if (views.contains(QStringLiteral("emsetup"))) {
+        info(tr("EM setup view already exists for cell '%1'.").arg(groupName));
+        return;
+    }
+
+    const QString groupPath = QDir::toNativeSeparators(libRoot + "/" + groupName);
+    QDir dir;
+    if (!dir.mkpath(groupPath)) {
+        error(QString("Failed to create cell directory '%1'.").arg(groupPath), false);
+        return;
+    }
+
+    const QString emRoot = emSetupDirPath(groupPath, groupName);
+    const QString variant = emSetupDefaultVariantName();
+    const QString variantDir = QDir(emRoot).filePath(variant);
+    if (!dir.mkpath(variantDir)) {
+        error(QString("Failed to create emsetup directory '%1'.").arg(variantDir), false);
+        return;
+    }
+
+    const QString modelPath = QDir(variantDir).filePath(QStringLiteral("model.py"));
+    if (QFileInfo::exists(modelPath)) {
+        error(tr("Model already exists:\n%1").arg(modelPath), false);
+        return;
+    }
+
+    const QString layoutPath = preferredLayoutPathForEmSetup(libName, groupName);
+    QString err;
+    if (writeEmSetupModelTemplate(modelPath, groupName, layoutPath, &err).isEmpty()) {
+        error(err.isEmpty() ? tr("Failed to write EM setup model.") : err, false);
+        return;
+    }
+
+    registerCreatedView(libName, groupName, QStringLiteral("emsetup"),
+                        QDir::toNativeSeparators(emRoot));
+    info(tr("Created EM setup: %1").arg(QDir::toNativeSeparators(emRoot)));
+}
+
+QString MainWindow::preferredLayoutPathForEmSetup(const QString &libName,
+                                                  const QString &cellName) const
+{
+    const QStringList prefer{QStringLiteral("layout"), QStringLiteral("gds"),
+                             QStringLiteral("oas"), QStringLiteral("lstr")};
+    for (const QString &view : prefer) {
+        const QString path = getViewPath(libName, cellName, view);
+        if (!path.isEmpty() && QFileInfo::exists(path)) {
+            return QFileInfo(path).absoluteFilePath();
+        }
+    }
+    return {};
+}
+
+QString MainWindow::writeEmSetupModelTemplate(const QString &modelPath,
+                                              const QString &cellName,
+                                              const QString &layoutPath,
+                                              QString *errorMsg) const
+{
+    QFile f(modelPath);
+    if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+        if (errorMsg) {
+            *errorMsg = tr("Cannot write model:\n%1").arg(modelPath);
+        }
+        return {};
+    }
+
+    QString layoutLiteral = QStringLiteral("\"\"");
+    if (!layoutPath.isEmpty()) {
+        const QDir modelDir = QFileInfo(modelPath).absoluteDir();
+        QString rel = QDir::fromNativeSeparators(modelDir.relativeFilePath(layoutPath));
+        if (rel.isEmpty()) {
+            rel = QDir::fromNativeSeparators(layoutPath);
+        }
+        layoutLiteral = QStringLiteral("os.path.normpath(os.path.join(os.path.dirname(__file__), %1))")
+                            .arg(QLatin1Char('\'') + rel.replace(QLatin1Char('\''), QStringLiteral("\\'"))
+                                 + QLatin1Char('\''));
+    }
+
+    const QString body = QStringLiteral(
+        "# EMStudio model created by LibMan (emsetup)\n"
+        "# Open this file in EMStudio. Layout File may be GDS or ROOM.\n"
+        "\n"
+        "import os\n"
+        "\n"
+        "start_simulation = False\n"
+        "\n"
+        "gds_filename = %1\n"
+        "cellname = \"%2\"\n"
+        "XML_filename = \"\"\n"
+        "\n"
+        "settings = {}\n"
+        "settings['unit'] = 1e-6\n"
+        "settings['margin'] = 50\n"
+        "settings['fstart'] = 0e9\n"
+        "settings['fstop'] = 100e9\n"
+        "settings['fstep'] = 2.5e9\n"
+        "settings['purpose'] = [0]\n"
+        "settings['preprocess_gds'] = False\n"
+        "settings['start_simulation'] = False\n"
+        "\n"
+        "# Fill ports / stackup / solver settings in EMStudio, then Run.\n")
+                             .arg(layoutLiteral, cellName);
+
+    f.write(body.toUtf8());
+    f.close();
+    return QFileInfo(modelPath).absoluteFilePath();
+}
+
+/*!*********************************************************************************************************************
  * \brief Creates new schematic view and adds it to the list widget.
  **********************************************************************************************************************/
 void MainWindow::addNewSchematicView()
@@ -799,9 +943,14 @@ void MainWindow::removeSelectedView()
         const QString key = getLibraryKeyPrefix() + libName + "/" + groupName + "/" + viewName;
         const QString viewPath = getViewPath(libName, groupName, viewName);
 
-        if(deleteFiles && QFileInfo(viewPath).exists()) {
+        if(deleteFiles && !viewPath.isEmpty() && QFileInfo(viewPath).exists()) {
             info(QString("Removing view '%1'").arg(viewPath));
-            QFile::remove(viewPath);
+            const QFileInfo fi(viewPath);
+            if(fi.isDir()) {
+                QDir(viewPath).removeRecursively();
+            } else {
+                QFile::remove(viewPath);
+            }
         }
 
         if(m_properties->exists(key)) {

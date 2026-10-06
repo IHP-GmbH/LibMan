@@ -155,6 +155,7 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     initRecentProjectMenu();
 
     loadSettings();
+    warmWslForXschemIfNeeded();
 
     setWindowIcon(QIcon(":logo"));
     initIcons();
@@ -461,6 +462,91 @@ void MainWindow::loadSettings()
     m_properties->set("PdfReader", pdfReader);
 
     settings.endGroup();
+}
+
+/*!*******************************************************************************************************************
+ * \brief Starts the WSL2 VM in the background when the schematic tool is open-xschem-wsl.
+ **********************************************************************************************************************/
+void MainWindow::warmWslForXschemIfNeeded()
+{
+#ifdef Q_OS_WIN
+    auto looksLikeXschemWsl = [](const QString &path) -> QString {
+        const QString trimmed = path.trimmed();
+        if(trimmed.isEmpty()) {
+            return {};
+        }
+        const QFileInfo fi(trimmed);
+        if(fi.fileName().compare(QStringLiteral("open-xschem-wsl.bat"), Qt::CaseInsensitive) == 0
+           || fi.fileName().compare(QStringLiteral("open-xschem-wsl.sh"), Qt::CaseInsensitive) == 0) {
+            return fi.absoluteFilePath();
+        }
+        const QString batInDir = QDir(trimmed).filePath(QStringLiteral("open-xschem-wsl.bat"));
+        if(QFileInfo::exists(batInDir)) {
+            return batInDir;
+        }
+        return {};
+    };
+
+    // Scan configured tool paths only — never call resolveViewToolPath() here,
+    // it pops the Choose Tool dialog when Xschem and Qucs-S are both present.
+    QStringList candidates;
+    const QStringList groups = m_properties->get<QString>(QStringLiteral("ToolList"))
+                                   .split(QLatin1Char(','), Qt::SkipEmptyParts);
+    for(const QString &groupName : groups) {
+        const QString group = groupName.trimmed();
+        if(group.isEmpty()) {
+            continue;
+        }
+        if(m_properties->exists(group)) {
+            candidates << m_properties->get<QString>(group);
+        }
+        for(const ViewToolEntry &entry : loadViewTools(m_properties, group)) {
+            candidates << entry.path;
+        }
+    }
+    if(m_properties->exists(QStringLiteral("Schematic"))) {
+        candidates << m_properties->get<QString>(QStringLiteral("Schematic"));
+    }
+    if(m_properties->exists(QStringLiteral("Editor"))) {
+        candidates << m_properties->get<QString>(QStringLiteral("Editor"));
+    }
+
+    QString wslBat;
+    for(const QString &candidate : candidates) {
+        wslBat = looksLikeXschemWsl(candidate);
+        if(!wslBat.isEmpty()) {
+            break;
+        }
+    }
+
+    if(wslBat.isEmpty()) {
+        return;
+    }
+
+    const QString workDir = QFileInfo(wslBat).absolutePath();
+    const QString wslScript = QDir(workDir).filePath(QStringLiteral("open-xschem-wsl.sh"));
+    if(!QFileInfo::exists(wslScript)) {
+        QProcess::startDetached(QStringLiteral("C:\\Windows\\System32\\wsl.exe"),
+                                QStringList() << QStringLiteral("-e") << QStringLiteral("true"));
+        return;
+    }
+
+    auto toWslPath = [](const QString &winPath) -> QString {
+        const QString abs = QDir::fromNativeSeparators(QFileInfo(winPath).absoluteFilePath());
+        if(abs.size() >= 2 && abs.at(1) == QLatin1Char(':')) {
+            return QStringLiteral("/mnt/") + abs.at(0).toLower() + abs.mid(2);
+        }
+        return abs;
+    };
+
+    QProcess::startDetached(QStringLiteral("C:\\Windows\\System32\\wsl.exe"),
+                            QStringList()
+                                << QStringLiteral("--cd")
+                                << toWslPath(workDir)
+                                << QStringLiteral("bash")
+                                << QStringLiteral("-lc")
+                                << QStringLiteral("./open-xschem-wsl.sh --warm"));
+#endif
 }
 
 /*!*******************************************************************************************************************
@@ -1242,11 +1328,43 @@ QString MainWindow::getViewPath(const QString &libName,
     }
 
     const QString key = getLibraryKeyPrefix() + libName + "/" + groupName + "/" + viewName;
-    if(!m_properties->exists(key)) {
+    if(m_properties->exists(key)) {
+        const QString stored = m_properties->get<QString>(key).trimmed();
+        if(!stored.isEmpty()) {
+            return stored;
+        }
+    }
+
+    const QString libRoot = getLibraryPath(libName);
+    if(libRoot.isEmpty()) {
+        return QString();
+    }
+    const QDir cellDir(QDir(libRoot).filePath(groupName));
+    if(!cellDir.exists()) {
         return QString();
     }
 
-    return m_properties->get<QString>(key).trimmed();
+    const QString view = viewName.trimmed().toLower();
+    if(isEmSetupViewName(view)) {
+        const QString emPath = emSetupDirPath(cellDir.absolutePath(), groupName);
+        if(QDir(emPath).exists()) {
+            return QDir::toNativeSeparators(emPath);
+        }
+        return QString();
+    }
+    if(isRoomViewName(view)) {
+        const QString roomPath = roomViewFilePath(cellDir.absolutePath(), groupName, view);
+        if(QFileInfo::exists(roomPath)) {
+            return QDir::toNativeSeparators(roomPath);
+        }
+        return QString();
+    }
+
+    const QString candidate = cellDir.filePath(groupName + QLatin1Char('.') + view);
+    if(QFileInfo::exists(candidate)) {
+        return QDir::toNativeSeparators(candidate);
+    }
+    return QString();
 }
 
 /*!*******************************************************************************************************************
@@ -1583,11 +1701,9 @@ QStringList MainWindow::getCurrentViews(const QString &libName, const QString &g
         }
     }
 
-    if(hasWildcardDefineForLibrary(libName)) {
-        for(const QString &viewName : discoverViewNamesFromDisk(libName, groupName)) {
-            if(!views.contains(viewName)) {
-                views << viewName;
-            }
+    for(const QString &viewName : discoverViewNamesFromDisk(libName, groupName)) {
+        if(!views.contains(viewName)) {
+            views << viewName;
         }
     }
 
@@ -1873,21 +1989,30 @@ void MainWindow::loadViews(const QString &libName, const QString &groupName)
         if(viewName == "gds") {
             viewItem->setData(0, RoleType, ItemViewGds);
             viewItem->setData(0, RoleGdsPath, viewPath);
+            applyViewTreeIcon(viewItem, viewName);
             viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         }
         else if(viewName == "lstr") {
             viewItem->setData(0, RoleType, ItemViewLStream);
             viewItem->setData(0, RoleLStreamPath, viewPath);
+            applyViewTreeIcon(viewItem, viewName);
             viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
         }
         else if(viewName == "oas" || viewName == "oasis") {
             viewItem->setData(0, RoleType, ItemViewOas);
             viewItem->setData(0, RoleOasPath, viewPath);
+            applyViewTreeIcon(viewItem, viewName);
             viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+        }
+        else if(isEmSetupViewName(viewName)) {
+            configureEmSetupViewTreeItem(viewItem, viewPath);
         }
         else if(isRoomViewName(viewName)) {
             configureCoreViewTreeItem(viewItem, viewName, viewPath);
             applyCoreViewLockPresentation(viewItem, viewName, viewPath);
+        }
+        else {
+            applyViewTreeIcon(viewItem, viewName);
         }
     }
 
@@ -2171,6 +2296,18 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
     // ------------------------------------------------------------
     // Normal views: cdl/spice/verilog/...
     // ------------------------------------------------------------
+    else if(type == ItemViewEmSetup || type == ItemEmSetupVariant
+            || isEmSetupViewName(item->text(0))) {
+        viewName = QStringLiteral("emsetup");
+        if(type == ItemEmSetupVariant) {
+            viewPath = item->data(0, RoleEmSetupPath).toString();
+        } else {
+            viewPath = item->data(0, RoleEmSetupPath).toString();
+            if(viewPath.isEmpty()) {
+                viewPath = getViewPath(getCurrentLibraryName(), getCurrentGroupName(), viewName);
+            }
+        }
+    }
     else {
         viewName = item->text(0);
         if(viewName.isEmpty()) {
@@ -2182,6 +2319,69 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
 
     if(viewPath.isEmpty() || !QFileInfo(viewPath).exists()) {
         error(QString("Failed to find view '%1'").arg(viewPath));
+        return;
+    }
+
+    // ------------------------------------------------------------
+    // emsetup: open model.py (EMStudio if configured) or the variant folder
+    // ------------------------------------------------------------
+    if(isEmSetupViewName(viewName) || type == ItemViewEmSetup || type == ItemEmSetupVariant) {
+        QString modelPath;
+        QFileInfo fi(viewPath);
+        if(fi.isFile() && fi.fileName().endsWith(QLatin1String(".py"), Qt::CaseInsensitive)) {
+            modelPath = fi.absoluteFilePath();
+        } else if(fi.isDir()) {
+            const QString direct = QDir(viewPath).filePath(QStringLiteral("model.py"));
+            if(QFileInfo::exists(direct)) {
+                modelPath = direct;
+            } else {
+                const QString nominal = QDir(viewPath).filePath(
+                    emSetupDefaultVariantName() + QStringLiteral("/model.py"));
+                if(QFileInfo::exists(nominal)) {
+                    modelPath = nominal;
+                } else {
+                    const QFileInfoList pys = QDir(viewPath).entryInfoList(
+                        QStringList() << QStringLiteral("*.py"), QDir::Files, QDir::Name);
+                    if(!pys.isEmpty()) {
+                        modelPath = pys.first().absoluteFilePath();
+                    } else {
+                        const QFileInfoList nested = QDir(viewPath).entryInfoList(
+                            QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+                        for(const QFileInfo &sub : nested) {
+                            const QString cand = QDir(sub.absoluteFilePath()).filePath(QStringLiteral("model.py"));
+                            if(QFileInfo::exists(cand)) {
+                                modelPath = cand;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        QString emstudio = m_properties->exists(QStringLiteral("EMSTUDIO"))
+            ? m_properties->get<QString>(QStringLiteral("EMSTUDIO")).trimmed()
+            : QString();
+        if(emstudio.isEmpty()) {
+            emstudio = QStandardPaths::findExecutable(QStringLiteral("EMStudio"));
+#ifdef Q_OS_WIN
+            if(emstudio.isEmpty()) {
+                emstudio = QStandardPaths::findExecutable(QStringLiteral("EMStudio.exe"));
+            }
+#endif
+        }
+        if(!modelPath.isEmpty() && !emstudio.isEmpty() && QFileInfo::exists(emstudio)) {
+            if(!QProcess::startDetached(emstudio, QStringList() << modelPath)) {
+                error(tr("Failed to start EMStudio:\n%1").arg(emstudio), false);
+            }
+            return;
+        }
+        if(!modelPath.isEmpty()) {
+            info(tr("EM setup model: %1\nSet property EMSTUDIO to the EMStudio executable to open it.")
+                     .arg(QDir::toNativeSeparators(modelPath)));
+            return;
+        }
+        info(tr("EM setup folder: %1").arg(QDir::toNativeSeparators(viewPath)));
         return;
     }
 

@@ -78,6 +78,9 @@ void NewView::on_btnCreate_clicked()
         else if(type == "spice") {
             m_mw->addNewSpiceView();
         }
+        else if(type == "emsetup") {
+            m_mw->addNewEmSetupView();
+        }
     }
 
     close();

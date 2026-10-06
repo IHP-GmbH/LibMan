@@ -81,7 +81,8 @@ class MainWindow : public QMainWindow
         RoleOasPath              = Qt::UserRole + 4,    /*!< Absolute path to OASIS file for "oas" view node. */
         RoleLStreamPath          = Qt::UserRole + 5,    /*!< Absolute path to LStream file for "lstream" view node. */
         RoleDocumentPath         = Qt::UserRole + 6,    /*!< Absolute path to document (pdf/txt/etc). */
-        RoleCorePath             = Qt::UserRole + 7     /*!< Absolute path to ROOM (.room) file. */
+        RoleCorePath             = Qt::UserRole + 7,    /*!< Absolute path to ROOM (.room) file. */
+        RoleEmSetupPath          = Qt::UserRole + 8     /*!< Absolute path to <cell>.emsetup/ folder. */
     };
 
     /*!
@@ -92,7 +93,9 @@ class MainWindow : public QMainWindow
         ItemCell                 = 2,                   /*!< Cell node in hierarchy (GDS/OASIS). */
         ItemViewOas              = 3,                   /*!< "oas" view root node. */
         ItemViewLStream          = 4,                   /*!< "lstr" view root node. */
-        ItemViewCore             = 5                    /*!< "core" view root node. */
+        ItemViewCore             = 5,                   /*!< "core" view root node. */
+        ItemViewEmSetup          = 6,                   /*!< "emsetup" folder view root. */
+        ItemEmSetupVariant       = 7                    /*!< Variant under emsetup (e.g. nominal). */
     };
 
 public:
@@ -199,6 +202,7 @@ private slots:
     void                                addNewCoreView();
     void                                addNewCoreSchematicView();
     void                                addNewCoreSymbolView();
+    void                                addNewEmSetupView();
 
     void                                addNewGroup();
     void                                addNewProject();
@@ -296,6 +300,7 @@ private slots:
 
 private:
     void                                loadSettings();
+    void                                warmWslForXschemIfNeeded();
 
     void                                info(const QString &msg, bool clear = true);
     void                                error(const QString &msg, bool clear = true);
@@ -430,6 +435,15 @@ private:
     void                                configureCoreViewTreeItem(QTreeWidgetItem *viewItem,
                                                                   const QString &viewName,
                                                                   const QString &viewPath) const;
+    void                                configureEmSetupViewTreeItem(QTreeWidgetItem *viewItem,
+                                                                     const QString &viewPath) const;
+    void                                applyViewTreeIcon(QTreeWidgetItem *viewItem, const QString &viewName) const;
+    QString                             preferredLayoutPathForEmSetup(const QString &libName,
+                                                                      const QString &cellName) const;
+    QString                             writeEmSetupModelTemplate(const QString &modelPath,
+                                                                  const QString &cellName,
+                                                                  const QString &layoutPath,
+                                                                  QString *errorMsg = nullptr) const;
     void                                applyCoreViewLockPresentation(QTreeWidgetItem *viewItem,
                                                                       const QString &viewName,
                                                                       const QString &viewPath);

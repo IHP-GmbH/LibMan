@@ -1,5 +1,7 @@
 #include <QMenu>
 #include <QFile>
+#include <QDir>
+#include <QIcon>
 #include <QScreen>
 #include <QDateTime>
 #include <QFileInfo>
@@ -17,6 +19,7 @@
 #include "property.h"
 #include "gds/gdsreader.h"
 #include "oas/oasReader.h"
+#include "room/room_path_utils.h"
 
 /*!*********************************************************************************************************************
  * \brief Displays menu for group (cell) widget.
@@ -326,6 +329,29 @@ void MainWindow::on_viewItemExpanded(QTreeWidgetItem *item)
     }
 
     const int type = item->data(0, RoleType).toInt();
+
+    // ------------------------------------------------------------
+    // emsetup root — list variant subdirectories
+    // ------------------------------------------------------------
+    if (type == ItemViewEmSetup || isEmSetupViewName(item->text(0))) {
+        if (item->childCount() > 0) {
+            return;
+        }
+        const QString emPath = item->data(0, RoleEmSetupPath).toString();
+        if (emPath.isEmpty() || !QDir(emPath).exists()) {
+            return;
+        }
+        const QFileInfoList variants =
+            QDir(emPath).entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+        for (const QFileInfo &variant : variants) {
+            auto *child = new QTreeWidgetItem(item);
+            child->setText(0, variant.fileName());
+            child->setData(0, RoleType, ItemEmSetupVariant);
+            child->setData(0, RoleEmSetupPath, variant.absoluteFilePath());
+            child->setIcon(0, QIcon(QStringLiteral(":/icons/emsetup.svg")));
+        }
+        return;
+    }
 
     // ------------------------------------------------------------
     // GDS root ("gds")

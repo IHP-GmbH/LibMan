@@ -1,6 +1,7 @@
 #include <QMenu>
 #include <QDir>
 #include <QFile>
+#include <QIcon>
 #include <QProcess>
 #include <QProcessEnvironment>
 #include <QVariant>
@@ -51,6 +52,13 @@ bool MainWindow::resolveCellViewFromPath(const QString &filePath,
         return false;
     }
 
+    const RoomViewIdentity emIdentity = parseEmSetupIdentity(filePath);
+    if (emIdentity.valid) {
+        *groupName = emIdentity.cellName;
+        *viewName = emIdentity.viewName;
+        return true;
+    }
+
     const RoomViewIdentity coreIdentity = parseRoomViewIdentity(filePath);
     if (coreIdentity.valid) {
         *groupName = coreIdentity.cellName;
@@ -84,8 +92,40 @@ void MainWindow::configureCoreViewTreeItem(QTreeWidgetItem *viewItem,
 
     viewItem->setData(0, RoleType, ItemViewCore);
     viewItem->setData(0, RoleCorePath, viewPath);
+    applyViewTreeIcon(viewItem, viewName);
     if (isLayoutRoomViewName(viewName)) {
         viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+    }
+}
+
+void MainWindow::configureEmSetupViewTreeItem(QTreeWidgetItem *viewItem,
+                                              const QString &viewPath) const
+{
+    if (!viewItem) {
+        return;
+    }
+    viewItem->setData(0, RoleType, ItemViewEmSetup);
+    viewItem->setData(0, RoleEmSetupPath, viewPath);
+    applyViewTreeIcon(viewItem, QStringLiteral("emsetup"));
+    viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+}
+
+void MainWindow::applyViewTreeIcon(QTreeWidgetItem *viewItem, const QString &viewName) const
+{
+    if (!viewItem) {
+        return;
+    }
+    const QString view = viewName.trimmed().toLower();
+    if (view == QStringLiteral("emsetup")) {
+        viewItem->setIcon(0, QIcon(QStringLiteral(":/icons/emsetup.svg")));
+    } else if (view == QStringLiteral("cdl") || view == QStringLiteral("spice")) {
+        viewItem->setIcon(0, QIcon(QStringLiteral(":/icons/spice.svg")));
+    } else if (view == QStringLiteral("schematic") || view == QStringLiteral("symbol")) {
+        viewItem->setIcon(0, QIcon(QStringLiteral(":/icons/schematic.svg")));
+    } else if (view == QStringLiteral("layout") || view == QStringLiteral("gds")
+               || view == QStringLiteral("oas") || view == QStringLiteral("oasis")
+               || view == QStringLiteral("lstr") || view == QStringLiteral("core")) {
+        viewItem->setIcon(0, QIcon(QStringLiteral(":/icons/layout.svg")));
     }
 }
 
@@ -234,6 +274,16 @@ void MainWindow::loadProjectFile(const QString &fileName)
         }
 
         if (fi.isDir()) {
+            QString groupName;
+            QString viewName;
+            if (resolveCellViewFromPath(fi.absoluteFilePath(), &groupName, &viewName)
+                && isEmSetupViewName(viewName)
+                && !groupName.isEmpty()) {
+                const QString key = getLibraryKeyPrefix() + libName + "/" + groupName + "/" + viewName;
+                m_properties->set(key, fi.absoluteFilePath());
+                loadedLibraries.insert(libName);
+                continue;
+            }
             setLibraryRootDirectory(libName, libPath);
             loadedLibraries.insert(libName);
             continue;
@@ -470,6 +520,29 @@ QStringList MainWindow::discoverViewNamesFromDisk(const QString &libraryName,
            && !viewName.isEmpty()
            && !views.contains(viewName)) {
             views << viewName;
+        }
+    }
+
+    const QFileInfoList emDirs = cellDir.entryInfoList(QStringList() << QStringLiteral("*.emsetup"),
+                                                       QDir::Dirs | QDir::NoDotAndDotDot,
+                                                       QDir::Name);
+    for (const QFileInfo &emDir : emDirs) {
+        QString groupName;
+        QString viewName;
+        if (resolveCellViewFromPath(emDir.absoluteFilePath(), &groupName, &viewName)
+            && groupName == cellName
+            && isEmSetupViewName(viewName)
+            && !views.contains(viewName)) {
+            views << viewName;
+        }
+    }
+
+    // Common layout suffixes beside ROOM (directory libraries).
+    for (const QString &suffix : {QStringLiteral("gds"), QStringLiteral("oas"), QStringLiteral("lstr"),
+                                  QStringLiteral("cdl"), QStringLiteral("spice")}) {
+        const QString candidate = cellDir.filePath(cellName + QLatin1Char('.') + suffix);
+        if (QFileInfo::exists(candidate) && !views.contains(suffix)) {
+            views << suffix;
         }
     }
 

@@ -80,6 +80,11 @@
            <string>spice</string>
           </property>
          </item>
+         <item>
+          <property name="text">
+           <string>emsetup</string>
+          </property>
+         </item>
         </widget>
        </item>
       </layout>

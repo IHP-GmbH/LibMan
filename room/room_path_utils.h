@@ -15,4 +15,12 @@ bool isLayoutRoomViewName(const QString &viewName);
 QString roomViewFileName(const QString &cellName, const QString &viewName);
 QString roomViewFilePath(const QString &directory, const QString &cellName, const QString &viewName);
 
+/*! EM setup folder view: <cell>/<cell>.emsetup/ (not a ROOM ViewType). */
+bool isEmSetupViewName(const QString &viewName);
+bool isEmSetupDirName(const QString &dirName);
+RoomViewIdentity parseEmSetupIdentity(const QString &dirPath);
+QString emSetupDirName(const QString &cellName);
+QString emSetupDirPath(const QString &cellDirectory, const QString &cellName);
+QString emSetupDefaultVariantName();
+
 #endif // ROOM_PATH_UTILS_H

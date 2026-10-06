@@ -89,3 +89,45 @@ QString roomViewFilePath(const QString &directory, const QString &cellName, cons
 {
     return QFileInfo(QDir(directory).filePath(roomViewFileName(cellName, viewName))).absoluteFilePath();
 }
+
+bool isEmSetupViewName(const QString &viewName)
+{
+    return viewName.trimmed().toLower() == QStringLiteral("emsetup");
+}
+
+bool isEmSetupDirName(const QString &dirName)
+{
+    return dirName.endsWith(QStringLiteral(".emsetup"), Qt::CaseInsensitive);
+}
+
+RoomViewIdentity parseEmSetupIdentity(const QString &dirPath)
+{
+    RoomViewIdentity identity;
+    const QString name = QFileInfo(dirPath).fileName();
+    if (!isEmSetupDirName(name)) {
+        return identity;
+    }
+    const QString stem = name.left(name.size() - QStringLiteral(".emsetup").size()).trimmed();
+    if (stem.isEmpty()) {
+        return identity;
+    }
+    identity.cellName = stem;
+    identity.viewName = QStringLiteral("emsetup");
+    identity.valid = true;
+    return identity;
+}
+
+QString emSetupDirName(const QString &cellName)
+{
+    return cellName.trimmed() + QStringLiteral(".emsetup");
+}
+
+QString emSetupDirPath(const QString &cellDirectory, const QString &cellName)
+{
+    return QFileInfo(QDir(cellDirectory).filePath(emSetupDirName(cellName))).absoluteFilePath();
+}
+
+QString emSetupDefaultVariantName()
+{
+    return QStringLiteral("nominal");
+}
