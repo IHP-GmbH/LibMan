@@ -305,6 +305,7 @@ private:
             const room::LayerPurpose purpose = layerPurpose(content, layerId);
             const QColor color = m_layout ? colorForLayoutLayer(content, layerId) : colorForPurpose(purpose);
             const bool isPin = purpose == room::LayerPurpose::Pin;
+            // Symbols (incl. EM lookalike): outline only, like Qucs/Xschem. Layout keeps fills.
             const bool fillArea = isPin || (m_layout && shape.type() != room::Shape::Type::Path
                                             && shape.type() != room::Shape::Type::Text
                                             && shape.type() != room::Shape::Type::Arc);
