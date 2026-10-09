@@ -86,3 +86,10 @@ tests/data/EMTest/**/palace_model/
 tests/data/EMTest/**/__pycache__/
 tests/data/EMTest/**/emstudio_simulation.log
 tests/data/EMTest/**/*.msh
+tests/data/EMTest/**/*.dat.ngspice
+tests/data/EMTest/**/*.dpl
+tests/data/EMTest/**/*.lck
+tests/data/EMTest/**/*_dump.sym
+
+# --- Local scratch ---
+ieee/
