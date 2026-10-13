@@ -27,23 +27,6 @@ QString viewNameForXschemSource(const QString &sourcePath)
     return QStringLiteral("schematic");
 }
 
-void emitConverterOutput(QByteArray &buffer, const CoreImportService::LogCallback &logCallback)
-{
-    if (!logCallback) {
-        return;
-    }
-
-    int newlineIndex = buffer.indexOf('\n');
-    while (newlineIndex >= 0) {
-        const QString line = QString::fromUtf8(buffer.left(newlineIndex)).trimmed();
-        buffer.remove(0, newlineIndex + 1);
-        if (!line.isEmpty()) {
-            logCallback(line);
-        }
-        newlineIndex = buffer.indexOf('\n');
-    }
-}
-
 } // namespace
 
 CoreImportService::CoreImportService(MainWindow *mainWindow)
@@ -241,11 +224,11 @@ CoreImportService::ImportItemResult CoreImportService::importOne(Format format,
     QString conversionError;
     switch (format) {
     case Format::Gds:
+        // Do not request a text dump: gds_to_room used to also mirror it to stdout,
+        // and ImportDialog would append ~10^5 lines and freeze the UI.
         arguments << QStringLiteral("--all-cells")
                   << QDir::toNativeSeparators(sourceInfo.absoluteFilePath())
-                  << QDir::toNativeSeparators(destinationPath)
-                  << QDir::toNativeSeparators(QDir::temp().filePath(
-                         QStringLiteral("libman_gds_%1.txt").arg(cellName)));
+                  << QDir::toNativeSeparators(destinationPath);
         break;
     case Format::Xschem:
     case Format::Qucs:
@@ -302,19 +285,47 @@ bool CoreImportService::runConverter(const QString &program,
     QElapsedTimer timer;
     timer.start();
     constexpr qint64 kTimeoutMs = 600000;
+    constexpr int kMaxLogLines = 200;
+    int loggedLines = 0;
+    bool logTruncated = false;
 
     auto drainOutput = [&]() {
         const QByteArray chunk = process.readAllStandardOutput();
-        if (!chunk.isEmpty()) {
-            capturedOutput += QString::fromUtf8(chunk);
-            outputBuffer += chunk;
-            emitConverterOutput(outputBuffer, logCallback);
+        if (chunk.isEmpty()) {
+            return;
+        }
+        capturedOutput += QString::fromUtf8(chunk);
+        if (!logCallback || loggedLines >= kMaxLogLines) {
+            if (logCallback && !logTruncated && loggedLines >= kMaxLogLines) {
+                logCallback(QStringLiteral("… converter log truncated (keeping first %1 lines).")
+                                .arg(kMaxLogLines));
+                logTruncated = true;
+            }
+            return;
+        }
+        outputBuffer += chunk;
+        // emitConverterOutput consumes complete lines; stop once the cap is hit.
+        int newlineIndex = outputBuffer.indexOf('\n');
+        while (newlineIndex >= 0 && loggedLines < kMaxLogLines) {
+            const QString line = QString::fromUtf8(outputBuffer.left(newlineIndex)).trimmed();
+            outputBuffer.remove(0, newlineIndex + 1);
+            if (!line.isEmpty()) {
+                logCallback(line);
+                ++loggedLines;
+            }
+            newlineIndex = outputBuffer.indexOf('\n');
+        }
+        if (loggedLines >= kMaxLogLines && !logTruncated) {
+            logCallback(QStringLiteral("… converter log truncated (keeping first %1 lines).")
+                            .arg(kMaxLogLines));
+            logTruncated = true;
+            outputBuffer.clear();
         }
     };
 
     while (!process.waitForFinished(100)) {
         drainOutput();
-        QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+        QCoreApplication::processEvents(QEventLoop::AllEvents);
 
         if (timer.elapsed() > kTimeoutMs) {
             process.kill();
@@ -326,7 +337,7 @@ bool CoreImportService::runConverter(const QString &program,
     }
 
     drainOutput();
-    if (!outputBuffer.trimmed().isEmpty() && logCallback) {
+    if (!outputBuffer.trimmed().isEmpty() && logCallback && loggedLines < kMaxLogLines) {
         logCallback(QString::fromUtf8(outputBuffer).trimmed());
     }
 
