@@ -182,6 +182,17 @@ sg13g2_stdcell/
       sg13g2_stdcell.sch
 ```
 
+## EM lookalike / emmodel netlisting
+
+Layout-lookalike cells (`em.lookalike=1` on `*.symbol.room`, published with `*.emmodel.room`)
+netlist like Qucs-S-roomdb LibComp:
+
+1. Xschem export stamps `format="@name @pinlist 0 @symname"` and `spice_stop=true` (pins + trailing gnd).
+2. `coreapi_export_cell` / `room_to_xschem` writes a sibling `cell.spice` via CommonDB S2Spice (`touchstone_to_spice`) from the Touchstone path in the emmodel.
+3. `integrations/room.tcl` prepends `.include` of those spice files into the batch netlist before Simulate.
+
+Instance line shape: `x1 <pin nets…> 0 <cellname>` — the trailing `0` is the S2Spice reference node.
+
 ## Troubleshooting
 
 | Symptom | What to check |
@@ -194,6 +205,7 @@ sg13g2_stdcell/
 | Blank schematic | ROOM file empty or export failed — check Messages in LibMan / Xschem stderr in WSL terminal |
 | WSL `file not found` | Path conversion: ensure LibMan passes existing file; test `wslpath -u 'C:\...'` |
 | `MISSING SYMBOL` for lab_pin, PDK devices | Check `CORE_PRIMITIVE_LIBS_FILE` / `LIBMAN_TECH_LIBRARY` in WSL (`echo $CORE_PRIMITIVE_LIBS`); see `/tmp/xschem-libman-launch.log` |
+| Lookalike sim: undefined subckt / no S-params | Need sibling `*.emmodel.room` + readable `snpPath`; rematerialize symbol (`.spice` next to `.sym`); check netlist starts with `.include …/*.spice` |
 | `extra characters after close-quote` (Tcl) | Outdated `core.tcl` — update XSchem-coredb; usually a Tcl syntax error in symbol index build |
 | No GUI in WSL | WSLg / DISPLAY; run `xschem` manually in WSL first |
 
