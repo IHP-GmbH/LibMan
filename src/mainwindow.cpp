@@ -2904,6 +2904,9 @@ void MainWindow::updateMessagesPanelVisibility()
 
 void MainWindow::setupPythonConsole()
 {
+    if (!m_ui || !m_ui->editPythonCommand) {
+        return;
+    }
     QFont mono = m_ui->editPythonCommand->font();
     mono.setFamily(QStringLiteral("Consolas"));
     mono.setStyleHint(QFont::Monospace);
@@ -2912,6 +2915,11 @@ void MainWindow::setupPythonConsole()
     m_ui->editPythonCommand->installEventFilter(this);
     m_ui->editPythonCommand->setTabChangesFocus(false);
 
+#ifdef LIBMAN_TESTING
+    // GUI unit tests construct MainWindow without a stable Python/ROOM env;
+    // spawning the REPL subprocess aborts CI. Skip the process; keep the UI wired.
+    return;
+#else
     m_pythonConsole = new PythonConsole(this);
     connect(m_pythonConsole, &PythonConsole::started, this, &MainWindow::onPythonConsoleStarted);
     connect(m_pythonConsole, &PythonConsole::failed, this, &MainWindow::onPythonConsoleFailed);
@@ -2920,6 +2928,7 @@ void MainWindow::setupPythonConsole()
 
     // Auto-start so `import room` is ready when LibMan opens (Virtuoso CIW style).
     QTimer::singleShot(0, m_pythonConsole, &PythonConsole::start);
+#endif
 }
 
 void MainWindow::appendPythonLog(const QString &text, bool isError)
