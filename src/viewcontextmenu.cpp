@@ -110,7 +110,8 @@ void MainWindow::showViewMenu(const QPoint &pos)
 
     QAction *emsetup = new QAction(tr("&EM Setup"), this);
     emsetup->setIcon(QIcon(":/icons/emsetup.svg"));
-    emsetup->setStatusTip(tr("Create EM setup folder with an empty EMStudio model."));
+    emsetup->setStatusTip(
+        tr("Create an empty EMStudio model under emsetup (nominal, or nominal_N if taken)."));
     connect(emsetup, &QAction::triggered, this, &MainWindow::addNewEmSetupView);
     menuViews->addAction(emsetup);
 
@@ -135,52 +136,96 @@ void MainWindow::showViewMenu(const QPoint &pos)
     if(items.count()) {
         menu->addSeparator();
 
-        bool emSetupSelected = false;
+        bool emSetupRootSelected = false;
+        bool emSetupVariantSelected = false;
+        bool otherViewSelected = false;
         for(QTreeWidgetItem *it : items) {
             if(!it) {
                 continue;
             }
             const int t = it->data(0, RoleType).toInt();
-            if(t == ItemViewEmSetup || t == ItemEmSetupVariant
-               || isEmSetupViewName(it->text(0))) {
-                emSetupSelected = true;
-                break;
+            if(t == ItemEmSetupVariant
+               || (it->parent()
+                   && (it->parent()->data(0, RoleType).toInt() == ItemViewEmSetup
+                       || isEmSetupViewName(it->parent()->text(0))))) {
+                emSetupVariantSelected = true;
+            } else if(t == ItemViewEmSetup || isEmSetupViewName(it->text(0))) {
+                emSetupRootSelected = true;
+            } else {
+                otherViewSelected = true;
             }
         }
-        if(emSetupSelected) {
+        const bool emSetupOnly = (emSetupRootSelected || emSetupVariantSelected) && !otherViewSelected;
+
+        if(emSetupOnly) {
+            if(emSetupVariantSelected && !emSetupRootSelected && items.count() == 1) {
+                QAction *renameVariant = new QAction(tr("&Rename..."), this);
+                renameVariant->setStatusTip(tr("Rename this emsetup variant folder."));
+                connect(renameVariant, &QAction::triggered, this, &MainWindow::renameEmSetupVariant);
+                menu->addAction(renameVariant);
+            }
+
+            QAction *copyEm = new QAction(tr("&Copy..."), this);
+            copyEm->setIcon(QIcon(":/icons/copy.svg"));
+            copyEm->setShortcut(QKeySequence::Copy);
+            copyEm->setShortcutContext(Qt::WidgetShortcut);
+            if(emSetupRootSelected && !emSetupVariantSelected) {
+                copyEm->setStatusTip(tr("Copy the whole emsetup folder into another library/cell."));
+            } else {
+                copyEm->setStatusTip(tr("Copy the selected emsetup variant into a library/cell."));
+            }
+            connect(copyEm, &QAction::triggered, this, &MainWindow::copyEmSetupSelection);
+            menu->addAction(copyEm);
+            addAction(copyEm);
+
+            QAction *delView = new QAction(tr("&Delete"), this);
+            delView->setIcon(QIcon(":/icons/delete.svg"));
+            delView->setShortcut(QKeySequence::Delete);
+            delView->setStatusTip(tr("Delete selected emsetup item(s)."));
+            delView->setShortcutContext(Qt::WidgetShortcut);
+            connect(delView, &QAction::triggered, this, &MainWindow::removeSelectedView);
+            menu->addAction(delView);
+            addAction(delView);
+
             QAction *attachModel = new QAction(tr("&Attach Model..."), this);
             attachModel->setIcon(QIcon(":/icons/emsetup.svg"));
             attachModel->setStatusTip(
                 tr("Copy an EMStudio model into this emsetup (subview named after the model)."));
             connect(attachModel, &QAction::triggered, this, &MainWindow::attachEmSetupModel);
             menu->addAction(attachModel);
+
+            QAction *viewInfo = new QAction(tr("&Info"), this);
+            viewInfo->setIcon(QIcon(":/icons/info.svg"));
+            viewInfo->setStatusTip(tr("Show view information."));
+            connect(viewInfo, &QAction::triggered, this, &MainWindow::showViewInfo);
+            menu->addAction(viewInfo);
+        } else {
+            QAction *copyView = new QAction(tr("&Copy"), this);
+            copyView->setIcon(QIcon(":/icons/copy.svg"));
+            copyView->setShortcut(QKeySequence::Copy);
+            copyView->setStatusTip(tr("Copy view."));
+            copyView->setShortcutContext(Qt::WidgetShortcut);
+            connect(copyView, &QAction::triggered, this, &MainWindow::copySelectedView);
+            menu->addAction(copyView);
+            addAction(copyView);
+
+            QAction *delView = new QAction(tr("&Delete"), this);
+            delView->setIcon(QIcon(":/icons/delete.svg"));
+            delView->setShortcut(QKeySequence::Delete);
+            delView->setStatusTip(tr("Delete view."));
+            delView->setShortcutContext(Qt::WidgetShortcut);
+            connect(delView, &QAction::triggered, this, &MainWindow::removeSelectedView);
+            menu->addAction(delView);
+            addAction(delView);
+
+            QAction *viewInfo = new QAction(tr("&Info"), this);
+            viewInfo->setIcon(QIcon(":/icons/info.svg"));
+            viewInfo->setStatusTip(tr("Show view information."));
+            viewInfo->setShortcutContext(Qt::WidgetShortcut);
+            connect(viewInfo, &QAction::triggered, this, &MainWindow::showViewInfo);
+            menu->addAction(viewInfo);
+            addAction(viewInfo);
         }
-
-        QAction *copyView = new QAction(tr("&Copy"), this);
-        copyView->setIcon(QIcon(":/icons/copy.svg"));
-        copyView->setShortcut(QKeySequence::Copy);
-        copyView->setStatusTip(tr("Copy view."));
-        copyView->setShortcutContext(Qt::WidgetShortcut);
-        connect(copyView, &QAction::triggered, this, &MainWindow::copySelectedView);
-        menu->addAction(copyView);
-        addAction(copyView);
-
-        QAction *delView = new QAction(tr("&Delete"), this);
-        delView->setIcon(QIcon(":/icons/delete.svg"));
-        delView->setShortcut(QKeySequence::Delete);
-        delView->setStatusTip(tr("Delete view."));
-        delView->setShortcutContext(Qt::WidgetShortcut);
-        connect(delView, &QAction::triggered, this, &MainWindow::removeSelectedView);
-        menu->addAction(delView);
-        addAction(delView);
-
-        QAction *viewInfo = new QAction(tr("&Info"), this);
-        viewInfo->setIcon(QIcon(":/icons/info.svg"));
-        viewInfo->setStatusTip(tr("Show view information."));
-        viewInfo->setShortcutContext(Qt::WidgetShortcut);
-        connect(viewInfo, &QAction::triggered, this, &MainWindow::showViewInfo);
-        menu->addAction(viewInfo);
-        addAction(viewInfo);
 
         if(isLayoutXorMenuCandidate(items.first())) {
             menu->addSeparator();
@@ -684,7 +729,11 @@ void MainWindow::addNewCoreSymbolView()
 }
 
 /*!*********************************************************************************************************************
- * \brief Creates <cell>.emsetup/nominal/ with an empty EMStudio model (uses layout view when present).
+ * \brief Creates an empty EMStudio model under <cell>.emsetup/.
+ *
+ * First call creates <cell>.emsetup/nominal/model.py. If emsetup already exists (e.g. only
+ * attached non-default variants), creates the next free default-style variant
+ * (\c nominal, then \c nominal_2, …) so it can be renamed later.
  **********************************************************************************************************************/
 void MainWindow::addNewEmSetupView()
 {
@@ -703,12 +752,6 @@ void MainWindow::addNewEmSetupView()
         return;
     }
 
-    const QStringList views = getCurrentViews(libName, groupName);
-    if (views.contains(QStringLiteral("emsetup"))) {
-        info(tr("EM setup view already exists for cell '%1'.").arg(groupName));
-        return;
-    }
-
     const QString groupPath = QDir::toNativeSeparators(libRoot + "/" + groupName);
     QDir dir;
     if (!dir.mkpath(groupPath)) {
@@ -717,8 +760,25 @@ void MainWindow::addNewEmSetupView()
     }
 
     const QString emRoot = emSetupDirPath(groupPath, groupName);
-    const QString variant = emSetupDefaultVariantName();
-    const QString variantDir = QDir(emRoot).filePath(variant);
+    const QString defaultVariant = emSetupDefaultVariantName();
+    QString variant = defaultVariant;
+    QString variantDir = QDir(emRoot).filePath(variant);
+    if (QDir(variantDir).exists()) {
+        int n = 2;
+        while (n < 1000) {
+            variant = QStringLiteral("%1_%2").arg(defaultVariant).arg(n);
+            variantDir = QDir(emRoot).filePath(variant);
+            if (!QDir(variantDir).exists()) {
+                break;
+            }
+            ++n;
+        }
+        if (QDir(variantDir).exists()) {
+            error(tr("Could not find a free emsetup variant name under '%1'.").arg(emRoot), false);
+            return;
+        }
+    }
+
     if (!dir.mkpath(variantDir)) {
         error(QString("Failed to create emsetup directory '%1'.").arg(variantDir), false);
         return;
@@ -737,9 +797,37 @@ void MainWindow::addNewEmSetupView()
         return;
     }
 
-    registerCreatedView(libName, groupName, QStringLiteral("emsetup"),
-                        QDir::toNativeSeparators(emRoot));
-    info(tr("Created EM setup: %1").arg(QDir::toNativeSeparators(emRoot)));
+    // First emsetup: register the view. Further New → EM Setup: add a variant only.
+    if (!findEmSetupViewItem()) {
+        registerCreatedView(libName, groupName, QStringLiteral("emsetup"),
+                            QDir::toNativeSeparators(emRoot));
+    } else {
+        const QString key = getLibraryKeyPrefix() + libName + "/" + groupName
+                            + QStringLiteral("/emsetup");
+        if (!m_properties->exists(key)) {
+            m_properties->set(key, QDir::toNativeSeparators(emRoot));
+        }
+        setStateChanged();
+        if (!m_currentProjFile.isEmpty() && !libmanAutomatedTestRun()) {
+            saveProjectFile(m_currentProjFile);
+        }
+    }
+
+    if (QTreeWidgetItem *emItem = findEmSetupViewItem()) {
+        emItem->setData(0, RoleEmSetupPath, QDir::toNativeSeparators(emRoot));
+        refreshEmSetupVariantItems(emItem);
+        emItem->setExpanded(true);
+        for (int i = 0; i < emItem->childCount(); ++i) {
+            QTreeWidgetItem *child = emItem->child(i);
+            if (child && child->text(0) == variant) {
+                m_ui->listViews->setCurrentItem(child);
+                break;
+            }
+        }
+    }
+
+    info(tr("Created EM setup variant: %1")
+             .arg(QDir::toNativeSeparators(QDir(emRoot).filePath(variant))));
 }
 
 QString MainWindow::preferredLayoutPathForEmSetup(const QString &libName,
@@ -1078,6 +1166,336 @@ void MainWindow::attachEmSetupModel()
 
     info(tr("Attached model '%1' as emsetup/%2")
              .arg(QFileInfo(sourcePy).fileName(), variant));
+}
+
+namespace {
+
+QString sanitizeEmSetupVariantName(QString name)
+{
+    name = name.trimmed();
+    name.replace(QRegularExpression(QStringLiteral("[\\\\/:*?\"<>|]")), QStringLiteral("_"));
+    if (name == QLatin1String(".") || name == QLatin1String("..")) {
+        name.clear();
+    }
+    return name;
+}
+
+} // namespace
+
+/*!*********************************************************************************************************************
+ * \brief Asks for a target library and cell (combo boxes filled from the open project).
+ **********************************************************************************************************************/
+bool MainWindow::pickTargetLibraryAndCell(QString *libOut, QString *cellOut, const QString &dialogTitle)
+{
+    if (!libOut || !cellOut) {
+        return false;
+    }
+
+    const QStringList libs = registeredLibraryNames();
+    if (libs.isEmpty()) {
+        error(tr("No libraries are loaded in the current project."), false);
+        return false;
+    }
+
+    int libIndex = libs.indexOf(getCurrentLibraryName());
+    if (libIndex < 0) {
+        libIndex = 0;
+    }
+
+    bool ok = false;
+    const QString lib = QInputDialog::getItem(this,
+                                              dialogTitle,
+                                              tr("Library:"),
+                                              libs,
+                                              libIndex,
+                                              false,
+                                              &ok);
+    if (!ok || lib.isEmpty()) {
+        return false;
+    }
+
+    QStringList cells = getCurrentGroups(lib);
+    if (cells.isEmpty()) {
+        error(tr("Library '%1' has no cells.").arg(lib), false);
+        return false;
+    }
+
+    int cellIndex = 0;
+    if (lib == getCurrentLibraryName()) {
+        const int idx = cells.indexOf(getCurrentGroupName());
+        if (idx >= 0) {
+            cellIndex = idx;
+        }
+    }
+
+    const QString cell = QInputDialog::getItem(this,
+                                               dialogTitle,
+                                               tr("Cell:"),
+                                               cells,
+                                               cellIndex,
+                                               false,
+                                               &ok);
+    if (!ok || cell.isEmpty()) {
+        return false;
+    }
+
+    *libOut = lib;
+    *cellOut = cell;
+    return true;
+}
+
+/*!*********************************************************************************************************************
+ * \brief Registers an emsetup view path for \p libName/\p cellName when missing.
+ **********************************************************************************************************************/
+bool MainWindow::ensureEmSetupViewRegistered(const QString &libName,
+                                             const QString &cellName,
+                                             const QString &emRoot)
+{
+    if (libName.isEmpty() || cellName.isEmpty() || emRoot.isEmpty() || !QDir(emRoot).exists()) {
+        return false;
+    }
+
+    const QString key = getLibraryKeyPrefix() + libName + "/" + cellName + QStringLiteral("/emsetup");
+    if (!m_properties->exists(key)) {
+        m_properties->set(key, QDir::toNativeSeparators(emRoot));
+        setStateChanged();
+        if (!m_currentProjFile.isEmpty() && !libmanAutomatedTestRun()) {
+            saveProjectFile(m_currentProjFile);
+        }
+    }
+
+    if (libName == getCurrentLibraryName() && cellName == getCurrentGroupName()) {
+        if (!findEmSetupViewItem()) {
+            registerCreatedView(libName, cellName, QStringLiteral("emsetup"),
+                                QDir::toNativeSeparators(emRoot));
+        } else if (QTreeWidgetItem *emItem = findEmSetupViewItem()) {
+            emItem->setData(0, RoleEmSetupPath, QDir::toNativeSeparators(emRoot));
+            refreshEmSetupVariantItems(emItem);
+            emItem->setExpanded(true);
+        }
+    }
+    return true;
+}
+
+/*!*********************************************************************************************************************
+ * \brief Returns \p preferred if free under \p emRoot, otherwise preferred_2, preferred_3, …
+ **********************************************************************************************************************/
+QString MainWindow::uniqueEmSetupVariantName(const QString &emRoot, const QString &preferred) const
+{
+    QString base = sanitizeEmSetupVariantName(preferred);
+    if (base.isEmpty()) {
+        base = emSetupDefaultVariantName();
+    }
+    QString name = base;
+    int n = 2;
+    while (QDir(QDir(emRoot).filePath(name)).exists() && n < 1000) {
+        name = QStringLiteral("%1_%2").arg(base).arg(n);
+        ++n;
+    }
+    return name;
+}
+
+/*!*********************************************************************************************************************
+ * \brief Renames the selected emsetup variant folder on disk and refreshes the View tree.
+ **********************************************************************************************************************/
+void MainWindow::renameEmSetupVariant()
+{
+    QList<QTreeWidgetItem *> items = m_ui->listViews->selectedItems();
+    if (items.count() != 1 || !items.first()) {
+        return;
+    }
+    QTreeWidgetItem *item = items.first();
+    const int type = item->data(0, RoleType).toInt();
+    QTreeWidgetItem *parent = item->parent();
+    const bool isVariant = type == ItemEmSetupVariant
+            || (parent
+                && (parent->data(0, RoleType).toInt() == ItemViewEmSetup
+                    || isEmSetupViewName(parent->text(0))));
+    if (!isVariant) {
+        return;
+    }
+
+    const QString oldPath = item->data(0, RoleEmSetupPath).toString();
+    if (oldPath.isEmpty() || !QDir(oldPath).exists()) {
+        error(tr("emsetup variant folder not found."), false);
+        return;
+    }
+
+    bool ok = false;
+    QString newName = QInputDialog::getText(this,
+                                            tr("Rename EM Setup Variant"),
+                                            tr("New name:"),
+                                            QLineEdit::Normal,
+                                            item->text(0),
+                                            &ok);
+    if (!ok) {
+        return;
+    }
+    newName = sanitizeEmSetupVariantName(newName);
+    if (newName.isEmpty()) {
+        error(tr("Invalid variant name."), false);
+        return;
+    }
+    if (newName == item->text(0)) {
+        return;
+    }
+
+    const QString newPath = QDir(QFileInfo(oldPath).absolutePath()).filePath(newName);
+    if (QDir(newPath).exists()) {
+        error(tr("A variant named '%1' already exists.").arg(newName), false);
+        return;
+    }
+    if (!QDir().rename(oldPath, newPath)) {
+        error(tr("Failed to rename:\n%1\nto\n%2").arg(oldPath, newPath), false);
+        return;
+    }
+
+    item->setText(0, newName);
+    item->setData(0, RoleEmSetupPath, QFileInfo(newPath).absoluteFilePath());
+    setStateChanged();
+    info(tr("Renamed emsetup variant to '%1'.").arg(newName));
+}
+
+/*!*********************************************************************************************************************
+ * \brief Copies selected emsetup root or variant into a chosen library/cell.
+ *
+ * Root copy asks for library + cell and copies the whole <cell>.emsetup folder.
+ * Variant copy asks for library + cell and places the variant under that cell's emsetup.
+ **********************************************************************************************************************/
+void MainWindow::copyEmSetupSelection()
+{
+    QList<QTreeWidgetItem *> items = m_ui->listViews->selectedItems();
+    if (items.isEmpty()) {
+        return;
+    }
+
+    bool rootSelected = false;
+    QList<QTreeWidgetItem *> variants;
+    for (QTreeWidgetItem *it : items) {
+        if (!it) {
+            continue;
+        }
+        const int type = it->data(0, RoleType).toInt();
+        QTreeWidgetItem *parent = it->parent();
+        const bool underEm = parent
+                && (parent->data(0, RoleType).toInt() == ItemViewEmSetup
+                    || isEmSetupViewName(parent->text(0)));
+        if (type == ItemEmSetupVariant || underEm) {
+            variants << it;
+        } else if (type == ItemViewEmSetup || isEmSetupViewName(it->text(0))) {
+            rootSelected = true;
+        }
+    }
+
+    QString targetLib;
+    QString targetCell;
+    const QString title = rootSelected && variants.isEmpty()
+            ? tr("Copy EM Setup")
+            : tr("Copy EM Setup Variant");
+    if (!pickTargetLibraryAndCell(&targetLib, &targetCell, title)) {
+        return;
+    }
+
+    const QString libRoot = getLibraryPath(targetLib);
+    if (libRoot.isEmpty() || !QFileInfo(libRoot).exists()) {
+        error(tr("Library path not found for '%1'.").arg(targetLib), false);
+        return;
+    }
+
+    const QString cellPath = QDir::toNativeSeparators(libRoot + "/" + targetCell);
+    QDir().mkpath(cellPath);
+    const QString destEmRoot = emSetupDirPath(cellPath, targetCell);
+
+    if (rootSelected && variants.isEmpty()) {
+        QTreeWidgetItem *rootItem = items.first();
+        const QString srcRoot = rootItem->data(0, RoleEmSetupPath).toString();
+        if (srcRoot.isEmpty() || !QDir(srcRoot).exists()) {
+            error(tr("Source emsetup folder not found."), false);
+            return;
+        }
+        if (QFileInfo(srcRoot).absoluteFilePath() == QFileInfo(destEmRoot).absoluteFilePath()) {
+            info(tr("Source and destination emsetup are the same."));
+            return;
+        }
+        if (QDir(destEmRoot).exists()) {
+            if (!askUserForAction(tr("Destination already has an emsetup. Merge/overwrite variants?"))) {
+                return;
+            }
+        } else if (!QDir().mkpath(destEmRoot)) {
+            error(tr("Failed to create '%1'.").arg(destEmRoot), false);
+            return;
+        }
+
+        const QFileInfoList srcVariants =
+            QDir(srcRoot).entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+        for (const QFileInfo &fi : srcVariants) {
+            const QString destVariant = QDir(destEmRoot).filePath(fi.fileName());
+            if (QDir(destVariant).exists()) {
+                QDir(destVariant).removeRecursively();
+            }
+            copyDir(fi.absoluteFilePath(), destVariant);
+        }
+        ensureEmSetupViewRegistered(targetLib, targetCell, destEmRoot);
+        info(tr("Copied emsetup to %1/%2").arg(targetLib, targetCell));
+        return;
+    }
+
+    if (variants.isEmpty()) {
+        return;
+    }
+
+    if (!QDir(destEmRoot).exists() && !QDir().mkpath(destEmRoot)) {
+        error(tr("Failed to create '%1'.").arg(destEmRoot), false);
+        return;
+    }
+
+    for (QTreeWidgetItem *item : variants) {
+        if (!item) {
+            continue;
+        }
+        const QString srcPath = item->data(0, RoleEmSetupPath).toString();
+        if (srcPath.isEmpty() || !QDir(srcPath).exists()) {
+            error(tr("Variant folder not found:\n%1").arg(srcPath), false);
+            continue;
+        }
+
+        QString destName = uniqueEmSetupVariantName(destEmRoot, item->text(0));
+        if (destName != item->text(0)
+            || QDir(QDir(destEmRoot).filePath(item->text(0))).exists()) {
+            bool ok = false;
+            QString asked = QInputDialog::getText(this,
+                                                  tr("Copy EM Setup Variant"),
+                                                  tr("Name under %1/%2:").arg(targetLib, targetCell),
+                                                  QLineEdit::Normal,
+                                                  destName,
+                                                  &ok);
+            if (!ok) {
+                return;
+            }
+            asked = sanitizeEmSetupVariantName(asked);
+            if (asked.isEmpty()) {
+                error(tr("Invalid variant name."), false);
+                return;
+            }
+            destName = asked;
+        }
+
+        const QString destPath = QDir(destEmRoot).filePath(destName);
+        if (QDir(destPath).exists()) {
+            if (!askUserForAction(tr("Replace existing variant '%1'?").arg(destName))) {
+                continue;
+            }
+            QDir(destPath).removeRecursively();
+        }
+        copyDir(srcPath, destPath);
+        if (!QDir(destPath).exists()) {
+            error(tr("Failed to copy variant to '%1'.").arg(destPath), false);
+            continue;
+        }
+        info(tr("Copied emsetup/%1 to %2/%3").arg(destName, targetLib, targetCell));
+    }
+
+    ensureEmSetupViewRegistered(targetLib, targetCell, destEmRoot);
 }
 
 /*!*********************************************************************************************************************

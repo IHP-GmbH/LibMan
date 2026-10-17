@@ -32,6 +32,8 @@ class QTreeWidgetItem;
 class QFileSystemWatcher;
 class SnapshotView;
 class ProjectEditor;
+class PythonConsole;
+class QPlainTextEdit;
 
 namespace Ui {
 class MainWindow;
@@ -205,6 +207,8 @@ private slots:
     void                                addNewCoreSymbolView();
     void                                addNewEmSetupView();
     void                                attachEmSetupModel();
+    void                                renameEmSetupVariant();
+    void                                copyEmSetupSelection();
 
     void                                addNewGroup();
     void                                addNewProject();
@@ -238,7 +242,9 @@ private slots:
     void                                addGroupToBeCopied(const QString &, const QString &);
 
     void                                loadRecentProject();
+    void                                openMostRecentProject();
     void                                updateRecentProjectActions();
+    void                                applyKeyBindings();
     void                                loadProjectFile(const QString &);
     void                                saveProjectFile(const QString &);
     QList<QPair<QString, QString>>      projectEntriesForEditor() const;
@@ -268,10 +274,19 @@ private slots:
     void                                on_actionShow_Categories_toggled(bool);
     void                                on_actionShow_Documents_toggled(bool);
     void                                on_actionShow_Snapshot_toggled(bool);
+    void                                on_actionShow_Messages_toggled(bool);
+    void                                on_actionShow_Command_Line_toggled(bool);
     void                                refreshSnapshot();
+    void                                runPythonCommand();
+    void                                onPythonConsoleOutput(const QString &text);
+    void                                onPythonConsoleStarted(const QString &detail);
+    void                                onPythonConsoleFailed(const QString &reason);
+    void                                onPythonCommandFinished(bool ok);
 
     void                                on_actionTools_triggered();
     void                                on_actionProjects_triggered();
+    void                                on_actionKeyBindings_triggered();
+    void                                on_actionOpenMostRecent_triggered();
     void                                on_actionOpen_triggered();
     void                                on_actionEditProject_triggered();
     void                                on_actionImport_triggered();
@@ -303,6 +318,11 @@ private slots:
 private:
     void                                loadSettings();
     void                                warmWslForXschemIfNeeded();
+    void                                updateMessagesPanelVisibility();
+    void                                setupPythonConsole();
+    void                                appendPythonLog(const QString &text, bool isError = false);
+    void                                pushPythonHistory(const QString &code);
+    bool                                recallPythonHistory(int delta);
 
     void                                info(const QString &msg, bool clear = true);
     void                                error(const QString &msg, bool clear = true);
@@ -451,6 +471,14 @@ private:
     bool                                copyEmSetupModelBundle(const QString &sourceModelPy,
                                                                const QString &destVariantDir,
                                                                QString *errorMsg = nullptr) const;
+    bool                                pickTargetLibraryAndCell(QString *libOut,
+                                                                 QString *cellOut,
+                                                                 const QString &dialogTitle);
+    bool                                ensureEmSetupViewRegistered(const QString &libName,
+                                                                    const QString &cellName,
+                                                                    const QString &emRoot);
+    QString                             uniqueEmSetupVariantName(const QString &emRoot,
+                                                                 const QString &preferred) const;
     void                                applyCoreViewLockPresentation(QTreeWidgetItem *viewItem,
                                                                       const QString &viewName,
                                                                       const QString &viewPath);
@@ -580,6 +608,10 @@ private:
     QHash<QString, std::shared_ptr<CoreCacheEntry>> m_coreCache;           /*!< ROOM hierarchy cache: abs path -> entry. */
     SnapshotView                       *m_snapshotView = nullptr;         /*!< Schematic/symbol thumbnail under the view list. */
     ProjectEditor                      *m_projectEditor = nullptr;        /*!< .projects editor pane in the main splitter. */
+    PythonConsole                      *m_pythonConsole = nullptr;        /*!< Persistent Python REPL with ROOM preloaded. */
+    QStringList                         m_pythonHistory;                  /*!< Command Line history (newest at end). */
+    int                                 m_pythonHistoryIndex = -1;        /*!< Browse index; -1 = editing a new/draft line. */
+    QString                             m_pythonHistoryDraft;             /*!< Text saved when Up starts history browse. */
 };
 
 /*!*******************************************************************************************************************

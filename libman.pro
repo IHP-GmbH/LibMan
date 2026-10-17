@@ -34,6 +34,7 @@ SOURCES += \
     src/klayoutCellResolver.cpp \
     src/lstreamcellreader.cpp \
     src/mainwindow.cpp \
+    src/python_console.cpp \
     extension/variantmanager.cpp \
     extension/variantfactory.cpp \
     extension/qlineeditd2.cpp \
@@ -69,6 +70,8 @@ SOURCES += \
     src/projectcontextmenu.cpp \
     src/categorycontextmenu.cpp \
     src/about.cpp \
+    src/keybindings.cpp \
+    src/keybindingsdialog.cpp \
     src/newview.cpp \
     src/snapshotscene.cpp \
     src/snapshotview.cpp \
@@ -92,6 +95,7 @@ contains(CONFIG, no_room) {
 HEADERS += \
     lstream/lstreamcellwriter.h \
     src/mainwindow.h \
+    src/python_console.h \
     src/klayout_tools.h \
     extension/variantmanager.h \
     extension/variantfactory.h \
@@ -124,6 +128,8 @@ HEADERS += \
     src/viewtoolstablewidget.h \
     src/toolpickerdialog.h \
     src/about.h \
+    src/keybindings.h \
+    src/keybindingsdialog.h \
     src/newview.h \
     src/snapshotscene.h \
     src/snapshotview.h \

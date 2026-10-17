@@ -114,6 +114,10 @@ db.loadFromFile("layout.room");
 
 Link targets are already set in `CMakeLists.txt` (`ROOM::room`, `ROOM::room_utils`).
 
+## Python Command Line
+
+LibMan also starts an out-of-process Python REPL with `import room` for interactive inspection of `.room` files. See **[Python Command Line](PYTHON_CONSOLE.md)** (Window → Messages / Command Line, Enter to run).
+
 ## CI (GitHub Actions)
 
 | Job | ROOM |

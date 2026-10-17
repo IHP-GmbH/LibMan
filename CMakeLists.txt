@@ -173,6 +173,7 @@ set(SOURCES
     src/klayoutCellResolver.cpp
     src/lstreamcellreader.cpp
     src/mainwindow.cpp
+    src/python_console.cpp
 
     extension/variantmanager.cpp
     extension/variantfactory.cpp
@@ -211,6 +212,8 @@ set(SOURCES
     src/projectcontextmenu.cpp
     src/categorycontextmenu.cpp
     src/about.cpp
+    src/keybindings.cpp
+    src/keybindingsdialog.cpp
     src/newview.cpp
     src/snapshotscene.cpp
     src/snapshotview.cpp
@@ -241,6 +244,7 @@ set(HEADERS
     room/roomKlayoutBridge.h
     lstream/lstreamcellwriter.h
     src/mainwindow.h
+    src/python_console.h
 
     extension/variantmanager.h
     extension/variantfactory.h
@@ -275,6 +279,8 @@ set(HEADERS
     src/viewtoolstablewidget.h
     src/toolpickerdialog.h
     src/about.h
+    src/keybindings.h
+    src/keybindingsdialog.h
     src/newview.h
 
     capnp/cell.capnp.h

@@ -24,6 +24,7 @@ LibMan integrates **[ROOM](https://github.com/IHP-GmbH/Room)** for cell views an
 | **File organization** | [Directory Structure](setup/DIRECTORY_STRUCTURE.md) (3 min) |
 | **Edit project file** | [Project Editor](setup/PROJECT_EDITOR.md) (5 min) |
 | **Import GDS/Xschem/Qucs/OAS** | [Import](setup/IMPORT.md) (5 min) |
+| **Python Command Line (ROOM)** | [Python console](setup/PYTHON_CONSOLE.md) (3 min) |
 | **Schematic (Windows)** | [Xschem + WSL](setup/XSCHEM_INTEGRATION.md) · [Qucs-S](setup/QUCS_INTEGRATION.md) |
 
 ---
@@ -44,11 +45,12 @@ Detailed setup and configuration information:
 1. **[VS Code Setup](setup/VSCODE_SETUP.md)** - Complete VS Code configuration guide
 2. **[Directory Structure](setup/DIRECTORY_STRUCTURE.md)** - Where everything is located
 3. **[ROOM integration](setup/ROOM_INTEGRATION.md)** - [ROOM](https://github.com/IHP-GmbH/Room) fetch/build ([API docs](https://ihp-gmbh.github.io/Room/))
-4. **[KLayout integration](setup/KLAYOUT_INTEGRATION.md)** - Layout views, server, root cell selection
-5. **[Project Editor](setup/PROJECT_EDITOR.md)** - Edit `define(library, path)` entries (`Ctrl+E`)
-6. **[Import](setup/IMPORT.md)** - Convert GDS, Xschem, Qucs, OAS into ROOM views (`File → Import...`)
-7. **[Xschem integration](setup/XSCHEM_INTEGRATION.md)** - Schematic/symbol on Windows via WSL launchers
-8. **[Qucs-S integration](setup/QUCS_INTEGRATION.md)** - Schematic/symbol in Qucs-S + ngspice on Windows
+4. **[Python Command Line](setup/PYTHON_CONSOLE.md)** - Interactive `import room` under Messages
+5. **[KLayout integration](setup/KLAYOUT_INTEGRATION.md)** - Layout views, server, root cell selection
+6. **[Project Editor](setup/PROJECT_EDITOR.md)** - Edit `define(library, path)` entries (`Ctrl+E`)
+7. **[Import](setup/IMPORT.md)** - Convert GDS, Xschem, Qucs, OAS into ROOM views (`File → Import...`)
+8. **[Xschem integration](setup/XSCHEM_INTEGRATION.md)** - Schematic/symbol on Windows via WSL launchers
+9. **[Qucs-S integration](setup/QUCS_INTEGRATION.md)** - Schematic/symbol in Qucs-S + ngspice on Windows
 
 ### 📖 Reference & Advanced
 Detailed reference and customization guides:

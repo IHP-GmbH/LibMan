@@ -223,15 +223,70 @@
        </widget>
        </widget>
       </widget>
-      <widget class="QGroupBox" name="groupBox_4">
-       <property name="title">
-        <string>Messages</string>
+      <widget class="QSplitter" name="splitterMessages">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
        </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_7">
-        <item>
-         <widget class="QTextEdit" name="textMessages"/>
-        </item>
-       </layout>
+       <widget class="QGroupBox" name="groupMessages">
+        <property name="title">
+         <string>Messages</string>
+        </property>
+        <layout class="QVBoxLayout" name="messagesLayout">
+         <property name="spacing">
+          <number>2</number>
+         </property>
+         <property name="leftMargin">
+          <number>4</number>
+         </property>
+         <property name="topMargin">
+          <number>4</number>
+         </property>
+         <property name="rightMargin">
+          <number>4</number>
+         </property>
+         <property name="bottomMargin">
+          <number>4</number>
+         </property>
+         <item>
+          <widget class="QTextEdit" name="textMessages"/>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QGroupBox" name="groupCommandLine">
+        <property name="title">
+         <string>Command Line</string>
+        </property>
+        <layout class="QVBoxLayout" name="commandLineLayout">
+         <property name="spacing">
+          <number>2</number>
+         </property>
+         <property name="leftMargin">
+          <number>4</number>
+         </property>
+         <property name="topMargin">
+          <number>4</number>
+         </property>
+         <property name="rightMargin">
+          <number>4</number>
+         </property>
+         <property name="bottomMargin">
+          <number>4</number>
+         </property>
+         <item>
+          <widget class="QPlainTextEdit" name="editPythonCommand">
+           <property name="maximumHeight">
+            <number>120</number>
+           </property>
+           <property name="tabChangesFocus">
+            <bool>false</bool>
+           </property>
+           <property name="lineWrapMode">
+            <enum>QPlainTextEdit::NoWrap</enum>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
       </widget>
      </widget>
     </item>
@@ -280,6 +335,7 @@
     <addaction name="actionExport"/>
     <addaction name="separator"/>
     <addaction name="menuRecent_Projects"/>
+    <addaction name="actionOpenMostRecent"/>
     <addaction name="actionClear_Recent_File_Stack"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
@@ -290,6 +346,19 @@
     </property>
     <addaction name="actionProjects"/>
     <addaction name="actionTools"/>
+    <addaction name="separator"/>
+    <addaction name="actionKeyBindings"/>
+   </widget>
+   <widget class="QMenu" name="menuWindow">
+    <property name="title">
+     <string>Window</string>
+    </property>
+    <addaction name="actionShow_Messages"/>
+    <addaction name="actionShow_Command_Line"/>
+    <addaction name="separator"/>
+    <addaction name="actionShow_Documents"/>
+    <addaction name="actionShow_Categories"/>
+    <addaction name="actionShow_Snapshot"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -299,6 +368,7 @@
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
+   <addaction name="menuWindow"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
@@ -351,7 +421,7 @@
     <string>Exit</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+X</string>
+    <string>Ctrl+Q</string>
    </property>
   </action>
   <action name="actionAbout">
@@ -363,13 +433,26 @@
    <property name="text">
     <string>Projects</string>
    </property>
-   <property name="shortcut">
-    <string>Ctrl+O</string>
-   </property>
   </action>
   <action name="actionTools">
    <property name="text">
     <string>Tools</string>
+   </property>
+  </action>
+  <action name="actionKeyBindings">
+   <property name="text">
+    <string>Key Bindings...</string>
+   </property>
+  </action>
+  <action name="actionOpenMostRecent">
+   <property name="text">
+    <string>Open Most Recent Project</string>
+   </property>
+   <property name="toolTip">
+    <string>Open the most recently used project file</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+R</string>
    </property>
   </action>
   <action name="actionRecent1">
@@ -444,6 +527,34 @@
     <string>Export...</string>
    </property>
   </action>
+  <action name="actionShow_Messages">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Messages</string>
+   </property>
+   <property name="toolTip">
+    <string>Show or hide the Messages log</string>
+   </property>
+  </action>
+  <action name="actionShow_Command_Line">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Command Line</string>
+   </property>
+   <property name="toolTip">
+    <string>Show or hide the Python command line</string>
+   </property>
+  </action>
   <action name="actionShow_Documents">
    <property name="checkable">
     <bool>true</bool>
@@ -507,7 +618,7 @@
     <string>Reload</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+R</string>
+    <string>F5</string>
    </property>
    <property name="menuRole">
     <enum>QAction::NoRole</enum>

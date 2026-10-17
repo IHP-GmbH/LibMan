@@ -67,6 +67,7 @@ add_executable(tst_libman_gui
     tst_coverage_80.cpp
 
     ${LIBMAN_ROOT}/src/mainwindow.cpp
+    ${LIBMAN_ROOT}/src/python_console.cpp
     ${LIBMAN_ROOT}/src/libfileparser.cpp
     ${LIBMAN_ROOT}/src/projectmanager.cpp
     ${LIBMAN_ROOT}/src/projectfile.cpp
@@ -84,6 +85,8 @@ add_executable(tst_libman_gui
     ${LIBMAN_ROOT}/src/projectcontextmenu.cpp
     ${LIBMAN_ROOT}/src/categorycontextmenu.cpp
     ${LIBMAN_ROOT}/src/about.cpp
+    ${LIBMAN_ROOT}/src/keybindings.cpp
+    ${LIBMAN_ROOT}/src/keybindingsdialog.cpp
     ${LIBMAN_ROOT}/src/newview.cpp
     ${LIBMAN_ROOT}/src/snapshotscene.cpp
     ${LIBMAN_ROOT}/src/snapshotview.cpp

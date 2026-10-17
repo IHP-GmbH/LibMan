@@ -23,13 +23,18 @@
 #include <QTextCursor>
 #include <QTextCharFormat>
 #include <QTextEdit>
+#include <QPlainTextEdit>
+#include <QFont>
+#include <QKeyEvent>
 #include <QStandardPaths>
 #include <QRegularExpression>
+#include <QSplitter>
 
 #include <QListWidgetItem>
 #include <QVBoxLayout>
 
 #include "snapshotview.h"
+#include "python_console.h"
 
 #if QT_VERSION >= 0x050000
 #include <QScreen>
@@ -38,6 +43,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include "keybindings.h"
+#include "keybindingsdialog.h"
 #include "libman_test_mode.h"
 
 namespace {
@@ -134,6 +141,8 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     connect(&m_klayoutTools, &KLayoutTools::error, this, [this](const QString &msg) { error(msg, false); });
     connect(&m_klayoutTools, &KLayoutTools::fileLink, this, &MainWindow::appendLogFileLink);
 
+    setupPythonConsole();
+
     m_snapshotView = new SnapshotView(m_ui->snapshotHost);
     auto *snapshotLayout = new QVBoxLayout(m_ui->snapshotHost);
     snapshotLayout->setContentsMargins(0, 0, 0, 0);
@@ -155,6 +164,7 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     initRecentProjectMenu();
 
     loadSettings();
+    applyKeyBindings();
     warmWslForXschemIfNeeded();
 
     setWindowIcon(QIcon(":logo"));
@@ -300,8 +310,17 @@ void MainWindow::closeEvent(QCloseEvent *event)
     settings.setValue("ShowDocuments", m_ui->groupDocs->isVisible());
     settings.setValue("ShowCategories", m_ui->groupCats->isVisible());
     settings.setValue("ShowSnapshot", m_ui->groupSnapshot->isVisible());
+    settings.setValue("ShowMessages", m_ui->actionShow_Messages->isChecked());
+    settings.setValue("ShowCommandLine", m_ui->actionShow_Command_Line->isChecked());
     settings.setValue("SnapshotSplitter", m_ui->splitterView->saveState());
+    if (m_ui->splitterMessages) {
+        settings.setValue("MessagesSplitter", m_ui->splitterMessages->saveState());
+    }
     settings.endGroup();
+
+    if (m_pythonConsole) {
+        m_pythonConsole->stop();
+    }
 
     settings.beginGroup("Tools");
 
@@ -415,7 +434,18 @@ void MainWindow::loadSettings()
     m_ui->actionShow_Documents->setChecked(settings.value("ShowDocuments", false).toBool());
     m_ui->actionShow_Categories->setChecked(settings.value("ShowCategories", false).toBool());
     m_ui->actionShow_Snapshot->setChecked(settings.value("ShowSnapshot", false).toBool());
+    m_ui->actionShow_Messages->setChecked(settings.value("ShowMessages", true).toBool());
+    m_ui->actionShow_Command_Line->setChecked(settings.value("ShowCommandLine", true).toBool());
     m_ui->splitterView->restoreState(settings.value("SnapshotSplitter").toByteArray());
+    if (m_ui->splitterMessages) {
+        const QByteArray messagesState = settings.value("MessagesSplitter").toByteArray();
+        if (!messagesState.isEmpty()) {
+            m_ui->splitterMessages->restoreState(messagesState);
+        } else {
+            m_ui->splitterMessages->setSizes({300, 80});
+        }
+    }
+    updateMessagesPanelVisibility();
 
     settings.endGroup();
 
@@ -726,6 +756,78 @@ void MainWindow::loadRecentProject()
 
         loadProjectFile(projFile);
     }
+}
+
+/*!*******************************************************************************************************************
+ * \brief Opens the top entry of the Recent Projects list (shortcut: Open most recent).
+ **********************************************************************************************************************/
+void MainWindow::openMostRecentProject()
+{
+    if (!m_ui->actionRecent1 || !m_ui->actionRecent1->isVisible()) {
+        QMessageBox::information(this,
+                                 tr("Open Most Recent Project"),
+                                 tr("No recent project is available."));
+        return;
+    }
+    const QString projFile = m_ui->actionRecent1->data().toString();
+    if (projFile.isEmpty() || !QFileInfo(projFile).exists()) {
+        QMessageBox::critical(this,
+                              tr("Open Project Error"),
+                              tr("Can not open project '%1'.").arg(projFile));
+        return;
+    }
+    loadProjectFile(projFile);
+}
+
+/*!*******************************************************************************************************************
+ * \brief Applies persisted (or default) shortcuts to the matching menu actions.
+ **********************************************************************************************************************/
+void MainWindow::applyKeyBindings()
+{
+    QSettings settings(getSettingsHeaderName());
+    const QMap<QString, QKeySequence> map = KeyBindings::load(settings);
+
+    auto setShortcut = [&map](QAction *action, const QString &id) {
+        if (!action) {
+            return;
+        }
+        action->setShortcut(map.value(id));
+    };
+
+    setShortcut(m_ui->actionOpen, QStringLiteral("open_project"));
+    setShortcut(m_ui->actionOpenMostRecent, QStringLiteral("open_most_recent"));
+    setShortcut(m_ui->actionSave, QStringLiteral("save_project"));
+    setShortcut(m_ui->actionSave_As, QStringLiteral("save_project_as"));
+    setShortcut(m_ui->actionEditProject, QStringLiteral("edit_project"));
+    setShortcut(m_ui->actionImport, QStringLiteral("import"));
+    setShortcut(m_ui->actionExport, QStringLiteral("export"));
+    setShortcut(m_ui->actionExit, QStringLiteral("exit"));
+    setShortcut(m_ui->actionReload, QStringLiteral("reload"));
+    setShortcut(m_ui->actionProjects, QStringLiteral("projects_dialog"));
+    setShortcut(m_ui->actionTools, QStringLiteral("tools_dialog"));
+    setShortcut(m_ui->actionKeyBindings, QStringLiteral("key_bindings"));
+}
+
+/*!*******************************************************************************************************************
+ * \brief Opens the Key Bindings dialog and saves accepted shortcuts.
+ **********************************************************************************************************************/
+void MainWindow::on_actionKeyBindings_triggered()
+{
+    QSettings settings(getSettingsHeaderName());
+    KeyBindingsDialog dlg(KeyBindings::load(settings), this);
+    if (dlg.exec() != QDialog::Accepted) {
+        return;
+    }
+    KeyBindings::save(settings, dlg.bindings());
+    applyKeyBindings();
+}
+
+/*!*******************************************************************************************************************
+ * \brief Menu / shortcut entry for opening the most recent project.
+ **********************************************************************************************************************/
+void MainWindow::on_actionOpenMostRecent_triggered()
+{
+    openMostRecentProject();
 }
 
 /*!*******************************************************************************************************************
@@ -2477,6 +2579,34 @@ void MainWindow::on_listViews_itemDoubleClicked(QTreeWidgetItem *item, int colum
  **********************************************************************************************************************/
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
+    if (obj == m_ui->editPythonCommand && event->type() == QEvent::KeyPress) {
+        auto *keyEvent = static_cast<QKeyEvent *>(event);
+        if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
+            // Shift+Enter — new line; Enter — run (Virtuoso-style).
+            if (keyEvent->modifiers() & Qt::ShiftModifier) {
+                return false;
+            }
+            runPythonCommand();
+            return true;
+        }
+        // Up/Down: command history (like a shell). Within multiline text, only at
+        // first/last line so arrow keys still move the cursor otherwise.
+        if (keyEvent->modifiers() == Qt::NoModifier
+            && (keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down)) {
+            const QTextCursor cursor = m_ui->editPythonCommand->textCursor();
+            const int block = cursor.blockNumber();
+            const int blocks = m_ui->editPythonCommand->document()->blockCount();
+            const bool atFirst = (block <= 0);
+            const bool atLast = (block >= blocks - 1);
+            if (keyEvent->key() == Qt::Key_Up && atFirst) {
+                return recallPythonHistory(-1);
+            }
+            if (keyEvent->key() == Qt::Key_Down && atLast) {
+                return recallPythonHistory(+1);
+            }
+        }
+    }
+
     if(obj == m_ui->textMessages->viewport()) {
         if(event->type() == QEvent::MouseMove || event->type() == QEvent::HoverMove) {
             auto *mouseEvent = static_cast<QMouseEvent *>(event);
@@ -2745,6 +2875,182 @@ void MainWindow::on_actionShow_Snapshot_toggled(bool state)
         m_ui->splitterView->setSizes({qMax(80, total - snapshot), snapshot});
     }
     refreshSnapshot();
+}
+
+void MainWindow::on_actionShow_Messages_toggled(bool)
+{
+    updateMessagesPanelVisibility();
+}
+
+void MainWindow::on_actionShow_Command_Line_toggled(bool)
+{
+    updateMessagesPanelVisibility();
+}
+
+void MainWindow::updateMessagesPanelVisibility()
+{
+    const bool showMessages = m_ui->actionShow_Messages->isChecked();
+    const bool showCommand = m_ui->actionShow_Command_Line->isChecked();
+    m_ui->groupMessages->setVisible(showMessages);
+    m_ui->groupCommandLine->setVisible(showCommand);
+    m_ui->splitterMessages->setVisible(showMessages || showCommand);
+    if (showMessages && showCommand) {
+        const QList<int> sizes = m_ui->splitterMessages->sizes();
+        if (sizes.size() == 2 && (sizes.at(0) < 40 || sizes.at(1) < 40)) {
+            m_ui->splitterMessages->setSizes({300, 80});
+        }
+    }
+}
+
+void MainWindow::setupPythonConsole()
+{
+    QFont mono = m_ui->editPythonCommand->font();
+    mono.setFamily(QStringLiteral("Consolas"));
+    mono.setStyleHint(QFont::Monospace);
+    mono.setPointSizeF(qMax(9.0, mono.pointSizeF()));
+    m_ui->editPythonCommand->setFont(mono);
+    m_ui->editPythonCommand->installEventFilter(this);
+    m_ui->editPythonCommand->setTabChangesFocus(false);
+
+    m_pythonConsole = new PythonConsole(this);
+    connect(m_pythonConsole, &PythonConsole::started, this, &MainWindow::onPythonConsoleStarted);
+    connect(m_pythonConsole, &PythonConsole::failed, this, &MainWindow::onPythonConsoleFailed);
+    connect(m_pythonConsole, &PythonConsole::output, this, &MainWindow::onPythonConsoleOutput);
+    connect(m_pythonConsole, &PythonConsole::commandFinished, this, &MainWindow::onPythonCommandFinished);
+
+    // Auto-start so `import room` is ready when LibMan opens (Virtuoso CIW style).
+    QTimer::singleShot(0, m_pythonConsole, &PythonConsole::start);
+}
+
+void MainWindow::appendPythonLog(const QString &text, bool isError)
+{
+    if (text.isEmpty()) {
+        return;
+    }
+    QTextCursor cursor = logCursorAtEnd(m_ui->textMessages, false);
+    QTextCharFormat fmt = logPlainCharFormat();
+    if (isError) {
+        fmt.setForeground(QBrush(Qt::red));
+    }
+    QString body = text;
+    if (!body.endsWith(QLatin1Char('\n'))) {
+        body += QLatin1Char('\n');
+    }
+    cursor.insertText(body, fmt);
+    cursor.setCharFormat(logPlainCharFormat());
+    m_ui->textMessages->setTextCursor(cursor);
+}
+
+void MainWindow::pushPythonHistory(const QString &code)
+{
+    const QString trimmed = code.trimmed();
+    if (trimmed.isEmpty()) {
+        return;
+    }
+    if (!m_pythonHistory.isEmpty() && m_pythonHistory.last() == trimmed) {
+        m_pythonHistoryIndex = -1;
+        m_pythonHistoryDraft.clear();
+        return;
+    }
+    m_pythonHistory.append(trimmed);
+    constexpr int kMaxHistory = 200;
+    while (m_pythonHistory.size() > kMaxHistory) {
+        m_pythonHistory.removeFirst();
+    }
+    m_pythonHistoryIndex = -1;
+    m_pythonHistoryDraft.clear();
+}
+
+bool MainWindow::recallPythonHistory(int delta)
+{
+    if (m_pythonHistory.isEmpty() || delta == 0) {
+        return false;
+    }
+
+    if (m_pythonHistoryIndex < 0) {
+        // Start browsing from just past the newest entry.
+        m_pythonHistoryDraft = m_ui->editPythonCommand->toPlainText();
+        m_pythonHistoryIndex = m_pythonHistory.size();
+    }
+
+    const int next = m_pythonHistoryIndex + delta;
+    if (next < 0) {
+        return true; // stay on oldest
+    }
+    if (next >= m_pythonHistory.size()) {
+        m_pythonHistoryIndex = -1;
+        m_ui->editPythonCommand->setPlainText(m_pythonHistoryDraft);
+        QTextCursor cursor = m_ui->editPythonCommand->textCursor();
+        cursor.movePosition(QTextCursor::End);
+        m_ui->editPythonCommand->setTextCursor(cursor);
+        return true;
+    }
+
+    m_pythonHistoryIndex = next;
+    m_ui->editPythonCommand->setPlainText(m_pythonHistory.at(m_pythonHistoryIndex));
+    QTextCursor cursor = m_ui->editPythonCommand->textCursor();
+    cursor.movePosition(QTextCursor::End);
+    m_ui->editPythonCommand->setTextCursor(cursor);
+    return true;
+}
+
+void MainWindow::runPythonCommand()
+{
+    if (!m_pythonConsole) {
+        return;
+    }
+
+    QString code = m_ui->editPythonCommand->textCursor().hasSelection()
+                       ? m_ui->editPythonCommand->textCursor().selectedText().replace(QChar(0x2029), QLatin1Char('\n'))
+                       : m_ui->editPythonCommand->toPlainText();
+    code = code.trimmed();
+    if (code.isEmpty()) {
+        return;
+    }
+
+    pushPythonHistory(code);
+
+    // Echo like Virtuoso CIW.
+    QStringList lines = code.split(QLatin1Char('\n'));
+    for (int i = 0; i < lines.size(); ++i) {
+        appendPythonLog((i == 0 ? QStringLiteral(">>> ") : QStringLiteral("... ")) + lines.at(i));
+    }
+
+    m_ui->editPythonCommand->setEnabled(false);
+    m_pythonConsole->execute(code);
+    if (!m_ui->editPythonCommand->textCursor().hasSelection()) {
+        m_ui->editPythonCommand->clear();
+    }
+}
+
+void MainWindow::onPythonConsoleOutput(const QString &text)
+{
+    const QString trimmed = text;
+    if (trimmed.contains(QStringLiteral("WARNING:"), Qt::CaseSensitive)
+        || trimmed.contains(QStringLiteral("Error"), Qt::CaseInsensitive)
+        || trimmed.contains(QStringLiteral("Traceback"), Qt::CaseSensitive)) {
+        appendPythonLog(trimmed, true);
+    } else {
+        appendPythonLog(trimmed, false);
+    }
+}
+
+void MainWindow::onPythonConsoleStarted(const QString &detail)
+{
+    Q_UNUSED(detail);
+    // Keep startup quiet — ROOM ready line comes from the interpreter itself.
+}
+
+void MainWindow::onPythonConsoleFailed(const QString &reason)
+{
+    error(reason, false);
+    m_ui->editPythonCommand->setEnabled(true);
+}
+
+void MainWindow::onPythonCommandFinished(bool)
+{
+    m_ui->editPythonCommand->setEnabled(true);
+    m_ui->editPythonCommand->setFocus(Qt::OtherFocusReason);
 }
 
 QString MainWindow::symbolCoreForCell(const QString &cellName) const

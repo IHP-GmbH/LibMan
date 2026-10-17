@@ -74,6 +74,8 @@ SOURCES += \
     $$PWD/../src/projectcontextmenu.cpp \
     $$PWD/../src/categorycontextmenu.cpp \
     $$PWD/../src/about.cpp \
+    $$PWD/../src/keybindings.cpp \
+    $$PWD/../src/keybindingsdialog.cpp \
     $$PWD/../src/newview.cpp \
     $$PWD/../src/snapshotscene.cpp \
     $$PWD/../src/snapshotview.cpp \
@@ -145,6 +147,8 @@ HEADERS += \
     $$PWD/../src/viewtoolstablewidget.h \
     $$PWD/../src/toolpickerdialog.h \
     $$PWD/../src/about.h \
+    $$PWD/../src/keybindings.h \
+    $$PWD/../src/keybindingsdialog.h \
     $$PWD/../src/newview.h \
     $$PWD/../src/snapshotscene.h \
     $$PWD/../src/snapshotview.h \
