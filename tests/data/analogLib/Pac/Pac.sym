@@ -1,0 +1,18 @@
+v {xschem version=3.4.4 file_version=1.2
+* Qucs Pac (power AC / S-parameter port) → ngspice port device
+}
+G {}
+K {type=primitive
+format="@name @pinlist port=@num z0=@z0"
+template="name=P1 num=1 z0=50"
+qucs.type=Pac
+}
+V {}
+S {}
+E {}
+L 4 -20 0 20 0 {}
+L 4 0 -20 0 20 {}
+B 5 -5 -25 5 -15 {name=p dir=inout}
+B 5 -5 15 5 25 {name=m dir=inout}
+T {@name} 10 -30 0 0 0.25 0.25 {}
+T {Pac @num} -15 30 0 0 0.2 0.2 {}

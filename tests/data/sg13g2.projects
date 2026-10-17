@@ -7,6 +7,8 @@ define("commonLib", "commonLib\\*");
 define("ihp_ota1336", "OTA1336\\*");
 define("sg13g2_pr", "sg13g2_pr\\*");
 define("EMTest", "EMTest\\cmim_2u3_tm1fix\\cmim_2u3_tm1fix.layout.room");
+define("EMTest", "EMTest\\cmim_2u3_tm1fix\\cmim_2u3_tm1fix.symbol.room");
+define("EMTest", "EMTest\\cmim_2u3_tm1fix\\cmim_2u3_tm1fix.emmodel.room");
 define("EMTest", "EMTest\\testbench\\testbench.schematic.room");
 define("ihp_sg13g2", "sg13g2_stdcell\\Test\\Test.gds");
 define("ihp_sg13g2", "sg13g2_stdcell\\Test\\Test.lstr");

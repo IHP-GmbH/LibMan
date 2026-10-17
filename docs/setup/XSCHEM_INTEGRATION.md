@@ -185,13 +185,16 @@ sg13g2_stdcell/
 ## EM lookalike / emmodel netlisting
 
 Layout-lookalike cells (`em.lookalike=1` on `*.symbol.room`, published with `*.emmodel.room`)
-netlist like Qucs-S-roomdb LibComp:
+netlist like Qucs-S-roomdb LibComp — **same EMTest TB works in Qucs and Xschem**:
 
 1. Xschem export stamps `format="@name @pinlist 0 @symname"` and `spice_stop=true` (pins + trailing gnd).
 2. `coreapi_export_cell` / `room_to_xschem` writes a sibling `cell.spice` via CommonDB S2Spice (`touchstone_to_spice`) from the Touchstone path in the emmodel.
 3. `integrations/room.tcl` prepends `.include` of those spice files into the batch netlist before Simulate.
+4. Qucs `Pac` / `.SP` / `NutmegEq` map to ngspice `port` + `sp` (+ optional `let`) on Xschem export (`Pac.sym` in analogLib).
 
 Instance line shape: `x1 <pin nets…> 0 <cellname>` — the trailing `0` is the S2Spice reference node.
+
+Fixture: `tests/data/EMTest/testbench` (Pac + lookalike `cmim_2u3_tm1fix` + `.SP`). Open the same `testbench.schematic.room` from LibMan with either schematic tool.
 
 ## Troubleshooting
 
