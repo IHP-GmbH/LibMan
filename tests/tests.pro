@@ -74,6 +74,7 @@ SOURCES += \
     $$PWD/../src/projectcontextmenu.cpp \
     $$PWD/../src/categorycontextmenu.cpp \
     $$PWD/../src/about.cpp \
+    $$PWD/../src/python_console.cpp \
     $$PWD/../src/keybindings.cpp \
     $$PWD/../src/keybindingsdialog.cpp \
     $$PWD/../src/newview.cpp \
@@ -147,6 +148,7 @@ HEADERS += \
     $$PWD/../src/viewtoolstablewidget.h \
     $$PWD/../src/toolpickerdialog.h \
     $$PWD/../src/about.h \
+    $$PWD/../src/python_console.h \
     $$PWD/../src/keybindings.h \
     $$PWD/../src/keybindingsdialog.h \
     $$PWD/../src/newview.h \
