@@ -1187,19 +1187,22 @@ void MainWindow::launchSchematicTool(const QString &tool, const QString &viewPat
             env.insert(QStringLiteral("WSLENV"),
                        QStringLiteral(
                            "CORE_PRIMITIVE_LIBS_FILE/p:CORE_PRIMITIVE_LIBS/p:CORE_PRIMITIVE_LIB/p:"
+                           "ROOM_PRIMITIVE_LIBS_FILE/p:ROOM_PRIMITIVE_LIBS/p:ROOM_PRIMITIVE_LIB/p:"
                            "LIBMAN_TECH_LIBRARY/u:XSCHEM_PRIMITIVE_CACHE/p:COMMONDB_ROOT/p:"
-                           "XSCHEM_OPEN_CORE/p:XSCHEM_OPEN_FILE/p:"
+                           "XSCHEM_OPEN_CORE/p:XSCHEM_OPEN_ROOM/p:XSCHEM_OPEN_FILE/p:"
                            "PDK_ROOT/u:PDK/u:XSCHEM_NETLIST_DIR/u"));
             proc.setProcessEnvironment(env);
             const QString wslWorkDir = toWslPath(workDir);
             const QString wslView = toWslPath(absViewPath);
+            // Non-login bash (no -l): sourcing ~/.bashrc on every open added seconds.
+            // Pass the view as a real argv — do not wrap in bash -c/'...'.
             proc.setProgram(QStringLiteral("C:\\Windows\\System32\\wsl.exe"));
             proc.setArguments(QStringList()
                               << QStringLiteral("--cd")
                               << wslWorkDir
                               << QStringLiteral("bash")
-                              << QStringLiteral("-lc")
-                              << QStringLiteral("./open-xschem-wsl.sh '%1'").arg(wslView));
+                              << QStringLiteral("./open-xschem-wsl.sh")
+                              << wslView);
             proc.setWorkingDirectory(workDir);
             proc.setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *args) {
                 args->flags &= ~static_cast<DWORD>(DETACHED_PROCESS);

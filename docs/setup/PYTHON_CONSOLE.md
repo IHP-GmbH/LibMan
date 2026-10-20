@@ -40,6 +40,14 @@ cxt = cell.content()          # sole view when the file has one content
 print(cxt.view(), len(cxt.instances()))
 ```
 
+### Load a script (SKILL-style)
+
+```python
+load(r"C:/path/to/myscript.py")
+```
+
+Runs the file in the same persistent session as typed commands (`room` and any prior bindings stay visible). Prefer this over `import` when you want the whole script executed and re-runnable.
+
 Open **`.room` files**, not view folders (e.g. `*.emsetup` is a directory).
 
 Paths are trimmed by ROOM’s Python API (leading/trailing spaces are ignored).

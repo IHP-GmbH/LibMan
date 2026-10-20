@@ -22,6 +22,14 @@ try:
 except Exception as e:
     print("WARNING: import room failed: %s" % e, file=sys.stderr)
 
+def load(path):
+    # SKILL-style: run a whole file into the persistent Command Line namespace (g).
+    # Must use g, not globals() — this function lives in the driver module.
+    # utf-8-sig strips a leading BOM (common on Windows-saved scripts).
+    exec(open(path, encoding="utf-8-sig").read(), g)
+
+g["load"] = load
+
 sys.stdout.flush()
 sys.stderr.flush()
 
