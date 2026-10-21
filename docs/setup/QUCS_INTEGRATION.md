@@ -1,13 +1,13 @@
 # Qucs-S integration (Windows)
 
-LibMan runs on **Windows**. **Qucs-S** (CORE-enabled) also runs natively on Windows — no WSL. Double-click a schematic/symbol view → `run-qucs-s.bat` → Qucs-S opens the `.schematic.room` / `.symbol.room` file. Simulation is done **inside Qucs-S** (Simulate → ngspice).
+DOOR runs on **Windows**. **Qucs-S** (CORE-enabled) also runs natively on Windows — no WSL. Double-click a schematic/symbol view → `run-qucs-s.bat` → Qucs-S opens the `.schematic.room` / `.symbol.room` file. Simulation is done **inside Qucs-S** (Simulate → ngspice).
 
 Xschem (WSL) remains available as a second schematic tool — see [Xschem integration](XSCHEM_INTEGRATION.md).
 
 ## Overview
 
 ```
-LibMan (Windows)
+DOOR (Windows)
   double-click schematic / symbol
     → run-qucs-s.bat
       → qucs-s.exe <path>
@@ -15,7 +15,7 @@ LibMan (Windows)
         → Simulation → ngspice_con.exe
 ```
 
-| View in LibMan | File suffix | Tool |
+| View in DOOR | File suffix | Tool |
 |----------------|-------------|------|
 | `schematic` | `*.schematic.room` | Qucs-S **or** Xschem (pick in Tool Manager / multi-tool) |
 | `symbol` | `*.symbol.room` | same |
@@ -25,13 +25,13 @@ LibMan (Windows)
 
 ### Qucs-S (ROOM build)
 
-Checkout and build sibling to CommonDB/LibMan:
+Checkout and build sibling to CommonDB/DOOR:
 
 ```text
 parent/
   Qucs-S-coredb/   ← https://github.com/adatsuk/Qucs-S-coredb
   CommonDB/
-  LibMan/
+  DOOR/
   XSchem-coredb/   ← optional second schematic tool
 ```
 
@@ -108,7 +108,7 @@ cd %PDK_ROOT%\ihp-sg13g2\libs.tech\ngspice\osdi-win
 openvaf ..\..\verilog-a\psp103\psp103.va
 ```
 
-## LibMan Tool Manager
+## DOOR Tool Manager
 
 **Settings → Tools**:
 
@@ -124,11 +124,11 @@ Example:
 C:\Users\anton\Documents\Qucs-S-coredb\run-qucs-s.bat
 ```
 
-If both Xschem and Qucs are registered for `schematic`, LibMan will ask which tool to use on open.
+If both Xschem and Qucs are registered for `schematic`, DOOR will ask which tool to use on open.
 
-Do **not** put `open-xschem-wsl.sh` next to this `.bat` — LibMan prefers the WSL launcher when that script sits beside the chosen bat.
+Do **not** put `open-xschem-wsl.sh` next to this `.bat` — DOOR prefers the WSL launcher when that script sits beside the chosen bat.
 
-## What LibMan passes
+## What DOOR passes
 
 Same primitive env as Xschem (`projectfile.cpp`):
 
@@ -151,8 +151,8 @@ Qucs-S ROOM load uses `PrimitiveResolver` + skips Xschem-only decorations (`code
 | Schematic | Path |
 |-----------|------|
 | Official IHP DC NMOS | `IHP-Open-PDK/.../libs.tech/qucs-s/examples/dc_lv_nmos.sch` (File → Open) |
-| LibMan Qucs examples | `LibMan/tests/data/Qucs_examples/dc_lv_nmos/dc_lv_nmos.schematic.room` |
-| Flat inverter TB (Qucs) | `LibMan/tests/data/_invcheck/inverter_tb_qucs_sim.sch` |
+| DOOR Qucs examples | `DOOR/tests/data/Qucs_examples/dc_lv_nmos/dc_lv_nmos.schematic.room` |
+| Flat inverter TB (Qucs) | `DOOR/tests/data/_invcheck/inverter_tb_qucs_sim.sch` |
 
 Xschem `inverter_tb.schematic.room` opens in Qucs but **drops** NGSPICE `code_shown` — add a Qucs `.TR` + `INCLSCR` (or use the flat TB above) before Simulate works like Xschem.
 
@@ -165,7 +165,7 @@ Xschem `inverter_tb.schematic.room` opens in Qucs but **drops** NGSPICE `code_sh
 | `cornerMOSlv.lib` not found | Set `.spiceinit` `sourcepath` + copy PDK `models/` |
 | OSDI `%1 is not a valid Win32 application` | PDK `osdi/*.osdi` are Linux ELF — use `osdi-win/` PE builds in `.spiceinit` |
 | Empty / missing Lib components | Install `~/.qucs/user_lib/IHP_PDK_*.lib` |
-| Hierarchy missing pins | Attach tech/design libs in LibMan so `CORE_PRIMITIVE_LIBS_FILE` is set |
+| Hierarchy missing pins | Attach tech/design libs in DOOR so `CORE_PRIMITIVE_LIBS_FILE` is set |
 
 ## Related
 

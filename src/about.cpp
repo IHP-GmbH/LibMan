@@ -2,7 +2,7 @@
 #include "ui_about.h"
 
 /*!****************************************************************************************
- * \brief Constracts About dialog window to show information about LibMan version and
+ * \brief Constructs About dialog window to show information about DOOR version and
  * its license.
  * \param parent       Parent widget, by default is NULL.
  *****************************************************************************************/
@@ -14,7 +14,7 @@ About::About(QWidget *parent) :
     m_ui->setupUi(this);
 
     QPixmap pix(":logo");
-    m_ui->lblLogo->resize(240, 240);
+    m_ui->lblLogo->resize(320, 160);
     pix = pix.scaled(m_ui->lblLogo->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
     m_ui->lblLogo->setPixmap(pix);
 
@@ -27,11 +27,13 @@ About::About(QWidget *parent) :
     font.setBold(true);
     m_ui->textAbout->setFont(font);
     m_ui->textAbout->setAlignment(Qt::AlignCenter);
-    m_ui->textAbout->append("LaibMan (" + m_version + ")\n");
-
-    m_ui->textAbout->setAlignment(Qt::AlignLeft);
+    m_ui->textAbout->append("DOOR (" + m_version + ")\n");
     font.setBold(false);
     m_ui->textAbout->setFont(font);
+    m_ui->textAbout->append("Design Open Object Repository\n");
+    m_ui->textAbout->append("Library Manager for Open EDA\n");
+
+    m_ui->textAbout->setAlignment(Qt::AlignLeft);
     m_ui->textAbout->append("By Anton Datsuk from IHP (datsuk@ihp-microlectronics.com)\n");
     m_ui->textAbout->append(getLicenseText().join("\n"));
 
@@ -41,11 +43,11 @@ About::About(QWidget *parent) :
 
     m_ui->textAbout->setReadOnly(true);
 
-    setWindowTitle("About LibMan");
+    setWindowTitle("About DOOR");
 }
 
 /*!****************************************************************************************
- * \brief Destructs About obejct and clears up UI members.
+ * \brief Destructs About object and clears up UI members.
  *****************************************************************************************/
 About::~About()
 {
@@ -53,13 +55,13 @@ About::~About()
 }
 
 /*!****************************************************************************************
- * \brief returns Apache License text for LibMan.
+ * \brief returns Apache License text for DOOR.
  *****************************************************************************************/
 QStringList About::getLicenseText() const
 {
     QStringList text;
 
-    text<<"Copyright 2023 IHP PDK Authors";
+    text<<"Copyright 2023–2026 IHP PDK Authors";
     text<<"";
     text<<"Licensed under the Apache License, Version 2.0 (the \"License\");";
     text<<"you may not use this file except in compliance with the License.";

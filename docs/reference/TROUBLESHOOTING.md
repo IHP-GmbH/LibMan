@@ -83,7 +83,7 @@
 
 **Solution**:
 1. Build first: `Ctrl+Shift+B` → Build Debug
-2. Check executable exists: `build/src/LibMan.exe`
+2. Check executable exists: `build/src/DOOR.exe`
 3. Verify `.vscode/launch.json` paths
 4. Check GDB path: `C:/Qt/Tools/mingw810_32/bin/gdb.exe` exists
 5. Reload VS Code
@@ -145,7 +145,7 @@
 **Solution**:
 1. Build first: `Ctrl+Shift+B` → Build Debug
 2. Verify build succeeds (no errors)
-3. Check executable exists: `build/src/LibMan.exe`
+3. Check executable exists: `build/src/DOOR.exe`
 4. Update `.vscode/tasks.json` run task if path is wrong
 
 **Time**: 5 minutes
@@ -294,17 +294,17 @@
 
 ---
 
-## 🟡 LibMan runtime issues
+## 🟡 DOOR runtime issues
 
 ### View still shown after deleting it in Project Editor
 
 **Cause (fixed):** Old `LIBRARY_*` property keys were not cleared on project reload.
 
-**If it happens on an old build:** Upgrade LibMan, save again from Project Editor, or **File → Open** the project file to force a full reload.
+**If it happens on an old build:** Upgrade DOOR, save again from Project Editor, or **File → Open** the project file to force a full reload.
 
 ---
 
-### New view from Browse does not appear in LibMan
+### New view from Browse does not appear in DOOR
 
 **Symptoms:** Row added in Project Editor but View tree has no `lstr` / new view.
 
@@ -341,11 +341,11 @@ See [KLayout integration](../setup/KLAYOUT_INTEGRATION.md).
 
 ### Wrong or missing cell in KLayout after opening layout root
 
-LibMan picks a root cell by: group name (if present in file) → single top cell → first top cell alphabetically. See [Root cell selection](../setup/KLAYOUT_INTEGRATION.md#root-cell-selection).
+DOOR picks a root cell by: group name (if present in file) → single top cell → first top cell alphabetically. See [Root cell selection](../setup/KLAYOUT_INTEGRATION.md#root-cell-selection).
 
 ---
 
-### Xschem does not start from LibMan (Windows)
+### Xschem does not start from DOOR (Windows)
 
 **Symptoms:** Double-click **schematic** does nothing or WSL error.
 
@@ -369,19 +369,19 @@ Corrupted `~/.xschem/geometry` with `1x1+` entries. See [Xschem integration — 
 
 **Symptoms:** qmake build fails in `room/roomcellreader.cpp` because CommonDB headers are missing.
 
-**Cause:** LibMan was configured for full ROOM linkage but [CommonDB](https://github.com/IHP-GmbH/Room) is not checked out (private repo).
+**Cause:** DOOR was configured for full ROOM linkage but [CommonDB](https://github.com/IHP-GmbH/Room) is not checked out (private repo).
 
 **Solution (public build, no ROOM):** plain `qmake` auto-disables ROOM when GitHub probe fails (no `LIBMAN_CORE_GIT_TOKEN`):
 
 ```bash
 cd build
-qmake ../libman.pro
+qmake ../door.pro
 make -j1 capnp_install
 make -j1 lstream_schemas
 make -j"$(nproc)"
 ```
 
-Or force stubs: `qmake CONFIG+=no_room ../libman.pro`.
+Or force stubs: `qmake CONFIG+=no_room ../door.pro`.
 
 **Solution (full ROOM):** set `LIBMAN_CORE_GIT_TOKEN` (or clone `.deps/Room`), re-run `qmake`, then `make -j1 room_fetch`. See [ROOM integration](../setup/ROOM_INTEGRATION.md).
 
@@ -403,11 +403,11 @@ Or force stubs: `qmake CONFIG+=no_room ../libman.pro`.
 
 ### Import: converter not found
 
-**Symptoms:** Log shows `Converter 'xschem_to_core' was not found next to LibMan`.
+**Symptoms:** Log shows `Converter 'xschem_to_core' was not found next to DOOR`.
 
 **Solution:**
 1. Rebuild with ROOM enabled (not `CONFIG+=no_room`).
-2. Confirm converter `.exe` files sit next to `libman.exe` (CMake POST_BUILD or qmake `core_converter_deploy.pri`).
+2. Confirm converter `.exe` files sit next to `door.exe` (CMake POST_BUILD or qmake `core_converter_deploy.pri`).
 3. Or set `LIBMAN_CONVERTER_DIR` to the tools directory.
 
 See [IMPORT.md](../setup/IMPORT.md).
@@ -416,7 +416,7 @@ See [IMPORT.md](../setup/IMPORT.md).
 
 ### Import: project file not updated
 
-**Symptoms:** Views appear in LibMan but `.projects` has no new `define()` lines.
+**Symptoms:** Views appear in DOOR but `.projects` has no new `define()` lines.
 
 **Solution:** Open the project first (**File → Open...**). Import auto-saves only when a project is loaded; otherwise **File → Save** after import.
 

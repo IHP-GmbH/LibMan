@@ -642,7 +642,7 @@ void MainWindow::addNewLStreamView()
                                  libName,
                                  cellNames,
                                  "unknown",
-                                 "LibMan");
+                                 "DOOR");
 
     if(!result.written) {
         foreach(const QString &explain, result.errors) {
@@ -891,7 +891,7 @@ QString MainWindow::writeEmSetupModelTemplate(const QString &modelPath,
     const QString cellEscaped = QString(cellName).replace(QStringLiteral("\""), QStringLiteral("\\\""));
 
     const QString body = QStringLiteral(
-        "# EMStudio model created by LibMan (emsetup)\n"
+        "# EMStudio model created by DOOR (emsetup)\n"
         "# gds_filename is the companion GDS next to this model (ROOM→GDS on Run).\n"
         "\n"
         "start_simulation = False\n"

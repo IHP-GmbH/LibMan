@@ -1,6 +1,6 @@
 # Project Editor
 
-LibMan stores design libraries in a **project file** (`.projects` or `.lib`). Each line is a `define(library, path)` entry that maps a logical library name to a view file (GDS, OAS, LStream, or ROOM).
+DOOR stores design libraries in a **project file** (`.projects` or `.lib`). Each line is a `define(library, path)` entry that maps a logical library name to a view file (GDS, OAS, LStream, or ROOM).
 
 The **Project Editor** is a Cadence Library Path Editor–style table for editing those entries without hand-editing the file.
 
@@ -72,13 +72,13 @@ define("ihp_sg13g2", "sg13g2_stdcell/sg13g2_stdcell/sg13g2_stdcell.schematic.roo
 - Inserts the **full absolute path** (e.g. `C:\Users\...\file.gds`) so paths are unambiguous in the table.
 - If **Library** is empty, copies the library name from the **row above** (typical when adding another view to the same library).
 - On **Save**, paths are stored relative to the `.projects` file directory when possible (portable projects).
-- Both absolute and relative paths in the file are resolved correctly when LibMan loads the project.
+- Both absolute and relative paths in the file are resolved correctly when DOOR loads the project.
 
 ## File menu (inside Project Editor)
 
 | Action | Shortcut | Description |
 |--------|----------|-------------|
-| **Save** | `Ctrl+S` | Writes to the current project file and reloads LibMan |
+| **Save** | `Ctrl+S` | Writes to the current project file and reloads DOOR |
 | **Save As...** | — | Save under a new name, then reload |
 | **Close** | `Ctrl+W` | Close (prompts if modified) |
 
@@ -88,7 +88,7 @@ Saving from the main window (**File → Save**, `Ctrl+S`) still works and writes
 
 1. Rows with **both** Library and Path filled are written to the project file.
 2. Rows with a missing library name or path are skipped.
-3. LibMan **reloads** the project:
+3. DOOR **reloads** the project:
    - Removed `define` entries disappear from the **View** tree (old `LIBRARY_*` keys are cleared first).
    - The previously selected **Project** and **Cell** are restored when possible.
    - **Documentation** and **categories** for the selected library are reloaded (PDF list is not left empty after save).

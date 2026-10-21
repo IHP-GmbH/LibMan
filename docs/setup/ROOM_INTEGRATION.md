@@ -1,6 +1,6 @@
 # ROOM integration
 
-LibMan links **[ROOM](https://github.com/IHP-GmbH/Room)** ([HTML API docs](https://ihp-gmbh.github.io/Room/)) for `.room` views and format converters. ROOM is a **public** repository (`IHP-GmbH/Room`). At configure time LibMan probes GitHub access to that repo; if reachable, ROOM is enabled, otherwise stubs are used (`LIBMAN_NO_ROOM`).
+DOOR links **[ROOM](https://github.com/IHP-GmbH/Room)** ([HTML API docs](https://ihp-gmbh.github.io/Room/)) for `.room` views and format converters. ROOM is a **public** repository (`IHP-GmbH/Room`). At configure time DOOR probes GitHub access to that repo; if reachable, ROOM is enabled, otherwise stubs are used (`LIBMAN_NO_ROOM`).
 
 ## Default behaviour
 
@@ -8,13 +8,13 @@ LibMan links **[ROOM](https://github.com/IHP-GmbH/Room)** ([HTML API docs](https
 
 ```bash
 mkdir -p build && cd build
-qmake ../libman.pro
+qmake ../door.pro
 make -j1 capnp_install
 make -j1 lstream_schemas
 make -j"$(nproc)"
 ```
 
-Without access you will see: `LibMan: building without ROOM (CommonDB not available)`.
+Without access you will see: `DOOR: building without ROOM (CommonDB not available)`.
 
 **CMake** — same probe via `cmake/ProbeCoreAccess.cmake`:
 
@@ -48,7 +48,7 @@ After a successful probe, qmake builds fetch ROOM on `make room_fetch` (or autom
 
 ```bash
 export LIBMAN_CORE_GIT_TOKEN=ghp_...
-qmake ../libman.pro
+qmake ../door.pro
 make -j1 capnp_install
 make -j1 lstream_schemas
 make -j1 room_fetch
@@ -103,7 +103,7 @@ cmake -B build -DLIBMAN_FETCH_CORE=OFF -DCORE_DIR=...
 | `CORE_GIT_TAG` | `main` | Branch, tag, or commit |
 | `LIBMAN_ROOM_SOURCE_DIR` | *(empty)* | Local tree instead of fetch |
 
-## Using ROOM in LibMan code
+## Using ROOM in DOOR code
 
 ```cpp
 #include "database.h"
@@ -116,7 +116,7 @@ Link targets are already set in `CMakeLists.txt` (`ROOM::room`, `ROOM::room_util
 
 ## Python Command Line
 
-LibMan also starts an out-of-process Python REPL with `import room` for interactive inspection of `.room` files. See **[Python Command Line](PYTHON_CONSOLE.md)** (Window → Messages / Command Line, Enter to run).
+DOOR also starts an out-of-process Python REPL with `import room` for interactive inspection of `.room` files. See **[Python Command Line](PYTHON_CONSOLE.md)** (Window → Messages / Command Line, Enter to run).
 
 ## CI (GitHub Actions)
 
@@ -134,7 +134,7 @@ Add repository secret (org-level `GH_PAT` is preferred — same token as Qucs/XS
 
 `qmake` / `cmake` auto-detect access; no manual `CONFIG+=core` required in CI.
 
-## Layout view in LibMan
+## Layout view in DOOR
 
 `layout` (and legacy `core`) is a first-class layout view suffix (like `gds`, `oas`, `lstr`):
 
@@ -148,8 +148,8 @@ Default `LayoutViews` property: `gds,oas,lstr,layout`.
 
 ## Project file and views
 
-View paths come from the project file (`define(library, path)`). Edit entries in **[Project Editor](PROJECT_EDITOR.md)** (**File → Edit Project...**, `Ctrl+E`). Bulk-import from external formats via **[Import](IMPORT.md)** (**File → Import...**). After Save or import, LibMan reloads libraries; removed views disappear from the tree and documentation for the selected library is refreshed.
+View paths come from the project file (`define(library, path)`). Edit entries in **[Project Editor](PROJECT_EDITOR.md)** (**File → Edit Project...**, `Ctrl+E`). Bulk-import from external formats via **[Import](IMPORT.md)** (**File → Import...**). After Save or import, DOOR reloads libraries; removed views disappear from the tree and documentation for the selected library is refreshed.
 
 ## Converter tools
 
-With `CORE_BUILD_EXAMPLES=ON` (default in LibMan CMake / qmake fetch scripts), converter executables are deployed next to `libman.exe` for the Import dialog. See **[Import](IMPORT.md)** for formats, folder import, and `LIBMAN_CONVERTER_DIR`.
+With `CORE_BUILD_EXAMPLES=ON` (default in DOOR CMake / qmake fetch scripts), converter executables are deployed next to `door.exe` for the Import dialog. See **[Import](IMPORT.md)** for formats, folder import, and `LIBMAN_CONVERTER_DIR`.

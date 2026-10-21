@@ -450,7 +450,7 @@ void ProjectEditor::on_btnSave_clicked()
             this,
             tr("Save project file"),
             initialDir,
-            tr("LibMan project (*.projects *.lib);;All files (*)"));
+            tr("DOOR project (*.projects *.lib);;All files (*)"));
         if (filePath.isEmpty()) {
             return;
         }

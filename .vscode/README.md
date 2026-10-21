@@ -1,15 +1,15 @@
-# LibMan VS Code Tasks Configuration
+# DOOR VS Code Tasks Configuration
 
-This directory contains VS Code configuration files for building and debugging the LibMan project.
+This directory contains VS Code configuration files for building and debugging the DOOR project.
 
 ## Files
 
 ### tasks.json
 Defines all build, run, and test tasks with organized groups:
 
-#### **Compilation & Running LibMan** (Dropdown Tasks)
-- **Build Debug** - Compiles LibMan in Debug mode
-- **Build Release** - Compiles LibMan in Release mode  
+#### **Compilation & Running DOOR** (Dropdown Tasks)
+- **Build Debug** - Compiles DOOR in Debug mode
+- **Build Release** - Compiles DOOR in Release mode  
 - **Run Debug** - Launches the debug executable
 - **Run Release** - Launches the release executable
 - **Build & Run Debug** - Compiles and runs in Debug mode
@@ -33,7 +33,7 @@ VS Code editor settings including:
 
 ### launch.json
 Debug configurations for:
-- **Debug LibMan (GDB)** - Debug the main LibMan application
+- **Debug DOOR (GDB)** - Debug the main DOOR application
 - **Debug Tests (GDB)** - Debug the test suite
 
 ### extensions.json
@@ -45,7 +45,7 @@ Recommended VS Code extensions for C++ development with CMake.
 1. Run task: **CMake: Configure Debug** (or Release)
 2. Once configuration is complete, you can use any compilation/run tasks
 
-### Build LibMan
+### Build DOOR
 - Press `Ctrl+Shift+B` and select from the dropdown
 - Common options: Build Debug, Build & Run Debug
 
@@ -55,7 +55,7 @@ Recommended VS Code extensions for C++ development with CMake.
 
 ### Debug
 - Press `F5` to start debugging (uses the configured debug task)
-- Use **Debug LibMan (GDB)** or **Debug Tests (GDB)** configurations
+- Use **Debug DOOR (GDB)** or **Debug Tests (GDB)** configurations
 
 ## Requirements
 

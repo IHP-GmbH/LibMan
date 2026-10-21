@@ -1,6 +1,6 @@
-# Building LibMan
+# Building DOOR
 
-LibMan has two supported build entry points: **qmake** (used in GitHub Actions) and **CMake** (used by VS Code tasks and local IDE workflows). Both fetch **Cap'n Proto** and **LStream schemas** on first build; they are not vendored in git.
+DOOR has two supported build entry points: **qmake** (used in GitHub Actions) and **CMake** (used by VS Code tasks and local IDE workflows). Both fetch **Cap'n Proto** and **LStream schemas** on first build; they are not vendored in git.
 
 ---
 
@@ -34,7 +34,7 @@ Set `CAPNP_SKIP_CHECK=1` to skip Cap'n Proto's test suite during install (CI use
 
 ```bash
 mkdir -p build && cd build
-qmake ../libman.pro
+qmake ../door.pro
 make -j1 capnp_install      # Cap'n Proto first (serial)
 make -j1 lstream_schemas    # LStream .capnp → C++ (serial)
 make -j"$(nproc)"           # application (parallel)
@@ -54,7 +54,7 @@ Then configure and patch the Makefile (order-only deps for Cap'n Proto consumers
 
 ```bash
 mkdir -p build && cd build
-qmake CONFIG+=release ../libman.pro
+qmake CONFIG+=release ../door.pro
 bash ../scripts/patch_capnp_makefile.sh
 mingw32-make -j"$(nproc)"
 ```
@@ -75,7 +75,7 @@ Linux CI runs tests via `scripts/run_tests.sh` with `LIBMAN_TEST_DATA_DIR` point
 
 ### Qt Creator
 
-1. Open **`tests/tests.pro`** as a separate project (not only `libman.pro`).
+1. Open **`tests/tests.pro`** as a separate project (not only `door.pro`).
 2. **Run qmake**, then **Build** (creates `tst_libman_gui.exe` under your shadow build dir, often `build-tests/Desktop_Qt_*-Debug/debug/` or `build/Desktop_Qt_*-Debug/debug/`).
 3. Run tests — in Qt Creator set the run target to **`tests/run_tests.bat`** (not `scripts/run_tests.bat`). That wrapper finds `tests/build/debug/tst_libman_gui.exe`. From a terminal:
    ```cmd

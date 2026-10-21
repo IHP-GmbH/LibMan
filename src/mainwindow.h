@@ -527,7 +527,9 @@ private:
     QString                             getToolByView(const QString &) const;
     QString                             getDocumentTool(const QString &) const;
 
-    QString                             getLibManTitle() const;
+    QString                             getAppTitle() const;
+    /** @deprecated Use getAppTitle(). */
+    QString                             getLibManTitle() const { return getAppTitle(); }
 
     QStringList                         getValidViewList() const;
     QStringList                         getCurrentGroups(const QString &) const;
@@ -684,11 +686,11 @@ inline bool MainWindow::isViewCopied() const
 }
 
 /*!*******************************************************************************************************************
- * \brief Returns title of the LibMan.
+ * \brief Returns the application window title (DOOR).
  ********************************************************************************************************************/
-inline QString MainWindow::getLibManTitle() const
+inline QString MainWindow::getAppTitle() const
 {
-    return QString("LibMan - Library Project Manager");
+    return QString("DOOR - Library Manager for Open EDA");
 }
 
 #endif // MAINWINDOW_H

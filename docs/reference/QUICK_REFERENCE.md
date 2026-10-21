@@ -30,7 +30,7 @@ Ctrl+Shift+B → "Build Debug" → Enter
 
 ### Debug the App
 ```
-F5 → "Debug LibMan (GDB)" → Enter
+F5 → "Debug DOOR (GDB)" → Enter
 ```
 
 ### Release Build
@@ -101,7 +101,7 @@ Ctrl+Shift+B → "Tests: Run All Tests" → Enter
 
 ## 📊 Task Groups (Ctrl+Shift+B Dropdown)
 
-### Compilation & Running LibMan
+### Compilation & Running DOOR
 - Build Debug
 - Build Release
 - Run Debug
@@ -141,7 +141,7 @@ Ctrl+Shift+B → "Tests: Run All Tests" → Enter
 
 ---
 
-## 🗂️ LibMan application shortcuts
+## 🗂️ DOOR application shortcuts
 
 | Shortcut | Action |
 |----------|--------|

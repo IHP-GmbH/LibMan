@@ -1,12 +1,12 @@
-# 📚 LibMan Documentation Index
+# 📚 DOOR Documentation Index
 
 <p align="center">
-  <img src="libman-logo.png" alt="LibMan logo" width="220">
+  <img src="libman-logo.png" alt="DOOR logo" width="220">
 </p>
 
-Welcome! This is your central hub for all LibMan documentation. Use the sections below to find what you need.
+Welcome! This is your central hub for all DOOR documentation. Use the sections below to find what you need.
 
-LibMan integrates **[ROOM](https://github.com/IHP-GmbH/Room)** for cell views and converters — see [ROOM integration](setup/ROOM_INTEGRATION.md) and the [ROOM API docs](https://ihp-gmbh.github.io/Room/).
+DOOR integrates **[ROOM](https://github.com/IHP-GmbH/Room)** for cell views and converters — see [ROOM integration](setup/ROOM_INTEGRATION.md) and the [ROOM API docs](https://ihp-gmbh.github.io/Room/).
 
 ---
 
@@ -85,7 +85,7 @@ Detailed reference and customization guides:
 Ctrl+Shift+B → Build & Run Debug
 
 # Debug the app
-F5 → Debug LibMan (GDB)
+F5 → Debug DOOR (GDB)
 
 # Run tests
 Ctrl+Shift+B → Tests: Run All Tests

@@ -2,7 +2,7 @@
 
 ## Complete Setup Documentation
 
-Your VS Code workspace has been configured with complete build, run, and test task management for the LibMan project.
+Your VS Code workspace has been configured with complete build, run, and test task management for the DOOR project.
 
 ---
 
@@ -28,7 +28,7 @@ Your VS Code workspace has been configured with complete build, run, and test ta
 
 ## 🎯 Available Tasks
 
-### Compilation & Running LibMan (Ctrl+Shift+B)
+### Compilation & Running DOOR (Ctrl+Shift+B)
 - Build Debug
 - Build Release
 - Run Debug
@@ -46,7 +46,7 @@ Your VS Code workspace has been configured with complete build, run, and test ta
 - CMake: Configure Release
 
 ### Debugging (F5)
-- Debug LibMan (GDB)
+- Debug DOOR (GDB)
 - Debug Tests (GDB)
 
 ---
@@ -60,7 +60,7 @@ Your VS Code workspace has been configured with complete build, run, and test ta
 
 ### Debug
 1. Press `F5`
-2. Select "Debug LibMan (GDB)"
+2. Select "Debug DOOR (GDB)"
 3. App launches with debugger
 
 ### Run Tests

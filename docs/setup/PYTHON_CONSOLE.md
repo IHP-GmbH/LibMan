@@ -1,6 +1,6 @@
 # Python Command Line (CML)
 
-LibMan embeds a Virtuoso-style **Command Line** under **Messages** for interactive [ROOM](https://github.com/IHP-GmbH/Room) Python (`import room`).
+DOOR embeds a Virtuoso-style **Command Line** under **Messages** for interactive [ROOM](https://github.com/IHP-GmbH/Room) Python (`import room`).
 
 ## UI
 
@@ -22,11 +22,11 @@ History keeps up to 200 distinct commands for the session.
 
 ## Startup
 
-On launch LibMan starts a persistent Python process from [`python/libman_console.py`](../../python/libman_console.py) (copied next to the binary on build; override with `LIBMAN_CONSOLE_PY`):
+On launch DOOR starts a persistent Python process from [`python/door_console.py`](../../python/door_console.py) (copied next to the binary on build; override with `DOOR_CONSOLE_PY / LIBMAN_CONSOLE_PY`):
 
-1. Finds `python` / `python3` (`LIBMAN_PYTHON` overrides the executable).
-2. Prefers CommonDB’s package via `PYTHONPATH` (`LIBMAN_ROOM_PYTHON` or sibling `../CommonDB/python`).
-3. Sets `ROOM_C_DLL` when a built `room_c` / `libroom_c` is found next to LibMan or under CommonDB `build-python/python`.
+1. Finds `python` / `python3` (`DOOR_PYTHON / LIBMAN_PYTHON` overrides the executable).
+2. Prefers CommonDB’s package via `PYTHONPATH` (`DOOR_ROOM_PYTHON / LIBMAN_ROOM_PYTHON` or sibling `../CommonDB/python`).
+3. Sets `ROOM_C_DLL` when a built `room_c` / `libroom_c` is found next to DOOR or under CommonDB `build-python/python`.
 
 The session namespace already has:
 
@@ -59,13 +59,13 @@ Runs the file in the same persistent session as typed commands (`room` and any p
 
 ### Register a new cell/view without reloading
 
-Create the `.room` file with ROOM, then tell LibMan:
+Create the `.room` file with ROOM, then tell DOOR:
 
 ```python
 define("module_0_foundations", r"C:/path/to/my_rect/my_rect.layout.room")
 ```
 
-LibMan adds the cell/view to the lists and writes `define(...)` into the open `.projects` file. External editors still get the reload prompt; CML `define`/`undefine` do not.
+DOOR adds the cell/view to the lists and writes `define(...)` into the open `.projects` file. External editors still get the reload prompt; CML `define`/`undefine` do not.
 
 Do **not** edit `.projects` from Python yourself (backslash escaping is easy to get wrong). Always use `define` / `undefine`.
 
@@ -115,6 +115,6 @@ Full API: [ROOM Python docs](https://ihp-gmbh.github.io/Room/python.html) · [Ce
 
 ## Related
 
-- [ROOM integration](ROOM_INTEGRATION.md) — fetch/build ROOM with LibMan
+- [ROOM integration](ROOM_INTEGRATION.md) — fetch/build ROOM with DOOR
 - [Import](IMPORT.md) — GDS/Xschem/Qucs/OAS → `.room`
 - [Project Editor](PROJECT_EDITOR.md) — `define(library, path)` lines in `.projects`

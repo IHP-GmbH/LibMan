@@ -2,10 +2,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug LibMan (GDB)",
+      "name": "Debug DOOR (GDB)",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/libman.exe",
+      "program": "${workspaceFolder}/build/door.exe",
       "args": [
         "${workspaceFolder}/tests/data/sg13g2.projects"
       ],
@@ -27,7 +27,7 @@
           "ignoreFailures": true
         }
       ],
-      "preLaunchTask": "Build LibMan",
+      "preLaunchTask": "Build DOOR",
       "sourceLanguages": [
         "cpp"
       ]

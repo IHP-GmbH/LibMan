@@ -1,8 +1,8 @@
-# LibMan Project Dependencies - Installation Guide
+# DOOR Project Dependencies - Installation Guide
 
 ## Current Status
 
-The LibMan project requires the following to compile:
+The DOOR project requires the following to compile:
 - ✅ Qt 5.15.2 (configured at `C:/Qt/5.15.2/mingw81_64/lib/cmake/Qt5`)
 - ✅ CMake 3.16+
 - ✅ MinGW 8.1.0 compiler
@@ -90,7 +90,7 @@ cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Debug `
 Once ZLIB is installed, verify CMake can find it:
 
 ```bash
-cd c:\Users\anton\Documents\LibMan
+cd c:\Users\anton\Documents\DOOR
 cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Debug
 ```
 

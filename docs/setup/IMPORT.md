@@ -1,6 +1,6 @@
 # Import external views (File → Import)
 
-LibMan can convert schematics and layouts from other EDA formats into **ROOM** view files and register them in the current project.
+DOOR can convert schematics and layouts from other EDA formats into **ROOM** view files and register them in the current project.
 
 | Menu | Description |
 |------|-------------|
@@ -30,9 +30,9 @@ The target library defaults to the library currently selected in the main window
 
 For each source file:
 
-1. LibMan creates `\<library-root>/\<cell>/\<cell>.\<view>.core` (or copies a native `.oas` file when no converter is available).
+1. DOOR creates `\<library-root>/\<cell>/\<cell>.\<view>.core` (or copies a native `.oas` file when no converter is available).
 2. A **ROOM converter** is run as an external process.
-3. The new view is registered in LibMan (`LIBRARY_<lib>/<cell>/<view>`).
+3. The new view is registered in DOOR (`LIBRARY_<lib>/<cell>/<view>`).
 4. If a project file is open, **File → Save** runs automatically — a new `define("library", "path");` line is appended to `.projects`.
 
 Cell name is taken from the source file base name (`OTA1336.sch` → cell `OTA1336`).
@@ -46,13 +46,13 @@ Cell name is taken from the source file base name (`OTA1336.sch` → cell `OTA13
 
 GDS import uses `--all-cells` so multi-cell libraries are preserved in one `.layout.room` file per source GDS.
 
-Large GDS files (fill/AREF-heavy chips) convert in a few seconds; LibMan no longer requests or streams a full text dump into the Import log (that used to freeze the UI). Converter stdout is capped in the dialog. Optional dumps: run `gds_to_room --dump out.txt …` yourself.
+Large GDS files (fill/AREF-heavy chips) convert in a few seconds; DOOR no longer requests or streams a full text dump into the Import log (that used to freeze the UI). Converter stdout is capped in the dialog. Optional dumps: run `gds_to_room --dump out.txt …` yourself.
 
 ---
 
-## Converter tools (next to `libman.exe`)
+## Converter tools (next to `door.exe`)
 
-LibMan does not embed converters in-process. On build, these tools from [CommonDB](https://github.com/IHP-GmbH/Room) are copied next to the executable:
+DOOR does not embed converters in-process. On build, these tools from [CommonDB](https://github.com/IHP-GmbH/Room) are copied next to the executable:
 
 - `gds_to_core`, `core_to_gds`
 - `xschem_to_core`, `core_to_xschem`
@@ -62,14 +62,14 @@ LibMan does not embed converters in-process. On build, these tools from [CommonD
 **Search order** (`room/converter_paths.cpp`):
 
 1. `LIBMAN_CONVERTER_DIR` environment variable (if set)
-2. Directory containing `libman.exe`
+2. Directory containing `door.exe`
 3. `tools/` and `converters/` subdirectories next to the executable
 
 Override example:
 
 ```powershell
 $env:LIBMAN_CONVERTER_DIR = "C:\path\to\converters"
-.\build\libman.exe
+.\build\door.exe
 ```
 
 ### Build integration
@@ -93,7 +93,7 @@ Export ROOM views from the current project to external formats:
 | Xschem | `.sch` / `.sym` | `core_to_xschem` |
 | Qucs | `.sch` | `core_to_qucs` |
 
-Pick a destination folder and one or more `*.room` view files (or use the project tree selection). Converters are resolved the same way as import (`LIBMAN_CONVERTER_DIR`, directory next to `libman.exe`).
+Pick a destination folder and one or more `*.room` view files (or use the project tree selection). Converters are resolved the same way as import (`LIBMAN_CONVERTER_DIR`, directory next to `door.exe`).
 
 ---
 
@@ -123,7 +123,7 @@ Use **[Project Editor](PROJECT_EDITOR.md)** (`Ctrl+E`) to review or edit entries
 
 | Symptom | What to check |
 |---------|----------------|
-| `Converter 'gds_to_core' was not found` | Rebuild with ROOM; confirm `gds_to_core.exe` is next to `libman.exe` or set `LIBMAN_CONVERTER_DIR` |
+| `Converter 'gds_to_core' was not found` | Rebuild with ROOM; confirm `gds_to_core.exe` is next to `door.exe` or set `LIBMAN_CONVERTER_DIR` |
 | `Cell view already exists` | Delete the existing cell folder or pick another library |
 | Import menu disabled / error about `no_room` | Rebuild without `CONFIG+=no_room`; CI stub builds omit Import |
 | OAS imports as `.oas` not `.layout.room` | `oas_to_core` was not built (ZLIB missing in ROOM build); native OAS copy still works |

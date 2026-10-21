@@ -4,9 +4,9 @@
 
 ---
 
-## What is LibMan?
+## What is DOOR?
 
-LibMan is a Qt5-based application for managing library components. It's built with:
+DOOR is a Qt5-based application for managing library components. It's built with:
 - **Language**: C++17
 - **Framework**: Qt 5.15.2
 - **Build System**: CMake
@@ -49,7 +49,7 @@ The first build also clones and compiles **Cap'n Proto** (several minutes). See 
 
 ### Open Terminal:
 ```bash
-cd c:\Users\anton\Documents\LibMan
+cd c:\Users\anton\Documents\DOOR
 ```
 
 ### Configure CMake:
@@ -72,7 +72,7 @@ cmake --build build --config Debug -j4
 
 ### From Terminal:
 ```bash
-./build/src/LibMan.exe
+./build/src/DOOR.exe
 ```
 
 ### Or from VS Code:
@@ -88,7 +88,7 @@ Press `F5` in VS Code to start debugging.
 
 ## ✅ Success!
 
-If you see the LibMan window, you're done! 🎉
+If you see the DOOR window, you're done! 🎉
 
 ---
 

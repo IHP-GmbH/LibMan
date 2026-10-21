@@ -49,7 +49,7 @@ void writeExportedXschemRc(const QString &destRoot)
     }
     QTextStream out(&file);
     // Match XSchem-coredb/integrations/xschem-batch.rc: devices + PDK parent of sg13g2_pr.
-    out << "# LibMan Xschem export — hierarchical netlist needs devices + PDK parent path\n"
+    out << "# DOOR Xschem export — hierarchical netlist needs devices + PDK parent path\n"
         << "set xschem_execute_scripts yes\n"
         << "set share [file join $::env(HOME) .local share xschem]\n"
         << "if {[file exists [file join $share xschemrc]]} {\n"
@@ -278,7 +278,7 @@ CoreExportService::ExportItemResult CoreExportService::exportOne(Format format,
 
     const QString converterPath = findCoreConverterExecutable(converterBaseName(format));
     if (converterPath.isEmpty()) {
-        result.message = QStringLiteral("Converter '%1' was not found next to LibMan.")
+        result.message = QStringLiteral("Converter '%1' was not found next to DOOR.")
                              .arg(converterBaseName(format));
         return result;
     }

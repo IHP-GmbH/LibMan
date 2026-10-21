@@ -1,6 +1,6 @@
 # KLayout integration
 
-LibMan opens layout views (`gds`, `oas`, `lstr`, `layout` / `*.layout.room`) in [KLayout](https://www.klayout.de/) via a persistent **KLayout server** — a background KLayout instance that polls a JSON command file.
+DOOR opens layout views (`gds`, `oas`, `lstr`, `layout` / `*.layout.room`) in [KLayout](https://www.klayout.de/) via a persistent **KLayout server** — a background KLayout instance that polls a JSON command file.
 
 ## Tool Manager setup
 
@@ -19,7 +19,7 @@ Double-click the **view node** itself (`gds`, `oas`, `lstr`, or `layout`) — no
 
 Double-click **opens KLayout** and does **not** expand or collapse the tree node (use the arrow/disclosure control or single-click expand for hierarchy browsing).
 
-LibMan:
+DOOR:
 
 1. Resolves the file path sent to KLayout (GDS/OAS/LStream directly; `*.layout.room` natively when the [mroom](https://github.com/adatsuk/KLayout-roomdb) streamer is installed).
 2. Picks a **root cell** to activate (see [Root cell selection](#root-cell-selection)).
@@ -28,20 +28,20 @@ LibMan:
 
 ### Double-click on a hierarchy cell
 
-Double-click a **child cell** under the layout view. LibMan always opens/selects that exact cell name.
+Double-click a **child cell** under the layout view. DOOR always opens/selects that exact cell name.
 
 ## Root cell selection
 
-When you open the layout **view root**, LibMan chooses the KLayout cell as follows:
+When you open the layout **view root**, DOOR chooses the KLayout cell as follows:
 
 | Priority | Rule | Example |
 |----------|------|---------|
-| 1 | LibMan **group name** (selected cell in the groups list) if that name exists in the layout file | Group `sg13g2_io`, GDS contains `sg13g2_io` → opens `sg13g2_io` |
+| 1 | DOOR **group name** (selected cell in the groups list) if that name exists in the layout file | Group `sg13g2_io`, GDS contains `sg13g2_io` → opens `sg13g2_io` |
 | 2 | **Single top cell** in the file hierarchy | One wrapper cell `TOP` with children shown in the tree → opens `TOP` |
 | 3 | **First top cell** (sorted) when several top-level cells exist | `sg13g2_stdcell.layout.room` with 84 stdcells, group `sg13g2_stdcell` not in file → opens first cell alphabetically (e.g. `sg13g2_and2_1`) |
 | 4 | No matching cell | File opens without an explicit cell selection (KLayout default) |
 
-Hierarchy is taken from the in-memory cache when the tree was expanded; otherwise LibMan reads it synchronously from the file (GDS/OAS/LStream/ROOM parsers).
+Hierarchy is taken from the in-memory cache when the tree was expanded; otherwise DOOR reads it synchronously from the file (GDS/OAS/LStream/ROOM parsers).
 
 This matches the tree rules for ROOM layout: a single wrapper top cell is shown as its children in the UI, but KLayout still activates the real top cell when you open the layout root.
 
@@ -67,11 +67,11 @@ See also: [ROOM integration](ROOM_INTEGRATION.md).
 Compare two layout views (`gds`, `oas`, `lstr`, `layout` / `*.layout.room`) from the views context menu — same two-step flow as copy/paste:
 
 1. Right-click the **first** layout view (or a cell under it) → **XOR...**  
-   LibMan remembers `library/cell/view` and logs:  
+   DOOR remembers `library/cell/view` and logs:  
    `XOR: 'lib/group/view' selected for XOR. Choose a second layout...`
 2. Right-click the **second** layout view → **XOR with &lt;first&gt;**  
-   LibMan starts a separate KLayout batch process (`klayout -b -r &lt;script&gt;`), not the interactive server.
-3. Per-layer XOR counts and the summary are streamed into the LibMan log (`textMessages`).
+   DOOR starts a separate KLayout batch process (`klayout -b -r &lt;script&gt;`), not the interactive server.
+3. Per-layer XOR counts and the summary are streamed into the DOOR log (`textMessages`).
 4. If differences exist, a clickable temp GDS link is logged. The file contains:
    - **master** cell tree (first operand)
    - **XOR_DIFF** — differing shapes only

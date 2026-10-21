@@ -10,7 +10,7 @@
 /*!*********************************************************************************************************************
  * \brief Persistent out-of-process Python REPL with ROOM (`import room`) preloaded.
  *
- * Driver script: ``python/libman_console.py`` (next to the binary or in the source tree).
+ * Driver script: ``python/door_console.py`` (next to the binary or in the source tree; ``libman_console.py`` still accepted).
  * Commands are sent as length-prefixed UTF-8 blocks; stdout/stderr are emitted as they arrive.
  * Completion of each command is marked with a sentinel so the UI can re-enable input.
  *

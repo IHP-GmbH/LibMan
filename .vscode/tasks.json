@@ -2,12 +2,12 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "_stopLibMan",
+      "label": "_stopDoor",
       "type": "shell",
       "command": "cmd",
       "args": [
         "/c",
-        "taskkill /IM libman.exe /F >nul 2>&1 || exit /b 0"
+        "taskkill /IM door.exe /F >nul 2>&1 || exit /b 0"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
@@ -56,7 +56,7 @@
       "hide": true
     },
     {
-      "label": "_configureLibMan",
+      "label": "_configureDoor",
       "type": "shell",
       "command": "cmake",
       "args": [
@@ -113,23 +113,23 @@
       "hide": true
     },
     {
-      "label": "Build LibMan",
+      "label": "Build DOOR",
       "type": "shell",
       "command": "cmake",
       "args": [
         "--build",
         "build",
         "--target",
-        "libman",
+        "door",
         "-j2"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
       },
       "dependsOn": [
-        "_stopLibMan",
+        "_stopDoor",
         "_cleanBrokenCoreUtils",
-        "_configureLibMan"
+        "_configureDoor"
       ],
       "dependsOrder": "sequence",
       "group": {
@@ -145,9 +145,9 @@
       }
     },
     {
-      "label": "Run LibMan",
+      "label": "Run DOOR",
       "type": "shell",
-      "command": "${workspaceFolder}/build/libman.exe",
+      "command": "${workspaceFolder}/build/door.exe",
       "options": {
         "cwd": "${workspaceFolder}",
         "env": {

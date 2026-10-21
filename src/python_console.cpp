@@ -122,9 +122,11 @@ bool PythonConsole::isBusy() const
 
 QString PythonConsole::findPythonExecutable() const
 {
-    const QString fromEnv = qEnvironmentVariable("LIBMAN_PYTHON").trimmed();
-    if (!fromEnv.isEmpty() && QFileInfo::exists(fromEnv)) {
-        return QFileInfo(fromEnv).absoluteFilePath();
+    for (const char *key : {"DOOR_PYTHON", "LIBMAN_PYTHON"}) {
+        const QString fromEnv = qEnvironmentVariable(key).trimmed();
+        if (!fromEnv.isEmpty() && QFileInfo::exists(fromEnv)) {
+            return QFileInfo(fromEnv).absoluteFilePath();
+        }
     }
 
     const QStringList names = {
@@ -219,18 +221,26 @@ QString PythonConsole::findRoomCLibrary() const
 
 QString PythonConsole::findDriverScript() const
 {
-    const QString env = qEnvironmentVariable("LIBMAN_CONSOLE_PY").trimmed();
-    if (!env.isEmpty() && QFileInfo::exists(env)) {
-        return QFileInfo(env).absoluteFilePath();
+    for (const char *key : {"DOOR_CONSOLE_PY", "LIBMAN_CONSOLE_PY"}) {
+        const QString env = qEnvironmentVariable(key).trimmed();
+        if (!env.isEmpty() && QFileInfo::exists(env)) {
+            return QFileInfo(env).absoluteFilePath();
+        }
     }
 
     const QString appDir = QCoreApplication::applicationDirPath();
     const QStringList candidates = {
+        QDir(appDir).filePath(QStringLiteral("python/door_console.py")),
         QDir(appDir).filePath(QStringLiteral("python/libman_console.py")),
+        QDir(appDir).filePath(QStringLiteral("../python/door_console.py")),
         QDir(appDir).filePath(QStringLiteral("../python/libman_console.py")),
+        QDir(appDir).filePath(QStringLiteral("../../python/door_console.py")),
         QDir(appDir).filePath(QStringLiteral("../../python/libman_console.py")),
+        QDir(appDir).filePath(QStringLiteral("../../../python/door_console.py")),
         QDir(appDir).filePath(QStringLiteral("../../../python/libman_console.py")),
         // cmake build/ next to source tree
+        QDir(appDir).filePath(QStringLiteral("../../Door/python/door_console.py")),
+        QDir(appDir).filePath(QStringLiteral("../../LibMan/python/door_console.py")),
         QDir(appDir).filePath(QStringLiteral("../../LibMan/python/libman_console.py")),
     };
     for (const QString &path : candidates) {
@@ -265,7 +275,7 @@ void PythonConsole::start()
 
     const QString python = findPythonExecutable();
     if (python.isEmpty()) {
-        emit failed(tr("Python interpreter not found. Set LIBMAN_PYTHON or install Python on PATH."));
+        emit failed(tr("Python interpreter not found. Set DOOR_PYTHON or LIBMAN_PYTHON, or install Python on PATH."));
         return;
     }
 
@@ -273,7 +283,7 @@ void PythonConsole::start()
     if (driver.isEmpty()) {
         driver = writeEmbeddedDriverFallback();
         if (driver.isEmpty()) {
-            emit failed(tr("Failed to locate python/libman_console.py and could not write fallback."));
+            emit failed(tr("Failed to locate python/door_console.py and could not write fallback."));
             return;
         }
     }
@@ -389,7 +399,7 @@ void PythonConsole::handleOutputChunk(const QString &chunk)
             if (err.error == QJsonParseError::NoError && doc.isObject()) {
                 emit libmanCommand(doc.object());
             } else {
-                emit output(tr("Bad LibMan CML command JSON: %1").arg(err.errorString()));
+                emit output(tr("Bad DOOR CML command JSON: %1").arg(err.errorString()));
             }
         } else if (!line.isEmpty()) {
             emit output(line + QLatin1Char('\n'));

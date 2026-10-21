@@ -215,7 +215,7 @@ CoreImportService::ImportItemResult CoreImportService::importOne(Format format,
 
     const QString converterPath = findCoreConverterExecutable(converterBaseName(format));
     if (converterPath.isEmpty()) {
-        result.message = QStringLiteral("Converter '%1' was not found next to LibMan.")
+        result.message = QStringLiteral("Converter '%1' was not found next to DOOR.")
                              .arg(converterBaseName(format));
         return result;
     }

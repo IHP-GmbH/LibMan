@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(LibMan LANGUAGES CXX)
+project(DOOR LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -147,9 +147,9 @@ if(LIBMAN_USE_ROOM)
         room/roomReadAsync.cpp
     )
     list(APPEND LIBMAN_ROOM_LINK_LIBS ROOM::room ROOM::room_utils)
-    message(STATUS "LibMan: building with ROOM")
+    message(STATUS "DOOR: building with ROOM")
 else()
-    message(STATUS "LibMan: building without ROOM (CommonDB/Room not reachable). Set LIBMAN_CORE_GIT_TOKEN or LIBMAN_ROOM_SOURCE_DIR for full ROOM.")
+    message(STATUS "DOOR: building without ROOM (CommonDB/Room not reachable). Set LIBMAN_CORE_GIT_TOKEN or LIBMAN_ROOM_SOURCE_DIR for full ROOM.")
 endif()
 
 # -----------------------------------------------------------------------------
@@ -310,7 +310,7 @@ set(RESOURCES
     icons.qrc
 )
 
-add_executable(libman
+add_executable(door
     ${SOURCES}
     ${HEADERS}
     ${FORMS}
@@ -318,19 +318,19 @@ add_executable(libman
 )
 
 if(WIN32)
-    target_sources(libman PRIVATE "${CMAKE_SOURCE_DIR}/icons/libman.rc")
+    target_sources(door PRIVATE "${CMAKE_SOURCE_DIR}/icons/door.rc")
 endif()
 
-add_dependencies(libman prepare_libman_deps)
+add_dependencies(door prepare_libman_deps)
 if(TARGET room)
-    add_dependencies(libman room)
+    add_dependencies(door room)
 endif()
 
 if(NOT LIBMAN_USE_ROOM)
-    target_compile_definitions(libman PRIVATE LIBMAN_NO_ROOM)
+    target_compile_definitions(door PRIVATE LIBMAN_NO_ROOM)
 endif()
 
-target_include_directories(libman PRIVATE
+target_include_directories(door PRIVATE
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/extension
@@ -339,11 +339,11 @@ target_include_directories(libman PRIVATE
     ${CAPNP_ROOT}/include
 )
 
-target_link_directories(libman PRIVATE
+target_link_directories(door PRIVATE
     ${CAPNP_ROOT}/lib
 )
 
-target_link_libraries(libman PRIVATE
+target_link_libraries(door PRIVATE
     Qt5::Core
     Qt5::Gui
     Qt5::Widgets
@@ -355,23 +355,26 @@ target_link_libraries(libman PRIVATE
     ${LIBMAN_ROOM_LINK_LIBS}
 )
 
-# CML driver next to the binary (python/libman_console.py).
-add_custom_command(TARGET libman POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:libman>/python"
+# CML driver next to the binary (python/door_console.py).
+add_custom_command(TARGET door POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:door>/python"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_SOURCE_DIR}/python/door_console.py"
+            "$<TARGET_FILE_DIR:door>/python/door_console.py"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${CMAKE_SOURCE_DIR}/python/libman_console.py"
-            "$<TARGET_FILE_DIR:libman>/python/libman_console.py"
-    COMMENT "Deploying libman_console.py next to libman"
+            "$<TARGET_FILE_DIR:door>/python/libman_console.py"
+    COMMENT "Deploying door_console.py next to door"
 )
 
 if(LIBMAN_USE_ROOM)
 foreach(_converter gds_to_room xschem_to_room qucs_to_room oas_to_room room_to_gds room_to_xschem room_to_qucs)
     if(TARGET ${_converter})
-        add_custom_command(TARGET libman POST_BUILD
+        add_custom_command(TARGET door POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                     "$<TARGET_FILE:${_converter}>"
-                    "$<TARGET_FILE_DIR:libman>"
-            COMMENT "Deploying ${_converter} next to libman.exe"
+                    "$<TARGET_FILE_DIR:door>"
+            COMMENT "Deploying ${_converter} next to door"
         )
     endif()
 endforeach()

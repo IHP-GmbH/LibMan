@@ -14,8 +14,8 @@ All tasks are organized in `.vscode/tasks.json` with three main categories:
 
 These prepare the build environment and must run before compilation.
 
-### 2. **Compilation & Running LibMan** (Main Development)
-Organized in a dropdown group with prefix `Compilation & Running LibMan:`
+### 2. **Compilation & Running DOOR** (Main Development)
+Organized in a dropdown group with prefix `Compilation & Running DOOR:`
 - `Build Debug` - Compiles in Debug mode
 - `Build Release` - Compiles in Release mode  
 - `Run Debug` - Runs the debug executable
@@ -65,7 +65,7 @@ Example: Adding an "AddressSanitizer" debug build
 
 ```json
 {
-  "label": "Compilation & Running LibMan: Build AddressSanitizer",
+  "label": "Compilation & Running DOOR: Build AddressSanitizer",
   "type": "shell",
   "command": "cmake",
   "args": [
@@ -118,7 +118,7 @@ Add to `.vscode/keybindings.json`:
 {
   "key": "ctrl+alt+b",
   "command": "workbench.action.tasks.runTask",
-  "args": "Compilation & Running LibMan: Build Debug"
+  "args": "Compilation & Running DOOR: Build Debug"
 }
 ```
 
@@ -143,7 +143,7 @@ To add custom patterns, edit the `"problemMatcher"` field.
 Example: Debug task runs build first
 
 ```json
-"preLaunchTask": "Compilation & Running LibMan: Build Debug"
+"preLaunchTask": "Compilation & Running DOOR: Build Debug"
 ```
 
 Example: Test task depends on build
@@ -202,7 +202,7 @@ Create a combined task:
 
 ```json
 {
-  "label": "Compilation & Running LibMan: Build Debug & Run Tests",
+  "label": "Compilation & Running DOOR: Build Debug & Run Tests",
   "type": "shell",
   "command": "cmake --build build --config Debug -j4 && cd tests/build && ctest --output-on-failure",
   "options": { "cwd": "${workspaceFolder}" },
@@ -269,8 +269,8 @@ Run Debug, Release, and Tests in sequence:
 {
   "label": "Full Test Suite",
   "dependsOn": [
-    "Compilation & Running LibMan: Build Debug",
-    "Compilation & Running LibMan: Build Release",
+    "Compilation & Running DOOR: Build Debug",
+    "Compilation & Running DOOR: Build Release",
     "Tests: Run All Tests"
   ],
   "problemMatcher": []

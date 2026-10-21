@@ -191,7 +191,7 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
 
     setupDragAndDrop();
 
-    setWindowTitle(getLibManTitle());
+    setWindowTitle(getAppTitle());
 
     if(QFileInfo(projFile).exists()) {
         loadProjectFile(projFile);
@@ -705,7 +705,7 @@ void MainWindow::on_actionImport_triggered()
     ImportDialog dialog(this);
     dialog.exec();
 #else
-    error(tr("Import requires ROOM support. Rebuild LibMan without CONFIG+=no_room."), false);
+    error(tr("Import requires ROOM support. Rebuild DOOR without CONFIG+=no_room."), false);
 #endif
 }
 
@@ -715,7 +715,7 @@ void MainWindow::on_actionExport_triggered()
     ExportDialog dialog(this);
     dialog.exec();
 #else
-    error(tr("Export requires ROOM support. Rebuild LibMan without CONFIG+=no_room."), false);
+    error(tr("Export requires ROOM support. Rebuild DOOR without CONFIG+=no_room."), false);
 #endif
 }
 
@@ -1049,7 +1049,7 @@ void MainWindow::on_actionOpen_triggered()
     QString fileName = QFileDialog::getOpenFileName(this,
                                                     tr("Open Project..."),
                                                     workDir,
-                                                    tr("LibMan project (*.projects *.lib);;All files (*)"));
+                                                    tr("DOOR project (*.projects *.lib);;All files (*)"));
 
     if(!fileName.isEmpty()) {
         loadProjectFile(fileName);
@@ -2854,7 +2854,7 @@ void MainWindow::on_actionSave_As_triggered()
     QString fileName = QFileDialog::getSaveFileName(this,
                                                     tr("Save Project As..."),
                                                     workDir,
-                                                    tr("LibMan project (*.projects *.lib);;All files (*)"));
+                                                    tr("DOOR project (*.projects *.lib);;All files (*)"));
     if(!fileName.isEmpty()) {
         saveProjectFile(fileName);
     }
@@ -2952,7 +2952,7 @@ void MainWindow::setupPythonConsole()
     connect(m_pythonConsole, &PythonConsole::commandFinished, this, &MainWindow::onPythonCommandFinished);
     connect(m_pythonConsole, &PythonConsole::libmanCommand, this, &MainWindow::onPythonLibmanCommand);
 
-    // Auto-start so `import room` is ready when LibMan opens (Virtuoso CIW style).
+    // Auto-start so `import room` is ready when DOOR opens (Virtuoso CIW style).
     QTimer::singleShot(0, m_pythonConsole, &PythonConsole::start);
 #endif
 }
@@ -3806,7 +3806,7 @@ void MainWindow::on_actionSession_triggered()
 
    loadSettings();
 
-   setWindowTitle(getLibManTitle());
+   setWindowTitle(getAppTitle());
    setupProjectFileWatcher(QString());
    setStateSaved();
 }
@@ -3893,7 +3893,7 @@ void MainWindow::clearCurrentProjectData()
 
     loadSettings();
 
-    setWindowTitle(getLibManTitle());
+    setWindowTitle(getAppTitle());
     setStateSaved();
 }
 
@@ -3948,7 +3948,7 @@ void MainWindow::onProjectFileChanged(const QString &path)
     QMessageBox msgBox(this);
     msgBox.setIcon(QMessageBox::Question);
     msgBox.setWindowTitle("Project File Changed");
-    msgBox.setText(QString("The project file\n\n%1\n\nhas been modified outside LibMan.").arg(path));
+    msgBox.setText(QString("The project file\n\n%1\n\nhas been modified outside DOOR.").arg(path));
     msgBox.setInformativeText("Would you like to reload it?");
     msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
     msgBox.setDefaultButton(QMessageBox::Yes);

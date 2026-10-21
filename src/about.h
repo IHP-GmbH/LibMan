@@ -8,8 +8,8 @@ class About;
 }
 
 /*!****************************************************************************************
- * \brief The About class creates and shows a dialog window with an information about
- * LibMan.
+ * \brief The About class creates and shows a dialog window with information about
+ * DOOR (Design Open Object Repository).
  *****************************************************************************************/
 class About : public QDialog
 {
@@ -31,7 +31,7 @@ private:
 
 private:
     Ui::About                   *m_ui;      /*!< A pointer to acess About graphic items.*/
-    QString                     m_version;  /*!< Keeps information about LibMan version.*/
+    QString                     m_version;  /*!< Keeps information about DOOR version.*/
 };
 
 #endif // ABOUT_H

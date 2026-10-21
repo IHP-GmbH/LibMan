@@ -82,7 +82,7 @@ Once you've installed ZLIB:
 
 ✅ **Fully functional when:**
 - `Ctrl+Shift+B` → Build & Run Debug launches app
-- `F5` → Debug LibMan starts debugger
+- `F5` → Debug DOOR starts debugger
 - All compilation succeeds without errors
 
 ---

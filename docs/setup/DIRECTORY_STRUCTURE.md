@@ -3,11 +3,11 @@
 ## Project Layout
 
 ```
-LibMan/
+DOOR/
 ├── README.md                    ← Main project README
 ├── CMakeLists.txt              ← CMake configuration
 ├── CMakePresets.json           ← CMake presets
-├── libman.pro                  ← QtCreator project file
+├── door.pro                  ← QtCreator project file
 │
 ├── 📁 .vscode/                 ← VS Code configuration
 │   ├── tasks.json              ← Build/Run/Test tasks
@@ -46,7 +46,7 @@ LibMan/
 │   └── build/                  ← Test build output
 │
 ├── 📁 build/                   ← Main build output
-│   ├── src/LibMan.exe          ← Executable
+│   ├── src/DOOR.exe          ← Executable
 │   ├── CMakeFiles/
 │   ├── Makefile
 │   └── compile_commands.json
@@ -84,7 +84,7 @@ LibMan/
 | `DEPENDENCIES.md` | How to install ZLIB |
 | `SETUP_VERIFICATION.md` | Verify your setup |
 
-**When to use**: First time using LibMan
+**When to use**: First time using DOOR
 
 ### ⚙️ docs/setup/ (Setup Guides)
 
@@ -113,7 +113,7 @@ LibMan/
 ```
 build/
 ├── src/
-│   ├── LibMan.exe        ← Executable (after build)
+│   ├── DOOR.exe        ← Executable (after build)
 │   └── CMakeFiles/
 ├── CMakeFiles/
 ├── CMakeCache.txt
@@ -122,7 +122,7 @@ build/
 ```
 
 Created when: First CMake configuration  
-Used for: Building LibMan application
+Used for: Building DOOR application
 
 ### Test Build: `tests/build/`
 ```
@@ -185,7 +185,7 @@ Test suite organized by component:
 |------|---------|
 | `CMakeLists.txt` | Main CMake project file |
 | `CMakePresets.json` | CMake build presets |
-| `libman.pro` | QtCreator project file |
+| `door.pro` | QtCreator project file |
 | `Doxyfile` | Doxygen documentation config |
 
 ---
@@ -196,7 +196,7 @@ Test suite organized by component:
 Source:          src/main.cpp
 Headers:         src/*.h
 Tests:           tests/tst_*.cpp
-Build output:    build/src/LibMan.exe
+Build output:    build/src/DOOR.exe
 Test executable: tests/build/tst_*.exe
 Documentation:   docs/INDEX.md
 VS Code config:  .vscode/tasks.json
