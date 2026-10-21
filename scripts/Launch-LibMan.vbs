@@ -1,4 +1,4 @@
-' Launch LibMan with Qt/MinGW runtime paths (desktop shortcut target).
+' Compat shim — prefer Launch-Door.vbs. Keeps old desktop shortcuts working.
 Option Explicit
 
 Dim fso, sh, root, qtDir, mingwDir, buildDir, exePath, env
@@ -10,10 +10,13 @@ root = fso.GetParentFolderName(fso.GetParentFolderName(WScript.ScriptFullName))
 qtDir = "C:\Qt\5.15.2\mingw81_64"
 mingwDir = "C:\Qt\Tools\mingw810_64\bin"
 buildDir = root & "\build"
-exePath = buildDir & "\libman.exe"
+exePath = buildDir & "\door.exe"
+If Not fso.FileExists(exePath) Then
+    exePath = buildDir & "\libman.exe"
+End If
 
 If Not fso.FileExists(exePath) Then
-    MsgBox "LibMan not found:" & vbCrLf & exePath & vbCrLf & vbCrLf & "Build the project first (Build LibMan task).", vbCritical, "LibMan"
+    MsgBox "DOOR not found:" & vbCrLf & buildDir & "\door.exe" & vbCrLf & vbCrLf & "Build the project first (Build DOOR task).", vbCritical, "DOOR"
     WScript.Quit 1
 End If
 

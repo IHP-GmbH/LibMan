@@ -1,49 +1,46 @@
 #include "about.h"
 #include "ui_about.h"
 
+#include <QIcon>
+
 /*!****************************************************************************************
  * \brief Constructs About dialog window to show information about DOOR version and
  * its license.
  * \param parent       Parent widget, by default is NULL.
  *****************************************************************************************/
 About::About(QWidget *parent) :
-    QDialog(parent),    
+    QDialog(parent),
     m_ui(new Ui::About),
     m_version("1.0")
 {
     m_ui->setupUi(this);
+    setWindowTitle(tr("About DOOR"));
+    setWindowIcon(QIcon(QStringLiteral(":appicon")));
 
-    QPixmap pix(":logo");
-    m_ui->lblLogo->resize(320, 160);
-    pix = pix.scaled(m_ui->lblLogo->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    QPixmap pix(QStringLiteral(":logo"));
+    // Fill dialog width (margins ≈ 16+16); keep aspect ratio so the lockup stays sharp.
+    const int logoWidth = qMax(520, width() - 32);
+    pix = pix.scaled(QSize(logoWidth, 280), Qt::KeepAspectRatio, Qt::SmoothTransformation);
     m_ui->lblLogo->setPixmap(pix);
+    m_ui->lblLogo->setMinimumHeight(pix.height());
+    m_ui->lblLogo->setMaximumHeight(pix.height() + 8);
 
-    QPalette palette;
-    palette.setColor(QPalette::Base, Qt::gray);
-    m_ui->textAbout->setPalette(palette);
+    // Branding is already in the logo; keep text to version, credit, license.
+    QString html;
+    html += QStringLiteral("<p style='margin:0 0 8px 0; font-size:14px;'>"
+                           "<b>DOOR</b> (%1)</p>")
+                .arg(m_version);
+    html += QStringLiteral(
+        "<p style='margin:0 0 12px 0;'>"
+        "By Anton Datsuk from IHP "
+        "(<a href='mailto:datsuk@ihp-microlectronics.com'>datsuk@ihp-microlectronics.com</a>)"
+        "</p>");
+    html += QStringLiteral("<p style='margin:0; text-align:left;'>%1</p>")
+                .arg(getLicenseText().join(QStringLiteral("<br/>")));
 
-    QFont font = m_ui->textAbout->font();
-
-    font.setBold(true);
-    m_ui->textAbout->setFont(font);
-    m_ui->textAbout->setAlignment(Qt::AlignCenter);
-    m_ui->textAbout->append("DOOR (" + m_version + ")\n");
-    font.setBold(false);
-    m_ui->textAbout->setFont(font);
-    m_ui->textAbout->append("Design Open Object Repository\n");
-    m_ui->textAbout->append("Library Manager for Open EDA\n");
-
-    m_ui->textAbout->setAlignment(Qt::AlignLeft);
-    m_ui->textAbout->append("By Anton Datsuk from IHP (datsuk@ihp-microlectronics.com)\n");
-    m_ui->textAbout->append(getLicenseText().join("\n"));
-
-    QTextCursor cursor = m_ui->textAbout->textCursor();
-    cursor.movePosition(QTextCursor::Start);
-    m_ui->textAbout->setTextCursor(cursor);
-
-    m_ui->textAbout->setReadOnly(true);
-
-    setWindowTitle("About DOOR");
+    m_ui->lblAbout->setTextFormat(Qt::RichText);
+    m_ui->lblAbout->setText(html);
+    m_ui->lblAbout->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
 }
 
 /*!****************************************************************************************
@@ -61,19 +58,21 @@ QStringList About::getLicenseText() const
 {
     QStringList text;
 
-    text<<"Copyright 2023–2026 IHP PDK Authors";
-    text<<"";
-    text<<"Licensed under the Apache License, Version 2.0 (the \"License\");";
-    text<<"you may not use this file except in compliance with the License.";
-    text<<"You may obtain a copy of the License at";
-    text<<"";
-    text<<"   https://www.apache.org/licenses/LICENSE-2.0";
-    text<<"";
-    text<<"Unless required by applicable law or agreed to in writing, software";
-    text<<"distributed under the License is distributed on an \"AS IS\" BASIS,";
-    text<<"WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.";
-    text<<"See the License for the specific language governing permissions and";
-    text<<"limitations under the License.";
+    text << QStringLiteral("Copyright 2023–2026 IHP PDK Authors");
+    text << QString();
+    text << QStringLiteral("Licensed under the Apache License, Version 2.0 (the \"License\");");
+    text << QStringLiteral("you may not use this file except in compliance with the License.");
+    text << QStringLiteral("You may obtain a copy of the License at");
+    text << QString();
+    text << QStringLiteral(
+        "<a href='https://www.apache.org/licenses/LICENSE-2.0'>"
+        "https://www.apache.org/licenses/LICENSE-2.0</a>");
+    text << QString();
+    text << QStringLiteral("Unless required by applicable law or agreed to in writing, software");
+    text << QStringLiteral("distributed under the License is distributed on an \"AS IS\" BASIS,");
+    text << QStringLiteral("WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.");
+    text << QStringLiteral("See the License for the specific language governing permissions and");
+    text << QStringLiteral("limitations under the License.");
 
     return text;
 }

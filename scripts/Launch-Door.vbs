@@ -11,9 +11,12 @@ qtDir = "C:\Qt\5.15.2\mingw81_64"
 mingwDir = "C:\Qt\Tools\mingw810_64\bin"
 buildDir = root & "\build"
 exePath = buildDir & "\door.exe"
+If Not fso.FileExists(exePath) Then
+    exePath = buildDir & "\libman.exe"
+End If
 
 If Not fso.FileExists(exePath) Then
-    MsgBox "DOOR not found:" & vbCrLf & exePath & vbCrLf & vbCrLf & "Build the project first (Build DOOR task).", vbCritical, "DOOR"
+    MsgBox "DOOR not found:" & vbCrLf & buildDir & "\door.exe" & vbCrLf & vbCrLf & "Build the project first (Build DOOR task).", vbCritical, "DOOR"
     WScript.Quit 1
 End If
 

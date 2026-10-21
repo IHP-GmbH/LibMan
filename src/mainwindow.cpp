@@ -169,7 +169,7 @@ MainWindow::MainWindow(const QString &projFile, const QString &runDir, QWidget *
     applyKeyBindings();
     warmWslForXschemIfNeeded();
 
-    setWindowIcon(QIcon(":logo"));
+    setWindowIcon(QIcon(":appicon"));
     initIcons();
 
     m_ui->listGroups->setSelectionMode(QAbstractItemView::ExtendedSelection);

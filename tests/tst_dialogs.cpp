@@ -4,7 +4,6 @@
 #include <QLabel>
 #include <QPlainTextEdit>
 #include <QPushButton>
-#include <QTextEdit>
 #include <QTreeWidget>
 #include <QVBoxLayout>
 
@@ -42,15 +41,13 @@ void DialogsTest::about_initializesUi()
 
     QVERIFY(QTest::qWaitForWindowExposed(&dlg));
 
-    QCOMPARE(dlg.windowTitle(), QString("About LibMan"));
+    QCOMPARE(dlg.windowTitle(), QString("About DOOR"));
 
-    QTextEdit *textAbout = dlg.findChild<QTextEdit*>("textAbout");
-    QVERIFY2(textAbout, "textAbout widget not found.");
+    QLabel *lblAbout = dlg.findChild<QLabel*>("lblAbout");
+    QVERIFY2(lblAbout, "lblAbout widget not found.");
 
-    QVERIFY(textAbout->isReadOnly());
-
-    const QString text = textAbout->toPlainText();
-    QVERIFY2(text.contains("LaibMan"), "About text does not contain application name.");
+    const QString text = lblAbout->text();
+    QVERIFY2(text.contains("DOOR"), "About text does not contain application name.");
     QVERIFY2(text.contains("Anton Datsuk"), "About text does not contain author name.");
     QVERIFY2(text.contains("Apache License"), "About text does not contain license heading.");
 
