@@ -355,6 +355,15 @@ target_link_libraries(libman PRIVATE
     ${LIBMAN_ROOM_LINK_LIBS}
 )
 
+# CML driver next to the binary (python/libman_console.py).
+add_custom_command(TARGET libman POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:libman>/python"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_SOURCE_DIR}/python/libman_console.py"
+            "$<TARGET_FILE_DIR:libman>/python/libman_console.py"
+    COMMENT "Deploying libman_console.py next to libman"
+)
+
 if(LIBMAN_USE_ROOM)
 foreach(_converter gds_to_room xschem_to_room qucs_to_room oas_to_room room_to_gds room_to_xschem room_to_qucs)
     if(TARGET ${_converter})

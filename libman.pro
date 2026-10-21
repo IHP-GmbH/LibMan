@@ -193,3 +193,13 @@ include(capnp_deps_finalize.pri)
     include(room_deps_finalize.pri)
     include(core_converter_deploy.pri)
 }
+
+# CML driver next to the binary
+CONSOLE_DST = $$OUT_PWD
+!isEmpty(DESTDIR): CONSOLE_DST = $$OUT_PWD/$$DESTDIR
+win32 {
+    QMAKE_POST_LINK += $$quote(cmd //c if not exist $$shell_path($$CONSOLE_DST/python) mkdir $$shell_path($$CONSOLE_DST/python))$$escape_expand(\\n\\t)
+    QMAKE_POST_LINK += $$quote(cmd //c copy /Y $$shell_path($$LIBMAN_ROOT/python/libman_console.py) $$shell_path($$CONSOLE_DST/python/libman_console.py))$$escape_expand(\\n\\t)
+} else {
+    QMAKE_POST_LINK += $$quote(mkdir -p $$shell_path($$CONSOLE_DST/python) && cp -f $$shell_path($$LIBMAN_ROOT/python/libman_console.py) $$shell_path($$CONSOLE_DST/python/libman_console.py))$$escape_expand(\\n\\t)
+}

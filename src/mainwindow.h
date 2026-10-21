@@ -14,6 +14,7 @@
 
 class QMimeData;
 class QDropEvent;
+class QJsonObject;
 #include <QHash>
 #include <QSet>
 #include <QTimer>
@@ -282,6 +283,7 @@ private slots:
     void                                onPythonConsoleStarted(const QString &detail);
     void                                onPythonConsoleFailed(const QString &reason);
     void                                onPythonCommandFinished(bool ok);
+    void                                onPythonLibmanCommand(const QJsonObject &cmd);
 
     void                                on_actionTools_triggered();
     void                                on_actionProjects_triggered();
@@ -354,6 +356,17 @@ private:
                                                             const QString &groupName,
                                                             const QString &viewName,
                                                             const QString &viewPath);
+
+    /*! Register/unregister a view from CML ``define()`` / ``undefine()`` without reload dialog. */
+    bool                                registerViewFromCml(const QString &libName, const QString &viewPath);
+    bool                                unregisterViewFromCml(const QString &libName, const QString &viewPath);
+    void                                ensureLibraryInTree(const QString &libName);
+    void                                ensureGroupInList(const QString &groupName);
+    void                                ensureViewInList(const QString &libName,
+                                                         const QString &groupName,
+                                                         const QString &viewName,
+                                                         const QString &viewPath);
+    void                                saveProjectFileQuiet(const QString &fileName);
 
     void                                loadGdsHierarchyAsync(const QString &gdsPath,
                                                               const std::shared_ptr<GdsCacheEntry> &entry,

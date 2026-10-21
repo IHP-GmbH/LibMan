@@ -4,17 +4,19 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonDocument>
+#include <QJsonParseError>
 #include <QStandardPaths>
 #include <QTemporaryFile>
 
 namespace {
 
 constexpr const char kDoneSentinel[] = "@@LIBMAN_DONE@@";
+constexpr const char kJsonPrefix[] = "@@LIBMAN_JSON@@";
 
-const char kDriverScript[] = R"PY(
-import sys
-import traceback
-
+// Fallback only if python/libman_console.py cannot be found (dev misconfig).
+const char kEmbeddedDriverFallback[] = R"PY(
+import sys, traceback, json, os
 g = {"__name__": "__main__"}
 try:
     import room
@@ -23,56 +25,51 @@ except Exception as e:
     print("WARNING: import room failed: %s" % e, file=sys.stderr)
 
 def load(path):
-    # SKILL-style: run a whole file into the persistent Command Line namespace (g).
-    # Must use g, not globals() — this function lives in the driver module.
-    # utf-8-sig strips a leading BOM (common on Windows-saved scripts).
     exec(open(path, encoding="utf-8-sig").read(), g)
 
+def _emit(cmd, **payload):
+    msg = {"cmd": cmd}
+    msg.update(payload)
+    sys.stdout.write("@@LIBMAN_JSON@@" + json.dumps(msg, ensure_ascii=False) + "\n")
+    sys.stdout.flush()
+
+def define(library, path):
+    abs_path = os.path.abspath(os.path.expanduser(str(path)))
+    _emit("define", library=str(library), path=abs_path)
+    return abs_path
+
+def undefine(library, path):
+    abs_path = os.path.abspath(os.path.expanduser(str(path)))
+    _emit("undefine", library=str(library), path=abs_path)
+    return abs_path
+
 g["load"] = load
-
-sys.stdout.flush()
-sys.stderr.flush()
-
+g["define"] = define
+g["undefine"] = undefine
+sys.stdout.flush(); sys.stderr.flush()
 while True:
     header = sys.stdin.readline()
-    if not header:
-        break
+    if not header: break
     header = header.strip()
-    if not header:
-        continue
-    try:
-        nbytes = int(header)
+    if not header: continue
+    try: nbytes = int(header)
     except ValueError:
         print("ERROR: bad command header: %r" % (header,), file=sys.stderr)
-        print("@@LIBMAN_DONE@@")
-        sys.stdout.flush()
-        sys.stderr.flush()
-        continue
+        print("@@LIBMAN_DONE@@"); sys.stdout.flush(); sys.stderr.flush(); continue
     buf = sys.stdin.read(nbytes)
-    if len(buf) < nbytes:
-        break
+    if len(buf) < nbytes: break
     src = buf if isinstance(buf, str) else buf.decode("utf-8", "replace")
     try:
-        # Prefer expression (shows repr); assignment/statements need exec.
-        # Do not nest try/except — otherwise a later RuntimeError chains a
-        # confusing "During handling of SyntaxError" for simple `db = ...`.
-        try:
-            code = compile(src, "<libman>", "eval")
-        except SyntaxError:
-            code = None
+        try: code = compile(src, "<libman>", "eval")
+        except SyntaxError: code = None
         if code is not None:
             result = eval(code, g, g)
-            if result is not None:
-                print(repr(result))
+            if result is not None: print(repr(result))
         else:
             exec(compile(src, "<libman>", "exec"), g, g)
-    except SystemExit:
-        raise
-    except BaseException:
-        traceback.print_exc()
-    print("@@LIBMAN_DONE@@")
-    sys.stdout.flush()
-    sys.stderr.flush()
+    except SystemExit: raise
+    except BaseException: traceback.print_exc()
+    print("@@LIBMAN_DONE@@"); sys.stdout.flush(); sys.stderr.flush()
 )PY";
 
 QStringList uniqueExistingDirs(const QStringList &candidates)
@@ -170,7 +167,6 @@ QString PythonConsole::findRoomPackageDir() const
 
     const QString appDir = QCoreApplication::applicationDirPath();
     candidates << QDir(appDir).filePath(QStringLiteral("python"));
-    // Dev / sibling layouts: LibMan/build -> ../CommonDB/python, or repo root.
     candidates << QDir(appDir).filePath(QStringLiteral("../CommonDB/python"));
     candidates << QDir(appDir).filePath(QStringLiteral("../../CommonDB/python"));
     candidates << QDir(appDir).filePath(QStringLiteral("../../../CommonDB/python"));
@@ -221,14 +217,38 @@ QString PythonConsole::findRoomCLibrary() const
     return {};
 }
 
-QString PythonConsole::writeDriverScript() const
+QString PythonConsole::findDriverScript() const
+{
+    const QString env = qEnvironmentVariable("LIBMAN_CONSOLE_PY").trimmed();
+    if (!env.isEmpty() && QFileInfo::exists(env)) {
+        return QFileInfo(env).absoluteFilePath();
+    }
+
+    const QString appDir = QCoreApplication::applicationDirPath();
+    const QStringList candidates = {
+        QDir(appDir).filePath(QStringLiteral("python/libman_console.py")),
+        QDir(appDir).filePath(QStringLiteral("../python/libman_console.py")),
+        QDir(appDir).filePath(QStringLiteral("../../python/libman_console.py")),
+        QDir(appDir).filePath(QStringLiteral("../../../python/libman_console.py")),
+        // cmake build/ next to source tree
+        QDir(appDir).filePath(QStringLiteral("../../LibMan/python/libman_console.py")),
+    };
+    for (const QString &path : candidates) {
+        if (QFileInfo::exists(path)) {
+            return QFileInfo(path).absoluteFilePath();
+        }
+    }
+    return {};
+}
+
+QString PythonConsole::writeEmbeddedDriverFallback() const
 {
     QTemporaryFile file(QDir::temp().filePath(QStringLiteral("libman_py_XXXXXX.py")));
     file.setAutoRemove(false);
     if (!file.open()) {
         return {};
     }
-    if (file.write(kDriverScript) < 0) {
+    if (file.write(kEmbeddedDriverFallback) < 0) {
         return {};
     }
     file.flush();
@@ -249,10 +269,13 @@ void PythonConsole::start()
         return;
     }
 
-    const QString driver = writeDriverScript();
+    QString driver = findDriverScript();
     if (driver.isEmpty()) {
-        emit failed(tr("Failed to create temporary Python console driver."));
-        return;
+        driver = writeEmbeddedDriverFallback();
+        if (driver.isEmpty()) {
+            emit failed(tr("Failed to locate python/libman_console.py and could not write fallback."));
+            return;
+        }
     }
 
     QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
@@ -271,16 +294,17 @@ void PythonConsole::start()
     m_process->setProgram(python);
     m_process->setArguments({QStringLiteral("-u"), driver});
     m_stdoutBuffer.clear();
+    m_lineBuffer.clear();
     m_busy = false;
     m_process->start();
 
     if (!m_process->waitForStarted(10000)) {
         emit failed(tr("Failed to start Python: %1").arg(m_process->errorString()));
-        QFile::remove(driver);
         return;
     }
 
     QString detail = tr("Python: %1").arg(QDir::toNativeSeparators(python));
+    detail += tr("\nDriver: %1").arg(QDir::toNativeSeparators(driver));
     if (!roomPkg.isEmpty()) {
         detail += tr("\nPYTHONPATH: %1").arg(QDir::toNativeSeparators(roomPkg));
     }
@@ -347,28 +371,51 @@ void PythonConsole::onReadyRead()
     emitPendingOutput();
 }
 
+void PythonConsole::handleOutputChunk(const QString &chunk)
+{
+    m_lineBuffer += chunk;
+    int nl = m_lineBuffer.indexOf(QLatin1Char('\n'));
+    while (nl >= 0) {
+        QString line = m_lineBuffer.left(nl);
+        m_lineBuffer.remove(0, nl + 1);
+        if (line.endsWith(QLatin1Char('\r'))) {
+            line.chop(1);
+        }
+
+        if (line.startsWith(QLatin1String(kJsonPrefix))) {
+            const QByteArray jsonBytes = line.mid(int(sizeof(kJsonPrefix) - 1)).toUtf8();
+            QJsonParseError err;
+            const QJsonDocument doc = QJsonDocument::fromJson(jsonBytes, &err);
+            if (err.error == QJsonParseError::NoError && doc.isObject()) {
+                emit libmanCommand(doc.object());
+            } else {
+                emit output(tr("Bad LibMan CML command JSON: %1").arg(err.errorString()));
+            }
+        } else if (!line.isEmpty()) {
+            emit output(line + QLatin1Char('\n'));
+        }
+
+        nl = m_lineBuffer.indexOf(QLatin1Char('\n'));
+    }
+}
+
 void PythonConsole::emitPendingOutput()
 {
     while (true) {
         const int idx = m_stdoutBuffer.indexOf(kDoneSentinel);
         if (idx < 0) {
-            // Stream incomplete lines only up to last newline to avoid cutting UTF-8 mid-command.
             const int lastNl = m_stdoutBuffer.lastIndexOf('\n');
             if (lastNl < 0) {
                 return;
             }
             const QByteArray chunk = m_stdoutBuffer.left(lastNl + 1);
             m_stdoutBuffer.remove(0, lastNl + 1);
-            const QString text = QString::fromUtf8(chunk);
-            if (!text.isEmpty()) {
-                emit output(text);
-            }
+            handleOutputChunk(QString::fromUtf8(chunk));
             return;
         }
 
         const QByteArray before = m_stdoutBuffer.left(idx);
         m_stdoutBuffer.remove(0, idx + int(sizeof(kDoneSentinel) - 1));
-        // Swallow trailing newline after sentinel.
         if (m_stdoutBuffer.startsWith('\r')) {
             m_stdoutBuffer.remove(0, 1);
         }
@@ -376,9 +423,10 @@ void PythonConsole::emitPendingOutput()
             m_stdoutBuffer.remove(0, 1);
         }
 
-        const QString text = QString::fromUtf8(before);
-        if (!text.isEmpty()) {
-            emit output(text);
+        handleOutputChunk(QString::fromUtf8(before));
+        // Flush any incomplete non-JSON line left in m_lineBuffer before finishing.
+        if (!m_lineBuffer.isEmpty()) {
+            handleOutputChunk(QStringLiteral("\n"));
         }
         m_busy = false;
         emit commandFinished(true);
@@ -389,8 +437,12 @@ void PythonConsole::onProcessFinished(int exitCode, QProcess::ExitStatus status)
 {
     emitPendingOutput();
     if (!m_stdoutBuffer.isEmpty()) {
-        emit output(QString::fromUtf8(m_stdoutBuffer));
+        handleOutputChunk(QString::fromUtf8(m_stdoutBuffer));
         m_stdoutBuffer.clear();
+    }
+    if (!m_lineBuffer.isEmpty()) {
+        emit output(m_lineBuffer);
+        m_lineBuffer.clear();
     }
     m_busy = false;
     if (status != QProcess::NormalExit || exitCode != 0) {

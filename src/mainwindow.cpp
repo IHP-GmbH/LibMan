@@ -20,6 +20,8 @@
 #include <QDropEvent>
 #include <QMimeData>
 #include <QUrl>
+#include <QDesktopServices>
+#include <QJsonObject>
 #include <QTextCursor>
 #include <QTextCharFormat>
 #include <QTextEdit>
@@ -2745,10 +2747,6 @@ void MainWindow::on_listCategories_itemClicked(QTreeWidgetItem *item)
  * \brief Slot is to execute document viewer with specified documentation.
  * \param item       Pointer to tree item document.
  **********************************************************************************************************************/
-/*!*******************************************************************************************************************
- * \brief Slot is to execute document viewer with specified documentation.
- * \param item       Pointer to tree item document.
- **********************************************************************************************************************/
 void MainWindow::on_listDocumentation_itemDoubleClicked(QTreeWidgetItem *item)
 {
     if(!item) {
@@ -2763,8 +2761,35 @@ void MainWindow::on_listDocumentation_itemDoubleClicked(QTreeWidgetItem *item)
     }
 
     const QString docPath = item->data(0, RoleDocumentPath).toString();
-    if(docPath.isEmpty() || !QFileInfo(docPath).exists()) {
+    if(docPath.isEmpty()) {
+        error(QString("Failed to find document '%1'.").arg(docName), false);
+        return;
+    }
+
+    // HTML and http(s) links: default system browser (not the configured text Editor).
+    const QUrl asUrl(docPath);
+    const bool isRemoteUrl = asUrl.isValid()
+        && (asUrl.scheme().compare(QStringLiteral("http"), Qt::CaseInsensitive) == 0
+            || asUrl.scheme().compare(QStringLiteral("https"), Qt::CaseInsensitive) == 0);
+    const QString suffix = QFileInfo(docName).suffix().toLower();
+    const bool isHtml = (suffix == QStringLiteral("htm") || suffix == QStringLiteral("html"));
+
+    if(isRemoteUrl) {
+        if(!QDesktopServices::openUrl(asUrl)) {
+            error(QString("Failed to open URL '%1' in the default browser.").arg(docPath), false);
+        }
+        return;
+    }
+
+    if(!QFileInfo(docPath).exists()) {
         error(QString("Failed to find document '%1'.").arg(docPath), false);
+        return;
+    }
+
+    if(isHtml) {
+        if(!QDesktopServices::openUrl(QUrl::fromLocalFile(docPath))) {
+            error(QString("Failed to open '%1' in the default browser.").arg(docPath), false);
+        }
         return;
     }
 
@@ -2925,6 +2950,7 @@ void MainWindow::setupPythonConsole()
     connect(m_pythonConsole, &PythonConsole::failed, this, &MainWindow::onPythonConsoleFailed);
     connect(m_pythonConsole, &PythonConsole::output, this, &MainWindow::onPythonConsoleOutput);
     connect(m_pythonConsole, &PythonConsole::commandFinished, this, &MainWindow::onPythonCommandFinished);
+    connect(m_pythonConsole, &PythonConsole::libmanCommand, this, &MainWindow::onPythonLibmanCommand);
 
     // Auto-start so `import room` is ready when LibMan opens (Virtuoso CIW style).
     QTimer::singleShot(0, m_pythonConsole, &PythonConsole::start);
@@ -3060,6 +3086,219 @@ void MainWindow::onPythonCommandFinished(bool)
 {
     m_ui->editPythonCommand->setEnabled(true);
     m_ui->editPythonCommand->setFocus(Qt::OtherFocusReason);
+}
+
+void MainWindow::onPythonLibmanCommand(const QJsonObject &cmd)
+{
+    const QString op = cmd.value(QStringLiteral("cmd")).toString().trimmed().toLower();
+    const QString lib = cmd.value(QStringLiteral("library")).toString().trimmed();
+    const QString path = cmd.value(QStringLiteral("path")).toString().trimmed();
+    if(op.isEmpty() || lib.isEmpty() || path.isEmpty()) {
+        error(tr("CML command missing cmd/library/path."), false);
+        return;
+    }
+
+    if(op == QLatin1String("define")) {
+        if(!registerViewFromCml(lib, path)) {
+            error(tr("define() failed for '%1' / '%2'.").arg(lib, path), false);
+        }
+        return;
+    }
+    if(op == QLatin1String("undefine")) {
+        if(!unregisterViewFromCml(lib, path)) {
+            error(tr("undefine() failed for '%1' / '%2'.").arg(lib, path), false);
+        }
+        return;
+    }
+    error(tr("Unknown CML command '%1'.").arg(op), false);
+}
+
+void MainWindow::saveProjectFileQuiet(const QString &fileName)
+{
+    if(fileName.isEmpty()) {
+        return;
+    }
+    m_ignoreProjectFileChange = true;
+    if(!saveProjectEntriesToFile(fileName, getCurrentProjectEntries())) {
+        QTimer::singleShot(100, this, [this]() {
+            m_ignoreProjectFileChange = false;
+        });
+        return;
+    }
+    setupProjectFileWatcher(QFileInfo(fileName).absoluteFilePath());
+    setStateSaved();
+    QTimer::singleShot(100, this, [this]() {
+        m_ignoreProjectFileChange = false;
+    });
+}
+
+void MainWindow::ensureLibraryInTree(const QString &libName)
+{
+    if(libName.isEmpty() || !m_ui || !m_ui->treeLibs) {
+        return;
+    }
+    for(int i = 0; i < m_ui->treeLibs->topLevelItemCount(); ++i) {
+        QTreeWidgetItem *item = m_ui->treeLibs->topLevelItem(i);
+        if(item && item->text(0) == libName) {
+            return;
+        }
+    }
+    QTreeWidgetItem *item = new QTreeWidgetItem;
+    item->setText(0, libName);
+    item->setFlags(item->flags() | Qt::ItemIsEditable);
+    m_ui->treeLibs->addTopLevelItem(item);
+#if QT_VERSION >= 0x050000
+    m_ui->treeLibs->sortByColumn(0, Qt::AscendingOrder);
+#else
+    m_ui->treeLibs->sortByColumn(0);
+#endif
+}
+
+void MainWindow::ensureGroupInList(const QString &groupName)
+{
+    if(groupName.isEmpty() || !m_ui || !m_ui->listGroups) {
+        return;
+    }
+    for(int i = 0; i < m_ui->listGroups->count(); ++i) {
+        QListWidgetItem *item = m_ui->listGroups->item(i);
+        if(item && item->text() == groupName) {
+            return;
+        }
+    }
+    QListWidgetItem *groupItem = new QListWidgetItem;
+    groupItem->setText(groupName);
+    groupItem->setFlags(groupItem->flags() | Qt::ItemIsEditable);
+    m_ui->listGroups->addItem(groupItem);
+    m_ui->listGroups->sortItems();
+}
+
+void MainWindow::ensureViewInList(const QString &libName,
+                                  const QString &groupName,
+                                  const QString &viewName,
+                                  const QString &viewPath)
+{
+    if(!m_ui || !m_ui->listViews) {
+        return;
+    }
+    if(getCurrentLibraryName() != libName || getCurrentGroupName() != groupName) {
+        return;
+    }
+    for(int i = 0; i < m_ui->listViews->topLevelItemCount(); ++i) {
+        QTreeWidgetItem *item = m_ui->listViews->topLevelItem(i);
+        if(item && item->text(0).trimmed() == viewName) {
+            return;
+        }
+    }
+
+    QTreeWidgetItem *viewItem = new QTreeWidgetItem(m_ui->listViews);
+    viewItem->setText(0, viewName);
+    if(viewName == QLatin1String("gds")) {
+        viewItem->setData(0, RoleType, ItemViewGds);
+        viewItem->setData(0, RoleGdsPath, viewPath);
+        applyViewTreeIcon(viewItem, viewName);
+        viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+    } else if(viewName == QLatin1String("oas") || viewName == QLatin1String("oasis")) {
+        viewItem->setData(0, RoleType, ItemViewOas);
+        viewItem->setData(0, RoleOasPath, viewPath);
+        applyViewTreeIcon(viewItem, viewName);
+        viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+    } else if(viewName == QLatin1String("lstr")) {
+        viewItem->setData(0, RoleType, ItemViewLStream);
+        viewItem->setData(0, RoleLStreamPath, viewPath);
+        applyViewTreeIcon(viewItem, viewName);
+        viewItem->setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
+    } else if(isEmSetupViewName(viewName)) {
+        configureEmSetupViewTreeItem(viewItem, viewPath);
+    } else if(isRoomViewName(viewName)) {
+        configureCoreViewTreeItem(viewItem, viewName, viewPath);
+        applyCoreViewLockPresentation(viewItem, viewName, viewPath);
+    } else {
+        applyViewTreeIcon(viewItem, viewName);
+    }
+    m_ui->listViews->sortItems(0, Qt::AscendingOrder);
+    syncCoreLockWatches();
+}
+
+bool MainWindow::registerViewFromCml(const QString &libName, const QString &viewPath)
+{
+    if(m_currentProjFile.isEmpty()) {
+        error(tr("No project file open — cannot define()."), false);
+        return false;
+    }
+
+    const QString absPath = QFileInfo(viewPath).absoluteFilePath();
+    if(!QFileInfo::exists(absPath)) {
+        error(tr("View file does not exist: %1").arg(absPath), false);
+        return false;
+    }
+
+    QString groupName;
+    QString viewName;
+    if(!resolveCellViewFromPath(absPath, &groupName, &viewName) || groupName.isEmpty() || viewName.isEmpty()) {
+        error(tr("Cannot derive cell/view from path: %1").arg(absPath), false);
+        return false;
+    }
+
+    const QString key = getLibraryKeyPrefix() + libName + "/" + groupName + "/" + viewName;
+    m_properties->set(key, absPath);
+
+    ensureLibraryInTree(libName);
+    if(getCurrentLibraryName() == libName) {
+        ensureGroupInList(groupName);
+        ensureViewInList(libName, groupName, viewName, absPath);
+    }
+
+    saveProjectFileQuiet(m_currentProjFile);
+    info(tr("Registered %1 / %2 / %3").arg(libName, groupName, viewName), false);
+    return true;
+}
+
+bool MainWindow::unregisterViewFromCml(const QString &libName, const QString &viewPath)
+{
+    if(m_currentProjFile.isEmpty()) {
+        error(tr("No project file open — cannot undefine()."), false);
+        return false;
+    }
+
+    const QString absPath = QFileInfo(viewPath).absoluteFilePath();
+    QString groupName;
+    QString viewName;
+    if(!resolveCellViewFromPath(absPath, &groupName, &viewName) || groupName.isEmpty() || viewName.isEmpty()) {
+        error(tr("Cannot derive cell/view from path: %1").arg(absPath), false);
+        return false;
+    }
+
+    const QString key = getLibraryKeyPrefix() + libName + "/" + groupName + "/" + viewName;
+    if(m_properties->exists(key)) {
+        m_properties->remove(key);
+    }
+
+    if(getCurrentLibraryName() == libName) {
+        if(getCurrentGroupName() == groupName && m_ui && m_ui->listViews) {
+            for(int idx = 0; idx < m_ui->listViews->topLevelItemCount(); ++idx) {
+                QTreeWidgetItem *viewItem = m_ui->listViews->topLevelItem(idx);
+                if(viewItem && viewItem->text(0).trimmed() == viewName) {
+                    delete m_ui->listViews->takeTopLevelItem(idx);
+                    break;
+                }
+            }
+        }
+        // Drop empty cell from the group list when no views remain.
+        if(getCurrentViews(libName, groupName).isEmpty() && m_ui && m_ui->listGroups) {
+            for(int i = 0; i < m_ui->listGroups->count(); ++i) {
+                QListWidgetItem *item = m_ui->listGroups->item(i);
+                if(item && item->text() == groupName) {
+                    delete m_ui->listGroups->takeItem(i);
+                    m_ui->listViews->clear();
+                    break;
+                }
+            }
+        }
+    }
+
+    saveProjectFileQuiet(m_currentProjFile);
+    info(tr("Unregistered %1 / %2 / %3").arg(libName, groupName, viewName), false);
+    return true;
 }
 
 QString MainWindow::symbolCoreForCell(const QString &cellName) const
@@ -3691,9 +3930,13 @@ void MainWindow::onProjectFileChanged(const QString &path)
         return;
     }
 
+    if(m_pythonConsole && m_pythonConsole->isBusy()) {
+        setupProjectFileWatcher(path);
+        return;
+    }
+
     QFileInfo fi(path);
 
-    // QFileSystemWatcher can drop the path after change/remove, so re-arm it.
     if(fi.exists() && fi.isFile()) {
         setupProjectFileWatcher(path);
     }
