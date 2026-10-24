@@ -367,6 +367,13 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
     settings.setValue("Editor", editor);
     settings.setValue("PdfReader", pdfReader);
+
+    QString schematicSymbolFormat = QStringLiteral("ROOM");
+    if (m_properties->exists(QStringLiteral("SchematicSymbolFormat"))) {
+        schematicSymbolFormat =
+            m_properties->get<QString>(QStringLiteral("SchematicSymbolFormat")).trimmed().toUpper();
+    }
+    settings.setValue(QStringLiteral("SchematicSymbolFormat"), schematicSymbolFormat);
     settings.endGroup();
 
     checkAndSaveProjectData(event);
@@ -493,6 +500,16 @@ void MainWindow::loadSettings()
     }
 
     m_properties->set("PdfReader", pdfReader);
+
+    QString schematicSymbolFormat = QStringLiteral("ROOM");
+    if (settings.contains(QStringLiteral("SchematicSymbolFormat"))) {
+        schematicSymbolFormat =
+            settings.value(QStringLiteral("SchematicSymbolFormat")).toString().trimmed().toUpper();
+    }
+    if (schematicSymbolFormat != QStringLiteral("JSON")) {
+        schematicSymbolFormat = QStringLiteral("ROOM");
+    }
+    m_properties->set(QStringLiteral("SchematicSymbolFormat"), schematicSymbolFormat);
 
     settings.endGroup();
 }
@@ -3352,7 +3369,8 @@ QString MainWindow::symbolCoreForCell(const QString &cellName) const
 
         const QString libraryRoot = getLibraryPath(libraryName);
         if (!libraryRoot.isEmpty()) {
-            const QString onDisk = existingFile(QDir(libraryRoot).filePath(bareCell + QLatin1Char('/') + bareCell + QStringLiteral(".symbol.room")));
+            const QString onDisk = existingFile(QDir(libraryRoot).filePath(
+                bareCell + QLatin1Char('/') + bareCell + QStringLiteral(".symbol.room")));
             if (!onDisk.isEmpty()) {
                 return onDisk;
             }

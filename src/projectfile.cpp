@@ -1089,6 +1089,11 @@ void MainWindow::launchSchematicTool(const QString &tool, const QString &viewPat
     }
 
     const QString absViewPath = QFileInfo(viewPath).absoluteFilePath();
+    // Prefer *.room for tools; rebuild from sibling *.json when JSON is newer / room missing.
+    if(!ensureWorkingRoomFromJson(absViewPath)) {
+        error(tr("Schematic file not found: %1").arg(viewPath), false);
+        return;
+    }
     if(absViewPath.isEmpty() || !QFileInfo::exists(absViewPath)) {
         error(tr("Schematic file not found: %1").arg(viewPath), false);
         return;
@@ -1116,7 +1121,7 @@ void MainWindow::launchSchematicTool(const QString &tool, const QString &viewPat
         techLibs.append(techLib);
     }
     QStringList nativePaths;
-    // Design-library symbol cores (e.g. inverter.symbol.room for inverter_tb hierarchy).
+    // Design-library symbol cores (e.g. inverter.symbol.room — JSON or binary content).
     for(const QString &path : resolveTechLibraryCorePaths(libName)) {
         if(!path.endsWith(QStringLiteral(".symbol.room"), Qt::CaseInsensitive)) {
             continue;

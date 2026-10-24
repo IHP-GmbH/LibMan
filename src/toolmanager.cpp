@@ -1,9 +1,11 @@
 #include <QMap>
 #include <QDebug>
 #include <QEvent>
+#include <QLabel>
 #include <QScreen>
 #include <QDialog>
 #include <QFileInfo>
+#include <QHBoxLayout>
 #include <QCloseEvent>
 #include <QInputDialog>
 #include <QGuiApplication>
@@ -72,6 +74,24 @@ void ToolManager::init()
 {
     if( !m_properties )
         return;
+
+    // Preferred encoding when DOOR creates schematic / symbol *.room views.
+    auto *formatRow = new QHBoxLayout();
+    formatRow->addWidget(new QLabel(tr("Schematic / Symbol format:"), this));
+    m_cbSchematicSymbolFormat = new QComboBox(this);
+    m_cbSchematicSymbolFormat->addItem(tr("ROOM"), QStringLiteral("ROOM"));
+    m_cbSchematicSymbolFormat->addItem(tr("JSON"), QStringLiteral("JSON"));
+    m_cbSchematicSymbolFormat->setToolTip(
+        tr("Format written into *.schematic.room / *.symbol.room when creating a new view.\n"
+           "ROOM = Cap’n Proto binary; JSON = room-json text (same file name)."));
+    QString format = QStringLiteral("ROOM");
+    if (m_properties->exists(QStringLiteral("SchematicSymbolFormat"))) {
+        format = m_properties->get<QString>(QStringLiteral("SchematicSymbolFormat")).trimmed().toUpper();
+    }
+    const int formatIndex = m_cbSchematicSymbolFormat->findData(format);
+    m_cbSchematicSymbolFormat->setCurrentIndex(formatIndex >= 0 ? formatIndex : 0);
+    formatRow->addWidget(m_cbSchematicSymbolFormat, 1);
+    m_ui->toolSettings->addLayout(formatRow);
 
     m_pbSettings = new QtTreePropertyBrowser(this);
     m_pbSettings->setResizeMode(QtTreePropertyBrowser::ResizeToContents);
@@ -162,6 +182,11 @@ void ToolManager::on_btnOk_clicked()
 {
     if(!m_mw) {
         return;
+    }
+
+    if (m_cbSchematicSymbolFormat != nullptr) {
+        m_properties->set(QStringLiteral("SchematicSymbolFormat"),
+                          m_cbSchematicSymbolFormat->currentData().toString());
     }
 
     QList<QtProperty *> props = m_pbSettings->properties();

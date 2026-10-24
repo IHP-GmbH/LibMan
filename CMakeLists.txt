@@ -368,7 +368,7 @@ add_custom_command(TARGET door POST_BUILD
 )
 
 if(LIBMAN_USE_ROOM)
-foreach(_converter gds_to_room xschem_to_room qucs_to_room oas_to_room room_to_gds room_to_xschem room_to_qucs)
+foreach(_converter gds_to_room xschem_to_room qucs_to_room oas_to_room json_to_room room_to_gds room_to_xschem room_to_qucs room_to_json)
     if(TARGET ${_converter})
         add_custom_command(TARGET door POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different

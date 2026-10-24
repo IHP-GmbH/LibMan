@@ -26,6 +26,7 @@ QStringList coreImportConverterNames()
         QStringLiteral("xschem_to_room"),
         QStringLiteral("qucs_to_room"),
         QStringLiteral("oas_to_room"),
+        QStringLiteral("json_to_room"),
     };
 }
 
@@ -35,6 +36,7 @@ QStringList coreExportConverterNames()
         QStringLiteral("room_to_gds"),
         QStringLiteral("room_to_xschem"),
         QStringLiteral("room_to_qucs"),
+        QStringLiteral("room_to_json"),
     };
 }
 

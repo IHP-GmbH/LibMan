@@ -16,6 +16,7 @@ public:
         Xschem,
         Qucs,
         Oas,
+        Json,
     };
 
     struct ImportItemResult {

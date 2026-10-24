@@ -45,6 +45,8 @@ void ExportDialog::populateFormats()
                                static_cast<int>(CoreExportService::Format::Xschem));
     m_ui->comboFormat->addItem(CoreExportService::formatDisplayName(CoreExportService::Format::Qucs),
                                static_cast<int>(CoreExportService::Format::Qucs));
+    m_ui->comboFormat->addItem(CoreExportService::formatDisplayName(CoreExportService::Format::Json),
+                               static_cast<int>(CoreExportService::Format::Json));
 }
 
 void ExportDialog::populateLibraries()

@@ -5,7 +5,7 @@ DOOR can convert schematics and layouts from other EDA formats into **ROOM** vie
 | Menu | Description |
 |------|-------------|
 | **File → Import...** | Open the import dialog |
-| **File → Export...** | Export selected ROOM views to GDS, Xschem, or Qucs |
+| **File → Export...** | Export selected ROOM views to GDS, Xschem, Qucs, or ROOM JSON |
 
 Import requires a **CORE-enabled** build (`CONFIG+=no_room` disables this menu).
 
@@ -15,7 +15,7 @@ Import requires a **CORE-enabled** build (`CONFIG+=no_room` disables this menu).
 
 | Field | Description |
 |-------|-------------|
-| **Source format** | `GDS`, `Xschem`, `Qucs`, or `OAS` |
+| **Source format** | `GDS`, `Xschem`, `Qucs`, `OAS`, or `ROOM JSON` |
 | **Target library** | Library from the open `.projects` file (same names as in [Project Editor](PROJECT_EDITOR.md)) |
 | **Single file / Folder** | Import one file or every matching file in a directory |
 | **Path** | Source file or folder (Browse...) |
@@ -42,7 +42,10 @@ Cell name is taken from the source file base name (`OTA1336.sch` → cell `OTA13
 | GDS | `.gds`, `.gds2` | `gds_to_core --all-cells` | `layout` |
 | Xschem | `.sch`, `.sym` | `xschem_to_core` | `schematic` or `symbol` |
 | Qucs | `.sch` | `qucs_to_core` | `schematic` |
-| OAS | `.oas`, `.oas.gz` | `oas_to_core` if present, else native copy | `layout` or `oas` |
+| OAS | `.oas`, `.oas.gz` | `oas_to_room` if present, else native copy | `layout` or `oas` |
+| ROOM JSON | `.schematic.json`, `.symbol.json` | `json_to_room` | `schematic` or `symbol` |
+
+**ROOM JSON** is the same `*.schematic.room` / `*.symbol.room` path with room-json text instead of Cap’n Proto. View menu **Convert to JSON** / **Convert to ROOM** overwrites that file in place (`isJsonRoom` picks the menu). Editors load/save either encoding. See CommonDB [ROOM_JSON.md](https://github.com/IHP-GmbH/Room/blob/main/docs/ROOM_JSON.md).
 
 GDS import uses `--all-cells` so multi-cell libraries are preserved in one `.layout.room` file per source GDS.
 
@@ -54,10 +57,11 @@ Large GDS files (fill/AREF-heavy chips) convert in a few seconds; DOOR no longer
 
 DOOR does not embed converters in-process. On build, these tools from [CommonDB](https://github.com/IHP-GmbH/Room) are copied next to the executable:
 
-- `gds_to_core`, `core_to_gds`
-- `xschem_to_core`, `core_to_xschem`
-- `qucs_to_core`, `core_to_qucs`
-- `oas_to_core` (when ROOM is built with ZLIB)
+- `gds_to_room`, `room_to_gds`
+- `xschem_to_room`, `room_to_xschem`
+- `qucs_to_room`, `room_to_qucs`
+- `oas_to_room` (when ROOM is built with ZLIB)
+- `json_to_room`, `room_to_json` (schematic/symbol JSON)
 
 **Search order** (`room/converter_paths.cpp`):
 

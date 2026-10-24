@@ -224,6 +224,8 @@ private slots:
     void                                removeSelectedCategory();
 
     void                                showViewInfo();
+    void                                convertSelectedViewToJson();
+    void                                convertSelectedViewToRoom();
     void                                showGroupInfo();
     void                                showProjectInfo();
     void                                showCategoryInfo();
@@ -559,6 +561,14 @@ private:
     QString                             resolveTechLibraryCorePath(const QString &techLibraryName) const;
     bool                                isSchematicLikeView(const QString &viewName) const;
     QString                             symbolCoreForCell(const QString &cellName) const;
+    /*! Legacy sibling ``*.json`` path (cleanup only; format lives inside ``*.room``). */
+    static QString                      siblingRoomJsonPath(const QString &roomPath);
+    /*! View file exists (JSON or binary content inside ``*.room``). */
+    bool                                ensureWorkingRoomFromJson(const QString &roomPath);
+    /*! Overwrite ``*.room`` in place with room-json text. */
+    bool                                convertRoomViewToJson(const QString &roomPath);
+    /*! Overwrite JSON-in-``*.room`` in place with Cap’n Proto binary. */
+    bool                                convertJsonSiblingToRoom(const QString &roomPath);
     void                                launchSchematicTool(const QString &tool, const QString &viewPath);
 
     bool                                ensureKLayoutServerRunning(const QString &tool);

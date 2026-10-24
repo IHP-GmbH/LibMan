@@ -27,6 +27,28 @@ QString viewNameForXschemSource(const QString &sourcePath)
     return QStringLiteral("schematic");
 }
 
+QString cellAndViewFromJsonSource(const QString &sourcePath, QString *viewOut)
+{
+    // cell.schematic.json / cell.symbol.json → completeBaseName is "cell.schematic"
+    const QString stem = QFileInfo(sourcePath).completeBaseName().trimmed();
+    if (stem.endsWith(QStringLiteral(".schematic"), Qt::CaseInsensitive)) {
+        if (viewOut) {
+            *viewOut = QStringLiteral("schematic");
+        }
+        return stem.left(stem.size() - QStringLiteral(".schematic").size());
+    }
+    if (stem.endsWith(QStringLiteral(".symbol"), Qt::CaseInsensitive)) {
+        if (viewOut) {
+            *viewOut = QStringLiteral("symbol");
+        }
+        return stem.left(stem.size() - QStringLiteral(".symbol").size());
+    }
+    if (viewOut) {
+        *viewOut = QStringLiteral("schematic");
+    }
+    return stem;
+}
+
 } // namespace
 
 CoreImportService::CoreImportService(MainWindow *mainWindow)
@@ -45,6 +67,8 @@ QString CoreImportService::formatDisplayName(Format format)
         return QStringLiteral("Qucs");
     case Format::Oas:
         return QStringLiteral("OAS");
+    case Format::Json:
+        return QStringLiteral("ROOM JSON");
     }
     return {};
 }
@@ -60,6 +84,8 @@ QStringList CoreImportService::sourceNameFilters(Format format)
         return {QStringLiteral("*.sch")};
     case Format::Oas:
         return {QStringLiteral("*.oas"), QStringLiteral("*.oas.gz")};
+    case Format::Json:
+        return {QStringLiteral("*.schematic.json"), QStringLiteral("*.symbol.json"), QStringLiteral("*.json")};
     }
     return {};
 }
@@ -75,6 +101,8 @@ QString CoreImportService::converterBaseName(Format format)
         return QStringLiteral("qucs_to_room");
     case Format::Oas:
         return QStringLiteral("oas_to_room");
+    case Format::Json:
+        return QStringLiteral("json_to_room");
     }
     return {};
 }
@@ -160,7 +188,27 @@ CoreImportService::ImportItemResult CoreImportService::importOne(Format format,
         m_mainWindow->setLibraryRootDirectory(libraryName, libraryRoot);
     }
 
-    const QString cellName = cellNameFromSource(sourcePath);
+    QString cellName;
+    QString viewName;
+    if (format == Format::Json) {
+        cellName = cellAndViewFromJsonSource(sourcePath, &viewName);
+    } else {
+        cellName = cellNameFromSource(sourcePath);
+        switch (format) {
+        case Format::Gds:
+        case Format::Oas:
+            viewName = QStringLiteral("layout");
+            break;
+        case Format::Xschem:
+            viewName = viewNameForXschemSource(sourcePath);
+            break;
+        case Format::Qucs:
+            viewName = QStringLiteral("schematic");
+            break;
+        case Format::Json:
+            break;
+        }
+    }
     if (cellName.isEmpty()) {
         result.message = QStringLiteral("Failed to determine cell name from '%1'.").arg(sourcePath);
         return result;
@@ -177,20 +225,6 @@ CoreImportService::ImportItemResult CoreImportService::importOne(Format format,
             }
             return result;
         }
-    }
-
-    QString viewName;
-    switch (format) {
-    case Format::Gds:
-    case Format::Oas:
-        viewName = QStringLiteral("layout");
-        break;
-    case Format::Xschem:
-        viewName = viewNameForXschemSource(sourcePath);
-        break;
-    case Format::Qucs:
-        viewName = QStringLiteral("schematic");
-        break;
     }
 
     const QString cellDirPath = QDir(libraryRoot).filePath(cellName);
@@ -233,6 +267,7 @@ CoreImportService::ImportItemResult CoreImportService::importOne(Format format,
     case Format::Xschem:
     case Format::Qucs:
     case Format::Oas:
+    case Format::Json:
         arguments << QDir::toNativeSeparators(sourceInfo.absoluteFilePath())
                   << QDir::toNativeSeparators(destinationPath);
         break;

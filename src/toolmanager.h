@@ -1,6 +1,7 @@
 #ifndef TOOLMANAGER_H
 #define TOOLMANAGER_H
 
+#include <QComboBox>
 #include <QDialog>
 #include <QLineEdit>
 #include <QMap>
@@ -98,6 +99,8 @@ private:
 
     QtTreePropertyBrowser*                      m_pbSettings; /*!< Property browser for editing tool settings. */
     QtVariantPropertyManager*                   m_vmSettings; /*!< Property manager for handling different property types and associated UI editors. */
+
+    QComboBox*                                  m_cbSchematicSymbolFormat = nullptr; /*!< ROOM vs JSON when creating schematic/symbol views. */
 
     QMap<QString, QLineEdit*>                   m_custViewsEditMap; /*!< View suffix editor per tool group tab. */
     QMap<QString, ViewToolsTableWidget*>        m_custToolsTableMap; /*!< Multi-tool table per tool group tab. */

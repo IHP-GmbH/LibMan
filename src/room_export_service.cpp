@@ -165,6 +165,8 @@ QString CoreExportService::formatDisplayName(Format format)
         return QStringLiteral("Xschem");
     case Format::Qucs:
         return QStringLiteral("Qucs");
+    case Format::Json:
+        return QStringLiteral("ROOM JSON");
     }
     return {};
 }
@@ -188,6 +190,8 @@ QString CoreExportService::converterBaseName(Format format)
         return QStringLiteral("room_to_xschem");
     case Format::Qucs:
         return QStringLiteral("room_to_qucs");
+    case Format::Json:
+        return QStringLiteral("room_to_json");
     }
     return {};
 }
@@ -202,6 +206,8 @@ bool CoreExportService::coreViewMatchesFormat(Format format, const QString &view
         return view == QStringLiteral("schematic") || view == QStringLiteral("symbol");
     case Format::Qucs:
         return view == QStringLiteral("schematic");
+    case Format::Json:
+        return view == QStringLiteral("schematic") || view == QStringLiteral("symbol");
     }
     return false;
 }
@@ -220,21 +226,24 @@ QVector<CoreExportService::ExportItemResult> CoreExportService::exportFiles(Form
     return results;
 }
 
-QString CoreExportService::destinationFilePath(const QString &destinationDir,
+QString CoreExportService::destinationFilePath(Format format,
+                                               const QString &destinationDir,
                                                const QString &cellName,
                                                const QString &viewName) const
 {
     const QString view = normalizedViewName(viewName);
-    QString extension;
-    if (view == QStringLiteral("layout")) {
-        extension = QStringLiteral(".gds");
+    QString fileName;
+    if (format == Format::Json) {
+        fileName = cellName + QLatin1Char('.') + view + QStringLiteral(".json");
+    } else if (view == QStringLiteral("layout")) {
+        fileName = cellName + QStringLiteral(".gds");
     } else if (view == QStringLiteral("symbol")) {
-        extension = QStringLiteral(".sym");
+        fileName = cellName + QStringLiteral(".sym");
     } else {
-        extension = QStringLiteral(".sch");
+        fileName = cellName + QStringLiteral(".sch");
     }
 
-    return QFileInfo(QDir(destinationDir).filePath(cellName + extension)).absoluteFilePath();
+    return QFileInfo(QDir(destinationDir).filePath(fileName)).absoluteFilePath();
 }
 
 CoreExportService::ExportItemResult CoreExportService::exportOne(Format format,
@@ -273,7 +282,7 @@ CoreExportService::ExportItemResult CoreExportService::exportOne(Format format,
         return result;
     }
 
-    const QString destinationPath = destinationFilePath(destRoot, identity.cellName, identity.viewName);
+    const QString destinationPath = destinationFilePath(format, destRoot, identity.cellName, identity.viewName);
     result.destinationPath = destinationPath;
 
     const QString converterPath = findCoreConverterExecutable(converterBaseName(format));
@@ -287,6 +296,7 @@ CoreExportService::ExportItemResult CoreExportService::exportOne(Format format,
     QString conversionError;
     switch (format) {
     case Format::Gds:
+    case Format::Json:
         arguments << QDir::toNativeSeparators(sourceInfo.absoluteFilePath())
                   << QDir::toNativeSeparators(destinationPath);
         break;

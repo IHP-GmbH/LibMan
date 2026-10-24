@@ -48,6 +48,8 @@ void ImportDialog::populateFormats()
                                static_cast<int>(CoreImportService::Format::Qucs));
     m_ui->comboFormat->addItem(CoreImportService::formatDisplayName(CoreImportService::Format::Oas),
                                static_cast<int>(CoreImportService::Format::Oas));
+    m_ui->comboFormat->addItem(CoreImportService::formatDisplayName(CoreImportService::Format::Json),
+                               static_cast<int>(CoreImportService::Format::Json));
 }
 
 void ImportDialog::populateLibraries()

@@ -14,6 +14,7 @@ public:
         Gds,
         Xschem,
         Qucs,
+        Json,
     };
 
     struct ExportItemResult {
@@ -43,7 +44,8 @@ private:
                       const QStringList &arguments,
                       QString *errorMessage) const;
 
-    QString destinationFilePath(const QString &destinationDir,
+    QString destinationFilePath(Format format,
+                                const QString &destinationDir,
                                 const QString &cellName,
                                 const QString &viewName) const;
 

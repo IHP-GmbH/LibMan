@@ -27,6 +27,9 @@
 #include "room/room_path_utils.h"
 #include "room/roomcellreader.h"
 #include "libman_test_mode.h"
+#ifndef LIBMAN_NO_ROOM
+#include "room_json_io.h"
+#endif
 
 /*!*********************************************************************************************************************
  * \brief Displays menu for view widget.
@@ -225,6 +228,49 @@ void MainWindow::showViewMenu(const QPoint &pos)
             connect(viewInfo, &QAction::triggered, this, &MainWindow::showViewInfo);
             menu->addAction(viewInfo);
             addAction(viewInfo);
+
+            // ROOM JSON exchange (schematic / symbol only) — Door still lists *.room.
+            bool schematicOrSymbol = false;
+            for(QTreeWidgetItem *it : items) {
+                if(!it) {
+                    continue;
+                }
+                const QString vn = it->text(0).trimmed().toLower();
+                if(vn == QStringLiteral("schematic") || vn == QStringLiteral("symbol")) {
+                    schematicOrSymbol = true;
+                    break;
+                }
+            }
+            if(schematicOrSymbol) {
+                // Same *.room path; content toggles JSON ↔ Cap’n Proto (isJsonRoom).
+                const QString viewPath = getViewPath(getCurrentLibraryName(), getCurrentGroupName(),
+                                                     items.first()->text(0).trimmed());
+                const QString absRoom = QFileInfo(viewPath).absoluteFilePath();
+                if(QFileInfo::exists(absRoom)) {
+                    menu->addSeparator();
+#ifndef LIBMAN_NO_ROOM
+                    const bool jsonContent =
+                        room::RoomJsonIo::isJsonRoom(absRoom.toStdString());
+#else
+                    const bool jsonContent = false;
+#endif
+                    if(jsonContent) {
+                        QAction *toRoom = new QAction(tr("Convert to &ROOM"), this);
+                        toRoom->setStatusTip(
+                            tr("Replace JSON content of this *.room with Cap’n Proto binary."));
+                        connect(toRoom, &QAction::triggered, this,
+                                &MainWindow::convertSelectedViewToRoom);
+                        menu->addAction(toRoom);
+                    } else {
+                        QAction *toJson = new QAction(tr("Convert to &JSON"), this);
+                        toJson->setStatusTip(
+                            tr("Replace Cap’n Proto content of this *.room with room-json text."));
+                        connect(toJson, &QAction::triggered, this,
+                                &MainWindow::convertSelectedViewToJson);
+                        menu->addAction(toJson);
+                    }
+                }
+            }
         }
 
         if(isLayoutXorMenuCandidate(items.first())) {
@@ -696,8 +742,18 @@ void MainWindow::createCoreView(const QString &viewName)
         return;
     }
 
+    bool asJson = false;
+    if ((normalizedView == QStringLiteral("schematic")
+         || normalizedView == QStringLiteral("symbol"))
+        && m_properties != nullptr
+        && m_properties->exists(QStringLiteral("SchematicSymbolFormat"))) {
+        const QString fmt =
+            m_properties->get<QString>(QStringLiteral("SchematicSymbolFormat")).trimmed().toUpper();
+        asJson = (fmt == QStringLiteral("JSON"));
+    }
+
     RoomCellReader reader(viewPath);
-    reader.coreCreate(groupName, normalizedView);
+    reader.coreCreate(groupName, normalizedView, asJson);
 
     const QStringList errors = reader.getErrors();
     if (errors.count()) {
@@ -1761,6 +1817,113 @@ void MainWindow::showViewInfo()
 
     const QString extra = isRoomViewName(viewName) ? coreLockInfoExtraLines(viewPath) : QString();
     showFolderInfo("View", viewName, viewPath, true, extra);
+}
+
+QString MainWindow::siblingRoomJsonPath(const QString &roomPath)
+{
+    QString path = QFileInfo(roomPath).absoluteFilePath();
+    if(path.endsWith(QStringLiteral(".room"), Qt::CaseInsensitive)) {
+        path.chop(5);
+        return path + QStringLiteral(".json");
+    }
+    if(path.endsWith(QStringLiteral(".json"), Qt::CaseInsensitive)) {
+        return path;
+    }
+    return path + QStringLiteral(".json");
+}
+
+bool MainWindow::convertRoomViewToJson(const QString &roomPath)
+{
+#ifndef LIBMAN_NO_ROOM
+    const QString absRoom = QFileInfo(roomPath).absoluteFilePath();
+    if(absRoom.isEmpty() || !QFileInfo::exists(absRoom)) {
+        error(tr("ROOM file not found: %1").arg(roomPath), false);
+        return false;
+    }
+    const room::RoomJsonIo::Result result =
+        room::RoomJsonIo::convertInPlaceToJson(absRoom.toStdString());
+    if(!result.ok) {
+        error(tr("Convert to JSON failed: %1").arg(QString::fromStdString(result.message)), false);
+        return false;
+    }
+    // Drop legacy sibling *.json if present (format now lives inside *.room).
+    const QString legacyJson = siblingRoomJsonPath(absRoom);
+    if(legacyJson.compare(absRoom, Qt::CaseInsensitive) != 0 && QFileInfo::exists(legacyJson)) {
+        QFile::remove(legacyJson);
+    }
+    info(tr("Wrote JSON into %1").arg(QDir::toNativeSeparators(absRoom)), false);
+    return true;
+#else
+    Q_UNUSED(roomPath);
+    error(tr("Convert to JSON requires ROOM support."), false);
+    return false;
+#endif
+}
+
+bool MainWindow::convertJsonSiblingToRoom(const QString &roomPath)
+{
+#ifndef LIBMAN_NO_ROOM
+    const QString absRoom = QFileInfo(roomPath).absoluteFilePath();
+    if(absRoom.isEmpty() || !QFileInfo::exists(absRoom)) {
+        error(tr("ROOM file not found: %1").arg(roomPath), false);
+        return false;
+    }
+    if(!room::RoomJsonIo::isJsonRoom(absRoom.toStdString())) {
+        error(tr("File is already binary ROOM: %1").arg(QDir::toNativeSeparators(absRoom)), false);
+        return false;
+    }
+    const room::RoomJsonIo::Result result =
+        room::RoomJsonIo::convertInPlaceToBinary(absRoom.toStdString());
+    if(!result.ok) {
+        error(tr("Convert to ROOM failed: %1").arg(QString::fromStdString(result.message)), false);
+        return false;
+    }
+    info(tr("Wrote binary ROOM into %1").arg(QDir::toNativeSeparators(absRoom)), false);
+    return true;
+#else
+    Q_UNUSED(roomPath);
+    error(tr("Convert to ROOM requires ROOM support."), false);
+    return false;
+#endif
+}
+
+bool MainWindow::ensureWorkingRoomFromJson(const QString &roomPath)
+{
+    // Editors load JSON-in-*.room via RoomJsonIo::isJsonRoom / loadRoomOrJson.
+    // No convert-before-launch; path name stays *.room either way.
+    return QFileInfo::exists(roomPath);
+}
+
+void MainWindow::convertSelectedViewToJson()
+{
+    const QString libName = getCurrentLibraryName();
+    const QString groupName = getCurrentGroupName();
+    const QString viewName = getCurrentViewName();
+    if(libName.isEmpty() || groupName.isEmpty() || viewName.isEmpty()) {
+        return;
+    }
+    if(!isSchematicLikeView(viewName)) {
+        error(tr("Convert to JSON is only for schematic/symbol views."), false);
+        return;
+    }
+    const QString viewPath = getViewPath(libName, groupName, viewName);
+    convertRoomViewToJson(viewPath);
+}
+
+void MainWindow::convertSelectedViewToRoom()
+{
+    const QString libName = getCurrentLibraryName();
+    const QString groupName = getCurrentGroupName();
+    const QString viewName = getCurrentViewName();
+    if(libName.isEmpty() || groupName.isEmpty() || viewName.isEmpty()) {
+        return;
+    }
+    if(!isSchematicLikeView(viewName)) {
+        error(tr("Convert to ROOM is only for schematic/symbol views."), false);
+        return;
+    }
+    const QString viewPath = getViewPath(libName, groupName, viewName);
+    convertJsonSiblingToRoom(viewPath);
 }
 
 /*!*********************************************************************************************************************

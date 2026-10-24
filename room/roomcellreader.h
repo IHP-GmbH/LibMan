@@ -17,7 +17,10 @@ public:
 
     explicit RoomCellReader(const QString &fileName);
 
-    void coreCreate(const QString &cellName, const QString &viewName = QStringLiteral("layout"));
+    /*! \param asJson When true and view is schematic/symbol, write room-json into ``*.room``. */
+    void coreCreate(const QString &cellName,
+                    const QString &viewName = QStringLiteral("layout"),
+                    bool asJson = false);
     QStringList getErrors() const { return m_errorList; }
 
     bool readHierarchy(CoreHierarchy &out);

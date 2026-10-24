@@ -9,11 +9,23 @@
 #include "database.h"
 #include "em_model_data.h"
 #include "enums.h"
+#include "room_json_io.h"
 #endif
 
 namespace {
 
 #ifndef LIBMAN_NO_ROOM
+
+room::Database loadRoomDb(const QString &path)
+{
+    room::Database db;
+    const room::RoomJsonIo::Result loaded =
+        room::RoomJsonIo::loadRoomOrJson(path.toStdString(), db);
+    if (!loaded.ok) {
+        throw std::runtime_error(loaded.message);
+    }
+    return db;
+}
 
 void includePoint(QRectF *bounds, bool *hasPoint, const QPointF &point)
 {
@@ -212,7 +224,7 @@ public:
 
     void drawFile(const QString &path, room::ViewType viewType, const QString &cellName)
     {
-        room::Database db = room::Database::loadFromFile(path.toStdString());
+        room::Database db = loadRoomDb(path);
         m_lib = &db.lib();
         m_layout = viewType == room::ViewType::Layout;
 
@@ -431,7 +443,7 @@ private:
             }
             if (!symbolPath.isEmpty()) {
                 try {
-                    room::Database symbolDb = room::Database::loadFromFile(symbolPath.toStdString());
+                    room::Database symbolDb = loadRoomDb(symbolPath);
                     const room::Cell *symbolCell =
                         symbolDb.lib().findCell(cellNameFromCorePath(symbolPath).toStdString());
                     if (symbolCell == nullptr && !symbolDb.lib().cells().empty()) {
@@ -554,7 +566,7 @@ QString layoutRoomPathFromEmModel(const QString &emmodelPath, QString *topCellOu
         return {};
     }
     try {
-        const room::Database db = room::Database::loadFromFile(emmodelPath.toStdString());
+        const room::Database db = loadRoomDb(emmodelPath);
         const room::EmModelViewData *model = nullptr;
         for (const room::Cell &cell : db.lib().cells()) {
             if (const room::CellContent *content = cell.findContent(room::ViewType::EmModel)) {

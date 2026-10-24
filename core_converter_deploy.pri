@@ -8,7 +8,7 @@ isEmpty(ROOM_BUILD_DIR) {
 CONVERTER_DST = $$OUT_PWD
 !isEmpty(DESTDIR): CONVERTER_DST = $$OUT_PWD/$$DESTDIR
 
-ROOM_CONVERTERS = gds_to_room xschem_to_room qucs_to_room oas_to_room room_to_gds room_to_xschem room_to_qucs
+ROOM_CONVERTERS = gds_to_room xschem_to_room qucs_to_room oas_to_room json_to_room room_to_gds room_to_xschem room_to_qucs room_to_json
 
 win32 {
   # mingw32-make on GitHub Actions runs recipes in bash; invoke cmd with a helper
