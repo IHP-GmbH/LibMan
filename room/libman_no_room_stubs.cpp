@@ -9,10 +9,11 @@ RoomCellReader::RoomCellReader(const QString &fileName)
 {
 }
 
-void RoomCellReader::coreCreate(const QString &cellName, const QString &viewName)
+void RoomCellReader::coreCreate(const QString &cellName, const QString &viewName, bool asJson)
 {
     Q_UNUSED(cellName);
     Q_UNUSED(viewName);
+    Q_UNUSED(asJson);
     m_errorList << QStringLiteral("ROOM support is not built (CONFIG+=no_room).");
 }
 
